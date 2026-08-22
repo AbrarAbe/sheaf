@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  dynamic_color: ^2.1.0
+  material_ui: ^1.0.1
 
 dev_dependencies:
   flutter_test:

@@ -4,6 +4,9 @@
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
+#ifdef GDK_WINDOWING_WAYLAND
+#include <gdk/gdkwayland.h>
+#endif
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -25,13 +28,13 @@ static void my_application_activate(GApplication *application) {
   GtkWindow *window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Use a header bar when running in GNOME as this is the common style used
-  // by applications and is the setup most users will be using (e.g. Ubuntu
-  // desktop).
-  // If running on X and not using GNOME then just use a traditional title bar
+  // Use a header bar only when running on X11 under GNOME as this is the common
+  // style used by applications there.
+  // If running on X11 and not using GNOME then just use a traditional title bar
   // in case the window manager does more exotic layout, e.g. tiling.
-  // If running on Wayland assume the header bar will work (may need changing
-  // if future cases occur).
+  // On Wayland never attach a client-side header bar: GTK then requests
+  // server-side decorations via xdg-decoration, so the compositor draws a
+  // title bar that matches the system theme.
   gboolean use_header_bar = TRUE;
 #ifdef GDK_WINDOWING_X11
   GdkScreen *screen = gtk_window_get_screen(window);
@@ -40,6 +43,11 @@ static void my_application_activate(GApplication *application) {
     if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
       use_header_bar = FALSE;
     }
+  }
+#endif
+#ifdef GDK_WINDOWING_WAYLAND
+  if (GDK_IS_WAYLAND_DISPLAY(gdk_display_get_default())) {
+    use_header_bar = FALSE;
   }
 #endif
   if (use_header_bar) {
