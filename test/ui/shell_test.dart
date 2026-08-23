@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taker/data/settings_repository.dart';
 import 'package:taker/data/vault_repository.dart';
 import 'package:taker/logic/vault_controller.dart';
+import 'package:taker/ui/shell/drag_divider.dart';
 import 'package:taker/ui/shell/pane_widths.dart';
 import 'package:taker/ui/shell/shell.dart';
 import 'package:taker/ui/sidebar/sidebar.dart';
@@ -116,6 +117,18 @@ void main() {
       widths.toggleSidebar();
       await tester.pump();
       expect(find.byType(Sidebar), findsOneWidget);
+    });
+
+    testWidgets('drag dividers have a generous hit target (>= 12 dp wide)', (tester) async {
+      await pumpShell(tester, width: 1280, height: 800);
+
+      final dividers = find.byType(DragDivider);
+      expect(dividers, findsNWidgets(2));
+
+      for (final divider in dividers.evaluate()) {
+        final box = divider.renderObject! as RenderBox;
+        expect(box.size.width, greaterThanOrEqualTo(12), reason: 'divider hit target too narrow');
+      }
     });
 
     testWidgets('selecting a note in the list opens it in the editor', (tester) async {
