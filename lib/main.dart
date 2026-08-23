@@ -1,29 +1,22 @@
-import 'package:dynamic_color/dynamic_color.dart';
-import 'package:material_ui/material_ui.dart';
+import 'dart:io';
 
-void main() {
-  runApp(const MainApp());
-}
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
-const _seedColor = Colors.blue;
+import 'app.dart';
+import 'data/settings_repository.dart';
+import 'data/vault_repository.dart';
+import 'logic/vault_controller.dart';
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  @override
-  Widget build(BuildContext context) {
-    return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        final ColorScheme lightScheme = lightDynamic ?? ColorScheme.fromSeed(seedColor: _seedColor);
-        final ColorScheme darkScheme =
-            darkDynamic ?? ColorScheme.fromSeed(seedColor: _seedColor, brightness: Brightness.dark);
-        return MaterialApp(
-          theme: ThemeData(colorScheme: lightScheme, useMaterial3: true),
-          darkTheme: ThemeData(colorScheme: darkScheme, useMaterial3: true),
-          themeMode: ThemeMode.system,
-          home: const Scaffold(body: Center(child: Text('Hello World!'))),
-        );
-      },
-    );
-  }
+  final configDir = await getApplicationSupportDirectory();
+  final controller = VaultController(
+    settings: SettingsRepository(file: File('${configDir.path}/settings.json')),
+    vaultFactory: (path) => VaultRepository(root: Directory(path)),
+  );
+  await controller.initialize();
+
+  runApp(TakerApp(controller: controller));
 }
