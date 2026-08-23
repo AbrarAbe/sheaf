@@ -151,6 +151,16 @@ class VaultController extends ChangeNotifier {
   /// Trash entries, for the sidebar trash view.
   Future<List<TrashEntry>> trash() => _requireVault().listTrash();
 
+  Future<void> restoreFromTrash(String trashedName) async {
+    await _requireVault().restore(trashedName);
+    await refresh();
+  }
+
+  Future<void> emptyTrashItem(String trashedName) async {
+    await _requireVault().deleteForever(trashedName);
+    await refresh();
+  }
+
   /// Rescans the vault from disk.
   Future<void> refresh() async {
     final vault = _requireVault();

@@ -99,6 +99,22 @@ void main() {
       expect(entries.map((e) => e.originalPath).toSet(), {'one/Twin.md', 'two/Twin.md'});
       expect(entries.map((e) => e.trashedName).toSet().length, 2);
     });
+
+    test('deleteForever removes the file and its index entry', () async {
+      final note = await vault.createNote(title: 'Goner');
+      await vault.deleteNote(note.path);
+      final entry = (await vault.listTrash()).single;
+
+      await vault.deleteForever(entry.trashedName);
+
+      expect(File('${tempDir.path}/.trash/${entry.trashedName}').existsSync(), isFalse);
+      expect(await vault.listTrash(), isEmpty);
+
+      // Trashing another note afterwards must not resurrect stale entries.
+      final other = await vault.createNote(title: 'Next');
+      await vault.deleteNote(other.path);
+      expect((await vault.listTrash()).single.originalPath, 'Next.md');
+    });
   });
 
   group('folders', () {

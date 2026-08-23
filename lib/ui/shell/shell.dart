@@ -5,6 +5,7 @@ import '../../logic/vault_controller.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
 import '../sidebar/sidebar.dart';
+import '../sidebar/trash_view.dart';
 import 'drag_divider.dart';
 import 'pane_widths.dart';
 
@@ -96,7 +97,11 @@ class _ShellState extends State<Shell> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!widths.sidebarCollapsed)
-                    Sidebar(controller: controller, width: widths.sidebar)
+                    Sidebar(
+                      controller: controller,
+                      width: widths.sidebar,
+                      onTrashTapped: () => showTrashDialog(context, controller),
+                    )
                   else
                     const Rail(),
                   if (!widths.sidebarCollapsed) DragDivider(onDrag: (dx) => widths.sidebar += dx),

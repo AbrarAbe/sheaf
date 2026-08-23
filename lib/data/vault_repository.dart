@@ -144,6 +144,26 @@ class VaultRepository {
 
   Future<List<TrashEntry>> listTrash() => _loadIndex().then((i) => i.items);
 
+  /// Permanently removes a trashed item and forgets its index entry.
+  Future<void> deleteForever(String trashedName) async {
+    final index = await _loadIndex();
+    TrashEntry? entry;
+    for (final e in index.items) {
+      if (e.trashedName == trashedName) {
+        entry = e;
+        break;
+      }
+    }
+    if (entry == null) throw StateError('No trash entry for $trashedName');
+
+    final source = p.join(_trash.path, trashedName);
+    final entity = FileSystemEntity.isDirectorySync(source) ? Directory(source) : File(source);
+    await entity.delete(recursive: true);
+
+    index.items.removeWhere((e) => identical(e, entry));
+    await _saveIndex(index);
+  }
+
   // ---------- folders ----------
 
   Future<void> createFolder(String relPath) async {
