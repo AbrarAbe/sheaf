@@ -87,7 +87,7 @@ test/
   data/  logic/          # pure-Dart unit tests (real temp dirs, no mocks)
   ui/                    # widget tests
 docs/
-  spec.md  plan.md  adr/ # this file, task breakdown, decision records
+  spec.md  plan_v0.1.md adr/ # this file, archived v0.1 plan, decisions
 ```
 
 ## Code Style

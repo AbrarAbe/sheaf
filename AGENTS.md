@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **taker** (340 symbols, 387 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **taker** (1104 symbols, 2216 relationships, 90 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -53,7 +53,8 @@ skill and follow it.
 1. **Spec first** — no feature starts without a spec (`spec-driven-development`).
    The living spec lives at `docs/spec.md`; update it before changing behavior.
 2. **Plan into tasks** — break approved specs into ordered, verifiable tasks in
-   `docs/plan.md` (`planning-and-task-breakdown`). Tick tasks off as they land.
+   the versioned plan file `docs/plan_v<X.Y>.md`
+   (`planning-and-task-breakdown`). Tick tasks off as they land.
 3. **Implement incrementally** — one plan task at a time, red→green
    (`incremental-implementation` + `test-driven-development`). Never call a task
    done with failing or skipped tests.
@@ -66,7 +67,7 @@ skill and follow it.
 
 ## Definition of done (per task)
 
-- [ ] Acceptance criteria from `docs/plan.md` met
+- [ ] Acceptance criteria from the current versioned plan (`docs/plan_v*.md`) met
 - [ ] `flutter analyze` clean
 - [ ] `flutter test` green (new tests included, failing-first where practical)
 - [ ] Hot reload pushed to any running app (rule below)
