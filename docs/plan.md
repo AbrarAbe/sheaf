@@ -121,6 +121,12 @@ sliced vertically: every phase ends with something runnable.
 ### Checkpoint: Complete
 - [x] All spec success criteria checked; analyze + full suite green.
 
+### Phase 4: v0.2 fixes (user feedback)
+
+- [x] **Task 15: Note creation affordance** — New note button beside the list filter, wired to shared handler; empty-state button functional.
+- [x] **Task 16: Divider hit target** — 12 dp invisible strip with centered hairline; rendered-width test.
+- [x] **Task 17: Settings dialog** — theme radios, vault path + change-vault picker, gear entry in sidebar.
+
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
