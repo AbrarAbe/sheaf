@@ -2,44 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/settings_repository.dart';
 import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
 import 'package:taker/ui/sidebar/trash_view.dart';
 
-/// Records which items the dialog asks to mutate, without touching disks.
-class SpyVaultController extends VaultController {
-  SpyVaultController(String settingsPath)
-    : super(
-        settings: SettingsRepository(file: File(settingsPath)),
-        vaultFactory: (path) => throw UnimplementedError(),
-      );
-
-  final restored = <String>[];
-  final emptied = <String>[];
-  List<TrashEntry> entries = const [];
-
-  @override
-  Future<List<TrashEntry>> trash() async => entries;
-
-  @override
-  Future<void> restoreFromTrash(String trashedName) async {
-    restored.add(trashedName);
-    entries = [
-      for (final e in entries)
-        if (e.trashedName != trashedName) e,
-    ];
-  }
-
-  @override
-  Future<void> emptyTrashItem(String trashedName) async {
-    emptied.add(trashedName);
-    entries = [
-      for (final e in entries)
-        if (e.trashedName != trashedName) e,
-    ];
-  }
-}
+import '../../helpers/spy_vault_controller.dart';
 
 void main() {
   late Directory tempDir;

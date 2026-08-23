@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
+import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
 import '../sidebar/sidebar.dart';
@@ -117,6 +118,7 @@ class _ShellState extends State<Shell> {
                             controller: controller,
                             width: widths.sidebar,
                             onTrashTapped: () => showTrashDialog(context, controller),
+                            onSettingsTapped: () => showSettingsDialog(context, controller),
                           )
                         else
                           const Rail(),

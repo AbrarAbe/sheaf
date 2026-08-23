@@ -7,11 +7,18 @@ import '../shell/pane_widths.dart';
 
 /// Quick filters, folder tree, tags, and trash — the leftmost pane.
 class Sidebar extends StatelessWidget {
-  const Sidebar({super.key, required this.controller, required this.width, this.onTrashTapped});
+  const Sidebar({
+    super.key,
+    required this.controller,
+    required this.width,
+    this.onTrashTapped,
+    this.onSettingsTapped,
+  });
 
   final VaultController controller;
   final double width;
   final VoidCallback? onTrashTapped;
+  final VoidCallback? onSettingsTapped;
 
   @override
   Widget build(BuildContext context) {
@@ -66,12 +73,23 @@ class Sidebar extends StatelessWidget {
                 ),
               ),
               const Divider(height: 1),
-              _Section(
-                child: _Entry(
-                  label: 'Trash',
-                  icon: Icons.delete_outline,
-                  onTap: onTrashTapped ?? () {},
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Section(
+                      child: _Entry(
+                        label: 'Trash',
+                        icon: Icons.delete_outline,
+                        onTap: onTrashTapped ?? () {},
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Settings',
+                    onPressed: onSettingsTapped,
+                    icon: const Icon(Icons.settings_outlined, size: 20),
+                  ),
+                ],
               ),
             ],
           );
