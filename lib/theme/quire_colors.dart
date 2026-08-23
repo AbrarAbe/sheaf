@@ -106,39 +106,39 @@ class QuireColors extends ThemeExtension<QuireColors> {
 }
 
 /// Daylight highlighters — color.md semantic table.
-const quireColorsLight = QuireColors(
-  hlPinBase: Color(0xFFF2C94C),
-  hlPinFg: Color(0xFF7A5E00),
-  hlPinWash: Color(0x4DF2C94C), // base @ 30%
-  hlAlertBase: Color(0xFFE5484D),
-  hlAlertFg: Color(0xFFB02A30),
-  hlAlertWash: Color(0x24E5484D), // base @ 14%
-  hlGrowBase: Color(0xFF3FB97F),
-  hlGrowFg: Color(0xFF17603E),
-  hlGrowWash: Color(0x293FB97F), // base @ 16%
-  hlWaitBase: Color(0xFFED8B16),
-  hlWaitFg: Color(0xFF8F5606),
-  hlWaitWash: Color(0x29ED8B16), // base @ 16%
-  focusRing: Color(0xFF2F4BD7),
-  textTertiary: Color(0xFF8A91A3),
-  inkPressed: Color(0xFF2439AC),
+final quireColorsLight = QuireColors(
+  hlPinBase: const Color(0xFFF2C94C),
+  hlPinFg: const Color(0xFF7A5E00),
+  hlPinWash: const Color(0xFFF2C94C).withValues(alpha: 0.30),
+  hlAlertBase: const Color(0xFFE5484D),
+  hlAlertFg: const Color(0xFFB02A30),
+  hlAlertWash: const Color(0xFFE5484D).withValues(alpha: 0.14),
+  hlGrowBase: const Color(0xFF3FB97F),
+  hlGrowFg: const Color(0xFF17603E),
+  hlGrowWash: const Color(0xFF3FB97F).withValues(alpha: 0.16),
+  hlWaitBase: const Color(0xFFED8B16),
+  hlWaitFg: const Color(0xFF8F5606),
+  hlWaitWash: const Color(0xFFED8B16).withValues(alpha: 0.16),
+  focusRing: const Color(0xFF2F4BD7),
+  textTertiary: const Color(0xFF8A91A3),
+  inkPressed: const Color(0xFF2439AC),
 );
 
 /// Lamplight highlighters — same meanings, lifted for warm charcoal.
-const quireColorsDark = QuireColors(
-  hlPinBase: Color(0xFFE8C34A),
-  hlPinFg: Color(0xFFF4DC86),
-  hlPinWash: Color(0x33E8C34A), // base @ 20%
-  hlAlertBase: Color(0xFFFF8A85),
-  hlAlertFg: Color(0xFFFFC2BE),
-  hlAlertWash: Color(0x2EFF8A85), // base @ 18%
-  hlGrowBase: Color(0xFF6FCB98),
-  hlGrowFg: Color(0xFFA8E0C2),
-  hlGrowWash: Color(0x2E6FCB98), // base @ 18%
-  hlWaitBase: Color(0xFFF2A65A),
-  hlWaitFg: Color(0xFFF8CF9E),
-  hlWaitWash: Color(0x2EF2A65A), // base @ 18%
-  focusRing: Color(0xFF93A8F0),
-  textTertiary: Color(0xFF6E685C),
-  inkPressed: Color(0xFFB7C4F5),
+final quireColorsDark = QuireColors(
+  hlPinBase: const Color(0xFFE8C34A),
+  hlPinFg: const Color(0xFFF4DC86),
+  hlPinWash: const Color(0xFFE8C34A).withValues(alpha: 0.20),
+  hlAlertBase: const Color(0xFFFF8A85),
+  hlAlertFg: const Color(0xFFFFC2BE),
+  hlAlertWash: const Color(0xFFFF8A85).withValues(alpha: 0.18),
+  hlGrowBase: const Color(0xFF6FCB98),
+  hlGrowFg: const Color(0xFFA8E0C2),
+  hlGrowWash: const Color(0xFF6FCB98).withValues(alpha: 0.18),
+  hlWaitBase: const Color(0xFFF2A65A),
+  hlWaitFg: const Color(0xFFF8CF9E),
+  hlWaitWash: const Color(0xFFF2A65A).withValues(alpha: 0.18),
+  focusRing: const Color(0xFF93A8F0),
+  textTertiary: const Color(0xFF6E685C),
+  inkPressed: const Color(0xFFB7C4F5),
 );

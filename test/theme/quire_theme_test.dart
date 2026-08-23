@@ -83,12 +83,12 @@ void main() {
 
     test('washes are translucent at documented alphas', () {
       final light = buildQuireLight().extension<QuireColors>()!;
-      expect(light.hlPinWash.alpha, closeTo(0.30 * 255, 1.5));
-      expect(light.hlAlertWash.alpha, closeTo(0.14 * 255, 1.5));
+      expect(light.hlPinWash, const Color(0xFFF2C94C).withValues(alpha: 0.30));
+      expect(light.hlAlertWash, const Color(0xFFE5484D).withValues(alpha: 0.14));
 
       final dark = buildQuireDark().extension<QuireColors>()!;
-      expect(dark.hlPinWash.alpha, closeTo(0.20 * 255, 1.5));
-      expect(dark.hlAlertWash.alpha, closeTo(0.18 * 255, 1.5));
+      expect(dark.hlPinWash, const Color(0xFFE8C34A).withValues(alpha: 0.20));
+      expect(dark.hlAlertWash, const Color(0xFFFF8A85).withValues(alpha: 0.18));
     });
 
     test('focus ring follows ink', () {
