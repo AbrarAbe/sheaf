@@ -42,7 +42,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: unit tests on `Directory.systemTemp`.
   - Files: `lib/data/settings_repository.dart`, `test/data/settings_repository_test.dart`
 
-- [ ] **Task 5: VaultRepository** (L)
+- [x] **Task 5: VaultRepository** (L)
   - Acceptance: note CRUD; delete→`.trash/` + restore; folder create/rename/delete;
     folder-tree scan; attachments helper; filename slugging; ignores dot-dirs.
   - Verify: unit tests on real temp vaults (round-trip, trash semantics, tree shape).
