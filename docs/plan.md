@@ -73,7 +73,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: widget tests with seeded temp vault.
   - Files: `lib/ui/sidebar/*`
 
-- [ ] **Task 9: Note list** (M)
+- [x] **Task 9: Note list** (M)
   - Acceptance: rows (title, snippet, mono time) under day eyebrows; recent-first;
     filter box matches title+body, title-priority ranking; empty-state copy from
     design voice.
