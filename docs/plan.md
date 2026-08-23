@@ -99,7 +99,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: widget tests for structure + width constraint; parser tests for resize syntax.
   - Files: `lib/ui/editor/preview.dart`, `lib/data/markdown_parser.dart`
 
-- [ ] **Task 12: Image insertion** (M)
+- [x] **Task 12: Image insertion** (M)
   - Acceptance: picker/drop copies into `<vault>/attachments/` (dedupe names) and
     inserts relative link at cursor.
   - Verify: repo-level copy/dedupe unit tests; widget test for insert-at-cursor.
