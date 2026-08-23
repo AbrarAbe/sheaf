@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:taker/data/vault_repository.dart';
@@ -32,6 +32,10 @@ class EditorController extends ChangeNotifier {
 
   /// Vault directory, for resolving vault-relative image links.
   Directory get vaultRoot => _vault.root;
+
+  /// Copies [source] into `<vault>/attachments/` and returns the
+  /// vault-relative path of the copy.
+  Future<String> importAttachment(File source) => _vault.importAttachment(source);
 
   /// When the current note was last written to disk, for the mono footer.
   DateTime? get lastSavedAt => _lastSavedAt;

@@ -1,7 +1,12 @@
+import 'dart:io';
+
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
+import '../../logic/image_link.dart';
 import '../../logic/search_controller.dart';
 import '../../theme/quire_theme.dart';
 import 'markdown_preview.dart';
@@ -9,10 +14,17 @@ import 'markdown_preview.dart';
 /// The editor pane: title row (renames file), tag chips, monospace body with
 /// debounced autosave, and the mono status footer.
 class EditorPane extends StatelessWidget {
-  const EditorPane({super.key, required this.controller});
+  const EditorPane({super.key, required this.controller, this.pickImage, this.importImage});
 
   /// Null while no vault is open; renders the placeholder.
   final EditorController? controller;
+
+  /// Injectable image chooser for tests; production uses the file picker.
+  final Future<File?> Function()? pickImage;
+
+  /// Injectable copier into `<vault>/attachments/`; defaults to the
+  /// controller's repository call. Tests inject a fake to stay zone-safe.
+  final Future<String> Function(File file)? importImage;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +38,7 @@ class EditorPane extends StatelessWidget {
         if (editor.current == null) {
           return const _Placeholder();
         }
-        return _Editor(controller: editor);
+        return _Editor(controller: editor, pickImage: pickImage, importImage: importImage);
       },
     );
   }
@@ -48,9 +60,11 @@ class _Placeholder extends StatelessWidget {
 }
 
 class _Editor extends StatefulWidget {
-  const _Editor({required this.controller});
+  const _Editor({required this.controller, this.pickImage, this.importImage});
 
   final EditorController controller;
+  final Future<File?> Function()? pickImage;
+  final Future<String> Function(File file)? importImage;
 
   @override
   State<_Editor> createState() => _EditorState();
@@ -61,6 +75,7 @@ class _EditorState extends State<_Editor> {
   late final TextEditingController _title;
   String? _loadedPath;
   bool _preview = false;
+  bool _dragging = false;
 
   @override
   void initState() {
@@ -114,6 +129,40 @@ class _EditorState extends State<_Editor> {
     await widget.controller.renameCurrent(trimmed);
   }
 
+  Future<void> _insertImageFromPicker() async {
+    final file = await widget.pickImage?.call();
+    if (file != null) await _insertImage(file);
+  }
+
+  Future<void> _insertDroppedImages(List<dynamic> items) async {
+    setState(() => _dragging = false);
+    for (final item in items) {
+      if (item is! DropItemFile) continue;
+      final path = item.path;
+      if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].contains(p.extension(path).toLowerCase())) {
+        await _insertImage(File(path));
+      }
+    }
+  }
+
+  /// Copies the image into the vault and inserts an Obsidian-style link at
+  /// the cursor (or end of the body).
+  Future<void> _insertImage(File file) async {
+    final doImport = widget.importImage ?? widget.controller.importAttachment;
+    final rel = await doImport(file);
+    final name = p.basenameWithoutExtension(rel);
+    final result = insertImageLink(
+      body: _body.text,
+      link: '![$name]($rel)',
+      offset: _body.selection.baseOffset,
+    );
+    _body.value = TextEditingValue(
+      text: result.text,
+      selection: TextSelection.collapsed(offset: result.caret),
+    );
+    widget.controller.updateBody(result.text);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -134,6 +183,11 @@ class _EditorState extends State<_Editor> {
                   decoration: const InputDecoration(fillColor: Colors.transparent),
                   onSubmitted: _commitRename,
                 ),
+              ),
+              IconButton(
+                tooltip: 'Insert image',
+                onPressed: _insertImageFromPicker,
+                icon: const Icon(Icons.image_outlined),
               ),
               IconButton(
                 tooltip: _preview ? 'Edit' : 'Preview',
@@ -165,16 +219,29 @@ class _EditorState extends State<_Editor> {
             padding: const EdgeInsets.all(QuireSpace.xl),
             child: _preview
                 ? MarkdownPreview(body: _body.text, vaultRoot: controller.vaultRoot)
-                : TextField(
-                    key: const Key('editor-body'),
-                    controller: _body,
-                    onChanged: controller.updateBody,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    keyboardType: TextInputType.multiline,
-                    style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
-                    decoration: const InputDecoration(fillColor: Colors.transparent),
+                : DropTarget(
+                    onDragDone: (details) => _insertDroppedImages(details.files),
+                    onDragEntered: (_) => setState(() => _dragging = true),
+                    onDragExited: (_) => setState(() => _dragging = false),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(QuireRadius.m),
+                        border: _dragging
+                            ? Border.all(color: theme.colorScheme.primary, width: 2)
+                            : null,
+                      ),
+                      child: TextField(
+                        key: const Key('editor-body'),
+                        controller: _body,
+                        onChanged: controller.updateBody,
+                        maxLines: null,
+                        expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        keyboardType: TextInputType.multiline,
+                        style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
+                        decoration: const InputDecoration(fillColor: Colors.transparent),
+                      ),
+                    ),
                   ),
           ),
         ),
