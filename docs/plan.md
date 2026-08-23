@@ -112,14 +112,14 @@ sliced vertically: every phase ends with something runnable.
   - Verify: repo tests for encode/restore round-trip.
   - Files: `lib/ui/sidebar/trash_view.dart`, `lib/data/vault_repository.dart`
 
-- [ ] **Task 14: Shortcuts + theme cycle** (S)
+- [x] **Task 14: Shortcuts + theme cycle** (S)
   - Acceptance: `Ctrl+N`, `Ctrl+\`, `Ctrl+Shift+L` cycle System→Light→Dark persisted,
     `↑/↓`+`Enter` list navigation, focus rings visible everywhere.
   - Verify: widget tests pump shortcuts and assert effects.
   - Files: `lib/ui/shell/shortcuts.dart`, `lib/logic/theme_controller.dart`
 
 ### Checkpoint: Complete
-- [ ] All spec success criteria checked; analyze + full suite green.
+- [x] All spec success criteria checked; analyze + full suite green.
 
 ## Risks and Mitigations
 
