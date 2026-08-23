@@ -1,0 +1,81 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:taker/data/vault_repository.dart';
+import 'package:taker/logic/vault_controller.dart';
+import 'package:taker/ui/note_list/list_pane.dart';
+
+import '../../helpers/test_vault.dart';
+
+void main() {
+  late Directory tempDir;
+
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('taker_list_test');
+  });
+
+  tearDown(() async => tempDir.delete(recursive: true));
+
+  Future<VaultController> pumpList(
+    WidgetTester tester, {
+    required Future<void> Function(VaultRepository vault) seed,
+  }) async {
+    final controller = (await tester.runAsync(() => TestVault.seeded(tempDir, seed: seed)))!;
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: ListPane(controller: controller)),
+      ),
+    );
+    await tester.pump();
+    return controller;
+  }
+
+  testWidgets('groups rows under day eyebrows with titles', (tester) async {
+    await pumpList(
+      tester,
+      seed: (vault) async {
+        await vault.createNote(title: 'Fresh note', body: 'first line here');
+        await vault.createNote(title: 'Older note');
+      },
+    );
+
+    expect(find.text('Fresh note'), findsOneWidget);
+    expect(find.text('Older note'), findsOneWidget);
+    expect(find.text('first line here'), findsOneWidget);
+    // Both created moments apart land in the same day bucket (uppercased eyebrow).
+    expect(find.text('TODAY'), findsOneWidget);
+  });
+
+  testWidgets('filter narrows the visible rows', (tester) async {
+    await pumpList(
+      tester,
+      seed: (vault) async {
+        await vault.createNote(title: 'Meeting notes');
+        await vault.createNote(title: 'Groceries');
+      },
+    );
+
+    await tester.enterText(find.byType(TextField), 'meet');
+    await tester.pump();
+
+    expect(find.text('Meeting notes'), findsOneWidget);
+    expect(find.text('Groceries'), findsNothing);
+  });
+
+  testWidgets('tapping a row selects the note', (tester) async {
+    final controller = await pumpList(
+      tester,
+      seed: (vault) async {
+        await vault.createNote(title: 'Pick me');
+      },
+    );
+
+    await tester.tap(find.text('Pick me'));
+    await tester.pump();
+
+    expect(controller.selectedNotePath, 'Pick me.md');
+  });
+}

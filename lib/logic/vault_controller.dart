@@ -62,6 +62,12 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selectNote(String? relPath) {
+    if (selectedNotePath == relPath) return;
+    selectedNotePath = relPath;
+    notifyListeners();
+  }
+
   /// Loads persisted settings and reopens the last vault if it still exists.
   Future<void> initialize() async {
     _settings = await _settingsRepo.load();
