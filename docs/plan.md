@@ -92,7 +92,7 @@ sliced vertically: every phase ends with something runnable.
 
 ### Phase 3: Rich content & polish
 
-- [ ] **Task 11: Markdown preview** (M)
+- [x] **Task 11: Markdown preview** (M)
   - Acceptance: edit/preview toggle renders GFM subset (headings, emphasis, lists,
     task lists, quotes, fenced code, links, tables) via Quire tokens;
     `![alt|400](…)` constrains width; bare images natural size.
