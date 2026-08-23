@@ -67,7 +67,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: widget tests pump at tier widths, assert pane visibility/rail width.
   - Files: `lib/ui/shell/*`
 
-- [ ] **Task 8: Sidebar** (M)
+- [x] **Task 8: Sidebar** (M)
   - Acceptance: folder tree; tag list with counts; Trash entry lists `.trash/`;
     ink-wash selection; context menus create/rename/delete folder.
   - Verify: widget tests with seeded temp vault.
