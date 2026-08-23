@@ -126,6 +126,18 @@ sliced vertically: every phase ends with something runnable.
 - [x] **Task 15: Note creation affordance** — New note button beside the list filter, wired to shared handler; empty-state button functional.
 - [x] **Task 16: Divider hit target** — 12 dp invisible strip with centered hairline; rendered-width test.
 - [x] **Task 17: Settings dialog** — theme radios, vault path + change-vault picker, gear entry in sidebar.
+- [x] **v0.2 round 2:** field backgrounds, note deletion (menu/Del/undo), expanding filter, context menus, folder-nesting fix, watcher auto-refresh (tasks in commits).
+- [x] **Task 23: Keyboard navigation** — ↑/↓ move selection through the visible (filtered, ranked) list with clamping and scroll-into-view; Enter opens; Esc clears+closes the filter; Ctrl+F expands and focuses it. Full map:
+
+  | Action | Keys |
+  |---|---|
+  | New note | `Ctrl+N` or list scaffold menu |
+  | Move selection | `↑` / `↓` (clamped) |
+  | Open selected | `Enter` |
+  | Delete selected | `Del` (undo toast) |
+  | Find/filter | `Ctrl+F`, dismiss with `Esc` |
+  | Sidebar rail | `Ctrl+\` |
+  | Cycle theme | `Ctrl+Shift+L` |
 
 ## Risks and Mitigations
 

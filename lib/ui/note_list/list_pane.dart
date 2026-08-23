@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../logic/search_controller.dart';
 import '../../logic/vault_controller.dart';
@@ -6,13 +7,15 @@ import '../../models/note.dart';
 import '../../theme/quire_theme.dart';
 import '../common/context_menus.dart';
 
-/// The note list pane: filter field, day-grouped compact rows.
+/// The note list pane: filter field, day-grouped compact rows, full keyboard
+/// navigation (arrows move selection, Enter opens, Esc dismisses, Ctrl+F
+/// focuses the filter).
 class ListPane extends StatefulWidget {
   const ListPane({super.key, required this.controller, this.onCreateNote});
 
   final VaultController controller;
 
-  /// Hook for the compose action (wired to the editor in Task 10).
+  /// Hook for the compose action; wired to the shared shell handler.
   final Future<Note?> Function()? onCreateNote;
 
   @override
@@ -23,13 +26,26 @@ class _ListPaneState extends State<ListPane> {
   final _filter = TextEditingController();
   bool _filterOpen = false;
   final _filterFocus = FocusNode();
+  final _listFocus = FocusNode();
+  final _rowKeys = <String, GlobalKey>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _listFocus.requestFocus();
+  }
 
   @override
   void dispose() {
     _filter.dispose();
     _filterFocus.dispose();
+    _listFocus.dispose();
     super.dispose();
   }
+
+  /// Notes in current display order (post-filter, ranked).
+  List<Note> get _orderedNotes =>
+      searchAndSort(widget.controller.visibleNotes.toList(), _filter.text);
 
   /// Deletes [note] and offers an undo toast backed by the trash.
   Future<void> _deleteWithUndo(Note note) async {
@@ -43,8 +59,7 @@ class _ListPaneState extends State<ListPane> {
         content: Text('Deleted "${note.title}"'),
         action: SnackBarAction(
           label: 'Undo',
-          onPressed: () =>
-              controller.restoreFromTrash(entries.first.trashedName),
+          onPressed: () => controller.restoreFromTrash(entries.first.trashedName),
         ),
       ),
     );
@@ -59,51 +74,117 @@ class _ListPaneState extends State<ListPane> {
     ),
   ]);
 
+  /// Arrow-key navigation over the visible list; clamps at both ends.
+  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    // While the filter is open only Esc applies here — arrows belong to the
+    // text field.
+    if (_filterOpen) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        _closeFilter(clear: true);
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
+    final notes = _orderedNotes;
+    if (notes.isEmpty) return KeyEventResult.ignored;
+
+    final currentPath = widget.controller.selectedNotePath;
+    var index = notes.indexWhere((n) => n.path == currentPath);
+
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowDown:
+        index = (index + 1).clamp(0, notes.length - 1);
+      case LogicalKeyboardKey.arrowUp:
+        index = index <= 0 ? 0 : index - 1;
+      case LogicalKeyboardKey.enter || LogicalKeyboardKey.numpadEnter:
+        index = index < 0 ? 0 : index;
+      default:
+        return KeyEventResult.ignored;
+    }
+
+    widget.controller.selectNote(notes[index]);
+    _revealRow(notes[index].path);
+    return KeyEventResult.handled;
+  }
+
+  void _revealRow(String path) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final keyContext = _rowKeys[path]?.currentContext;
+      if (keyContext != null) Scrollable.ensureVisible(keyContext);
+    });
+  }
+
+  void _closeFilter({required bool clear}) {
+    if (clear) _filter.clear();
+    setState(() => _filterOpen = false);
+    _listFocus.requestFocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return QuireContextMenuRegion(
-      menu: _scaffoldMenu,
-      onItemSelected: (value) {
-        if (value == 'new-note') widget.onCreateNote?.call();
+    return Shortcuts(
+      shortcuts: const {
+        SingleActivator(LogicalKeyboardKey.keyF, control: true): FindFilterIntent(),
       },
-      child: Container(
-        color: theme.colorScheme.surface,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                QuireSpace.m,
-                QuireSpace.m,
-                QuireSpace.m,
-                0,
-              ),
-              child: Row(
+      child: Actions(
+        actions: {
+          FindFilterIntent: CallbackAction<FindFilterIntent>(
+            onInvoke: (intent) {
+              setState(() => _filterOpen = true);
+              _filterFocus.requestFocus();
+              return null;
+            },
+          ),
+        },
+        child: Focus(
+          focusNode: _listFocus,
+          autofocus: true,
+          onKeyEvent: _onKeyEvent,
+          child: QuireContextMenuRegion(
+            menu: _scaffoldMenu,
+            onItemSelected: (value) {
+              if (value == 'new-note') widget.onCreateNote?.call();
+            },
+            child: Container(
+              color: theme.colorScheme.surface,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: _FilterField(
-                      controller: _filter,
-                      focusNode: _filterFocus,
-                      open: _filterOpen,
-                      onToggle: () =>
-                          setState(() => _filterOpen = !_filterOpen),
-                      onChanged: (_) => setState(() {}),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(QuireSpace.m, QuireSpace.m, QuireSpace.m, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _FilterField(
+                            controller: _filter,
+                            focusNode: _filterFocus,
+                            open: _filterOpen,
+                            onToggle: () => setState(() => _filterOpen = !_filterOpen),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                        ),
+                        const SizedBox(width: QuireSpace.s),
+                        FilledButton.tonalIcon(
+                          onPressed: widget.onCreateNote == null
+                              ? null
+                              : () => widget.onCreateNote!(),
+                          icon: const Icon(Icons.note_add_outlined, size: 18),
+                          label: const Text('New note'),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: QuireSpace.s),
-                  FilledButton.tonalIcon(
-                    onPressed: widget.onCreateNote == null
-                        ? null
-                        : () => widget.onCreateNote!(),
-                    icon: const Icon(Icons.note_add_outlined, size: 18),
-                    label: const Text('New note'),
-                  ),
+                  Expanded(child: _buildList(theme)),
                 ],
               ),
             ),
-            Expanded(child: _buildList(theme)),
-          ],
+          ),
         ),
       ),
     );
@@ -114,10 +195,7 @@ class _ListPaneState extends State<ListPane> {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final notes = searchAndSort(
-          controller.visibleNotes.toList(),
-          _filter.text,
-        );
+        final notes = searchAndSort(controller.visibleNotes.toList(), _filter.text);
 
         if (notes.isEmpty) {
           return _EmptyState(onCreate: widget.onCreateNote);
@@ -158,6 +236,7 @@ class _ListPaneState extends State<ListPane> {
                 ),
                 for (final note in entry.value)
                   _NoteRow(
+                    key: _rowKeys.putIfAbsent(note.path, GlobalKey.new),
                     note: note,
                     selected: controller.selectedNotePath == note.path,
                     onTap: () => controller.selectNote(note),
@@ -174,6 +253,7 @@ class _ListPaneState extends State<ListPane> {
 
 class _NoteRow extends StatelessWidget {
   const _NoteRow({
+    super.key,
     required this.note,
     required this.selected,
     required this.onTap,
@@ -188,12 +268,7 @@ class _NoteRow extends StatelessWidget {
   ContextMenu<Object?> get _menu => quireMenu([
     menuItem('Open', value: 'open', icon: Icons.description_outlined),
     menuDivider,
-    menuItem(
-      'Delete',
-      value: 'delete',
-      icon: Icons.delete_outline,
-      shortcut: deleteActivator,
-    ),
+    menuItem('Delete', value: 'delete', icon: Icons.delete_outline, shortcut: deleteActivator),
   ]);
 
   @override
@@ -206,9 +281,7 @@ class _NoteRow extends StatelessWidget {
         if (value == 'delete') onDelete();
       },
       child: Material(
-        color: selected
-            ? theme.colorScheme.secondaryContainer
-            : Colors.transparent,
+        color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
         child: InkWell(
           onTap: onTap,
           child: Container(
@@ -225,9 +298,7 @@ class _NoteRow extends StatelessWidget {
                         note.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
                       ),
                       if (snippetOf(note.body).isNotEmpty)
                         Text(
@@ -258,6 +329,8 @@ class _NoteRow extends StatelessWidget {
   }
 }
 
+/// Collapsed-by-default search: icon until opened, then a filter field that
+/// clears and collapses from its own close button.
 class _FilterField extends StatelessWidget {
   const _FilterField({
     required this.controller,
@@ -275,7 +348,6 @@ class _FilterField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     if (!open) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -307,7 +379,6 @@ class _FilterField extends StatelessWidget {
           },
         ),
       ),
-      style: theme.textTheme.bodyMedium,
     );
   }
 }
@@ -334,4 +405,9 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Ctrl+F — expand and focus the filter field.
+class FindFilterIntent extends Intent {
+  const FindFilterIntent();
 }
