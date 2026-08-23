@@ -1,5 +1,5 @@
 name: taker
-description: "A new Flutter project."
+description: "A local-first Markdown notes desk for Linux with plain-file vaults, live preview, tags, trash restore, and keyboard-first navigation."
 publish_to: 'none'
 version: 0.1.0+1
 
