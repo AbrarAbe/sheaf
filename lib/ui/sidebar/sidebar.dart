@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/vault_repository.dart' show FolderNode;
 import '../../logic/vault_controller.dart';
 import '../../theme/quire_theme.dart';
+import '../common/context_menus.dart';
 import '../shell/pane_widths.dart';
 
 /// Quick filters, folder tree, tags, and trash — the leftmost pane.
@@ -43,18 +44,29 @@ class Sidebar extends StatelessWidget {
               ),
               const Divider(height: 1),
               Expanded(
-                child: SingleChildScrollView(
-                  child: _Section(
-                    label: 'Folders',
-                    trailing: IconButton(
-                      tooltip: 'New folder',
-                      icon: const Icon(Icons.create_new_folder_outlined, size: 20),
-                      onPressed: () => _newFolderDialog(context),
+                child: QuireContextMenuRegion(
+                  menu: quireMenu([
+                    menuItem(
+                      'New folder',
+                      value: 'new-folder-root',
+                      icon: Icons.create_new_folder_outlined,
                     ),
-                    child: Column(
-                      children: [
-                        for (final folder in controller.folders)
-                          _FolderRow(controller: controller, node: folder),
+                  ]),
+                  onItemSelected: (value) {
+                    if (value == 'new-folder-root') _newFolderDialog(context);
+                  },
+                  child: SingleChildScrollView(
+                    child: _Section(
+                      label: 'Folders',
+                      trailing: IconButton(
+                        tooltip: 'New folder',
+                        icon: const Icon(Icons.create_new_folder_outlined, size: 20),
+                        onPressed: () => _newFolderDialog(context),
+                      ),
+                      child: Column(
+                        children: [
+                          for (final folder in controller.folders)
+                            _FolderRow(controller: controller, node: folder),
                         if (tags.isNotEmpty) ...[
                           const SizedBox(height: QuireSpace.m),
                           _Section(
@@ -71,6 +83,7 @@ class Sidebar extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
               ),
               const Divider(height: 1),
               Row(
@@ -98,10 +111,10 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Future<void> _newFolderDialog(BuildContext context) async {
+  Future<void> _newFolderDialog(BuildContext context, {String parent = ''}) async {
     final name = await _textPrompt(context, title: 'New folder');
     if (name != null && name.trim().isNotEmpty) {
-      await controller.createFolder(name.trim());
+      await controller.createFolderAt(parent, name.trim());
     }
   }
 }
@@ -234,15 +247,61 @@ class _FolderRow extends StatelessWidget {
   final VaultController controller;
   final FolderNode node;
 
+  ContextMenu<Object?> get _menu => quireMenu([
+        menuItem(
+          'New folder inside',
+          value: 'new-inside',
+          icon: Icons.create_new_folder_outlined,
+        ),
+        menuItem('Rename', value: 'rename', icon: Icons.drive_file_rename_outline),
+        menuDivider,
+        menuItem(
+          'Delete',
+          value: 'delete',
+          icon: Icons.delete_outline,
+          shortcut: deleteActivator,
+        ),
+      ]);
+
   @override
   Widget build(BuildContext context) {
-    return _Entry(
-      label: node.name,
-      selected: controller.selectedFolder == node.relPath,
-      icon: Icons.folder_outlined,
-      onTap: () => controller.selectFolder(node.relPath),
-      // Long-press/secondary-click opens the manage menu.
+    return QuireContextMenuRegion(
+      menu: _menu,
+      onItemSelected: (value) async {
+        switch (value) {
+          case 'new-inside':
+            await _promptAndCreate(context);
+          case 'rename':
+            await _promptAndRename(context);
+          case 'delete':
+            await controller.deleteFolder(node.relPath);
+        }
+      },
+      child: _Entry(
+        label: node.name,
+        selected: controller.selectedFolder == node.relPath,
+        icon: Icons.folder_outlined,
+        onTap: () => controller.selectFolder(node.relPath),
+      ),
     );
+  }
+
+  Future<void> _promptAndCreate(BuildContext context) async {
+    final name = await _textPrompt(context, title: 'New folder inside "${node.name}"');
+    if (name != null && name.trim().isNotEmpty) {
+      await controller.createFolderAt(node.relPath, name.trim());
+    }
+  }
+
+  Future<void> _promptAndRename(BuildContext context) async {
+    final name = await _textPrompt(
+      context,
+      title: 'Rename folder',
+      initial: node.name,
+    );
+    if (name != null && name.trim().isNotEmpty && name.trim() != node.name) {
+      await controller.renameFolder(node.relPath, name.trim());
+    }
   }
 }
 

@@ -18,6 +18,11 @@ class CycleThemeIntent extends Intent {
   const CycleThemeIntent();
 }
 
+/// Intent for deleting the selected note (`Del`).
+class DeleteNoteIntent extends Intent {
+  const DeleteNoteIntent();
+}
+
 /// Intent for selecting the note at [index] from the keyboard.
 class SelectNoteIntent extends Intent {
   const SelectNoteIntent(this.note);
@@ -28,6 +33,7 @@ Map<Type, Action<Intent>> takerActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
   required VoidCallback onCycleTheme,
+  required VoidCallback onDeleteSelectedNote,
 }) {
   return {
     CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
@@ -35,6 +41,9 @@ Map<Type, Action<Intent>> takerActions({
       onInvoke: (intent) => onToggleSidebar(),
     ),
     CycleThemeIntent: CallbackAction<CycleThemeIntent>(onInvoke: (intent) => onCycleTheme()),
+    DeleteNoteIntent: CallbackAction<DeleteNoteIntent>(
+      onInvoke: (intent) => onDeleteSelectedNote(),
+    ),
   };
 }
 
@@ -43,4 +52,5 @@ Map<ShortcutActivator, Intent> takerShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.backslash, control: true): const ToggleSidebarIntent(),
   const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true):
       const CycleThemeIntent(),
+  const SingleActivator(LogicalKeyboardKey.delete): const DeleteNoteIntent(),
 };

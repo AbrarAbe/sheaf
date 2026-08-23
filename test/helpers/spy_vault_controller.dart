@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:taker/data/settings_repository.dart';
 import 'package:taker/data/vault_repository.dart';
 import 'package:taker/logic/vault_controller.dart';
+import 'package:taker/models/note.dart';
 import 'package:taker/models/settings.dart';
 
 /// Records mutations without touching disks — lets widget tests verify that
@@ -16,12 +17,23 @@ class SpyVaultController extends VaultController {
 
   final restored = <String>[];
   final emptied = <String>[];
+  final deleted = <String>[];
   final themes = <ThemeSetting>[];
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
+  List<Note> fakeNotes = const [];
   ThemeSetting theme = ThemeSetting.system;
   @override
   String vaultPath = '/old/vault';
+
+  @override
+  List<Note> get notes => List.unmodifiable(fakeNotes);
+
+  @override
+  Iterable<Note> get visibleNotes => fakeNotes;
+
+  @override
+  Map<String, int> get tagCounts => const {};
 
   @override
   Future<List<TrashEntry>> trash() async => entries;
@@ -41,6 +53,15 @@ class SpyVaultController extends VaultController {
     entries = [
       for (final e in entries)
         if (e.trashedName != trashedName) e,
+    ];
+  }
+
+  @override
+  Future<void> deleteNote(String relPath) async {
+    deleted.add(relPath);
+    fakeNotes = [
+      for (final n in fakeNotes)
+        if (n.path != relPath) n,
     ];
   }
 

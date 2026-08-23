@@ -62,6 +62,9 @@ void main() {
       },
     );
 
+    // Filter starts collapsed; expand it before typing.
+    await tester.tap(find.byTooltip('Search notes'));
+    await tester.pump();
     await tester.enterText(find.byType(TextField), 'meet');
     await tester.pump();
 

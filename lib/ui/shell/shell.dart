@@ -99,6 +99,7 @@ class _ShellState extends State<Shell> {
           onCreateNote: _createNote,
           onToggleSidebar: widths.toggleSidebar,
           onCycleTheme: () => controller.cycleTheme(),
+          onDeleteSelectedNote: () => _deleteSelectedWithUndo(context),
         ),
         child: Shortcuts(
           shortcuts: takerShortcuts(),
@@ -155,6 +156,26 @@ class _ShellState extends State<Shell> {
     final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
     if (note != null) controller.selectNote(note);
     return note;
+  }
+
+  /// Deletes the selected note and offers an undo toast backed by trash.
+  Future<void> _deleteSelectedWithUndo(BuildContext context) async {
+    final controller = widget.controller;
+    final note = controller.selectedNote;
+    if (note == null) return;
+
+    await controller.deleteNote(note.path);
+    final entries = await controller.trash();
+    if (!context.mounted || entries.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Deleted "${note.title}"'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => controller.restoreFromTrash(entries.first.trashedName),
+        ),
+      ),
+    );
   }
 
   Widget _listAndEditor(VaultController controller, PaneWidths widths) {
