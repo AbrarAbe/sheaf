@@ -9,6 +9,8 @@ import 'package:taker/ui/shell/pane_widths.dart';
 import 'package:taker/ui/shell/shell.dart';
 import 'package:taker/ui/sidebar/sidebar.dart';
 
+import '../helpers/test_vault.dart';
+
 void main() {
   group('tierForWidth', () {
     test('matches layout doc breakpoints', () {
@@ -114,6 +116,31 @@ void main() {
       widths.toggleSidebar();
       await tester.pump();
       expect(find.byType(Sidebar), findsOneWidget);
+    });
+
+    testWidgets('selecting a note in the list opens it in the editor', (tester) async {
+      final controller = (await tester.runAsync(
+        () => TestVault.seeded(
+          tempDir,
+          seed: (vault) async {
+            await vault.createNote(title: 'Wire me', body: 'body text');
+          },
+        ),
+      ))!;
+      addTearDown(controller.dispose);
+
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(MaterialApp(home: Shell(controller: controller)));
+      await tester.pump();
+
+      await tester.tap(find.text('Wire me'));
+      await tester.pump();
+
+      expect(find.widgetWithText(TextField, 'Wire me'), findsOneWidget);
     });
   });
 }

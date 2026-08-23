@@ -130,4 +130,73 @@ void main() {
     await reloaded.initialize();
     expect(reloaded.settings.theme, ThemeSetting.dark);
   });
+
+  group('selection and filtering', () {
+    test('null folder shows every note, picking one scopes it', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+
+      await controller.createNote(title: 'Root');
+      await controller.createNote(title: 'Nested', folder: 'work');
+      expect(controller.visibleNotes.length, 2);
+
+      controller.selectFolder('work');
+      expect(controller.visibleNotes.single.title, 'Nested');
+
+      controller.selectFolder(null);
+      expect(controller.visibleNotes.length, 2);
+    });
+
+    test('tag selection filters and counts are aggregated', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+
+      await controller.createNote(title: 'A', body: '#x #y');
+      await controller.createNote(title: 'B', body: 'also #y');
+
+      expect(controller.tagCounts['y'], 2);
+      expect(controller.tagCounts['x'], 1);
+
+      controller.selectTag('x');
+      expect(controller.visibleNotes.single.title, 'A');
+      expect(controller.selectedTag, 'x');
+
+      controller.selectTag(null);
+      expect(controller.visibleNotes.length, 2);
+    });
+
+    test('renameFolder rescans and keeps scoped selection coherent', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+      await controller.createNote(title: 'P', folder: 'proj');
+      controller.selectFolder('proj');
+      expect(controller.visibleNotes.length, 1);
+
+      await controller.renameFolder('proj', 'project-x');
+      expect(controller.folders.map((f) => f.name), ['project-x']);
+      // Old path no longer exists; fall back to all-notes.
+      expect(controller.selectedFolder, isNull);
+    });
+
+    test('deleteFolder trashes contents', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+      await controller.createFolder('temp');
+      await controller.createNote(title: 'T', folder: 'temp');
+
+      await controller.deleteFolder('temp');
+
+      expect(controller.folders, isEmpty);
+      expect(controller.notes, isEmpty);
+      expect((await controller.trash()).single.isFolder, isTrue);
+    });
+  });
 }

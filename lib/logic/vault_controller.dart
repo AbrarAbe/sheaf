@@ -22,13 +22,24 @@ class VaultController extends ChangeNotifier {
   /// Currently scoped folder, or null for the all-notes view.
   String? selectedFolder;
   String? selectedTag;
-  String? selectedNotePath;
+
+  /// Selected note object (full body already parsed) and its path.
+  Note? selectedNote;
+  String? get selectedNotePath => selectedNote?.path;
 
   AppSettings get settings => _settings;
   List<Note> get notes => List.unmodifiable(_notes);
   List<FolderNode> get folders => List.unmodifiable(_folders);
   bool get hasVault => _vault != null;
   String get vaultPath => _vault?.root.path ?? '';
+
+  /// Direct repository access for panes that own their controllers
+  /// (the editor). Only valid while [hasVault].
+  VaultRepository get repository {
+    final vault = _vault;
+    if (vault == null) throw StateError('No vault open');
+    return vault;
+  }
 
   /// Notes passing the active folder + tag filters.
   Iterable<Note> get visibleNotes => _notes.where((n) {
@@ -62,9 +73,9 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void selectNote(String? relPath) {
-    if (selectedNotePath == relPath) return;
-    selectedNotePath = relPath;
+  void selectNote(Note? note) {
+    if (selectedNote?.path == note?.path) return;
+    selectedNote = note;
     notifyListeners();
   }
 
@@ -109,7 +120,7 @@ class VaultController extends ChangeNotifier {
 
   Future<void> deleteNote(String relPath) async {
     await _requireVault().deleteNote(relPath);
-    if (selectedNotePath == relPath) selectedNotePath = null;
+    if (selectedNote?.path == relPath) selectedNote = null;
     await refresh();
   }
 
@@ -154,7 +165,7 @@ class VaultController extends ChangeNotifier {
     await _settingsRepo.save(_settings);
     selectedFolder = null;
     selectedTag = null;
-    selectedNotePath = null;
+    selectedNote = null;
     await refresh();
   }
 

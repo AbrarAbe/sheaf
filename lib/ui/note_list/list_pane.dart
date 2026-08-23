@@ -100,7 +100,7 @@ class _ListPaneState extends State<ListPane> {
                   _NoteRow(
                     note: note,
                     selected: controller.selectedNotePath == note.path,
-                    onTap: () => controller.selectNote(note.path),
+                    onTap: () => controller.selectNote(note),
                   ),
               ],
             );

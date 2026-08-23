@@ -10,24 +10,38 @@ import '../../theme/quire_theme.dart';
 class EditorPane extends StatelessWidget {
   const EditorPane({super.key, required this.controller});
 
-  final EditorController controller;
+  /// Null while no vault is open; renders the placeholder.
+  final EditorController? controller;
 
   @override
   Widget build(BuildContext context) {
+    final editor = controller;
+    if (editor == null) {
+      return const _Placeholder();
+    }
     return ListenableBuilder(
-      listenable: controller,
+      listenable: editor,
       builder: (context, _) {
-        if (controller.current == null) {
-          final theme = Theme.of(context);
-          return Center(
-            child: Text(
-              'Select a note',
-              style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          );
+        if (editor.current == null) {
+          return const _Placeholder();
         }
-        return _Editor(controller: controller);
+        return _Editor(controller: editor);
       },
+    );
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  const _Placeholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Text(
+        'Select a note',
+        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
     );
   }
 }
