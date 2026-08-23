@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../logic/search_controller.dart';
 import '../../logic/vault_controller.dart';
@@ -156,8 +157,9 @@ class _ListPaneState extends State<ListPane> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Toolbar: filter + New note
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(QuireSpace.m, QuireSpace.m, QuireSpace.m, 0),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
                     child: Row(
                       children: [
                         Expanded(
@@ -169,17 +171,22 @@ class _ListPaneState extends State<ListPane> {
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
-                        const SizedBox(width: QuireSpace.s),
-                        FilledButton.tonalIcon(
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
                           onPressed: widget.onCreateNote == null
                               ? null
                               : () => widget.onCreateNote!(),
-                          icon: const Icon(Icons.note_add_outlined, size: 18),
+                          icon: const Icon(Icons.edit_outlined, size: 16),
                           label: const Text('New note'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            textStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
                         ),
                       ],
                     ),
                   ),
+                  Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
                   Expanded(child: _buildList(theme)),
                 ],
               ),
@@ -198,6 +205,10 @@ class _ListPaneState extends State<ListPane> {
         final notes = searchAndSort(controller.visibleNotes.toList(), _filter.text);
 
         if (notes.isEmpty) {
+          final hasQuery = _filter.text.trim().isNotEmpty;
+          if (hasQuery) {
+            return _NoResults(query: _filter.text);
+          }
           return _EmptyState(onCreate: widget.onCreateNote);
         }
 
@@ -212,6 +223,7 @@ class _ListPaneState extends State<ListPane> {
         }
 
         return ListView.builder(
+          padding: const EdgeInsets.only(bottom: 24),
           itemCount: groups.entries.length,
           itemBuilder: (context, index) {
             final entry = groups.entries.elementAt(index);
@@ -219,28 +231,29 @@ class _ListPaneState extends State<ListPane> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    QuireSpace.xl,
-                    QuireSpace.m,
-                    QuireSpace.xl,
-                    QuireSpace.xs,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
                   child: Text(
                     entry.key.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    style: GoogleFonts.splineSansMono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.9,
+                      height: 16 / 11,
                       color: theme.colorScheme.onSurfaceVariant,
-                      fontFamily: 'monospace',
-                      letterSpacing: 0.8,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ),
                 for (final note in entry.value)
-                  _NoteRow(
-                    key: _rowKeys.putIfAbsent(note.path, GlobalKey.new),
-                    note: note,
-                    selected: controller.selectedNotePath == note.path,
-                    onTap: () => controller.selectNote(note),
-                    onDelete: () => _deleteWithUndo(note),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+                    child: _NoteRow(
+                      key: _rowKeys.putIfAbsent(note.path, GlobalKey.new),
+                      note: note,
+                      selected: controller.selectedNotePath == note.path,
+                      onTap: () => controller.selectNote(note),
+                      onDelete: () => _deleteWithUndo(note),
+                    ),
                   ),
               ],
             );
@@ -251,7 +264,7 @@ class _ListPaneState extends State<ListPane> {
   }
 }
 
-class _NoteRow extends StatelessWidget {
+class _NoteRow extends StatefulWidget {
   const _NoteRow({
     super.key,
     required this.note,
@@ -265,6 +278,13 @@ class _NoteRow extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
+  @override
+  State<_NoteRow> createState() => _NoteRowState();
+}
+
+class _NoteRowState extends State<_NoteRow> {
+  bool _hover = false;
+
   ContextMenu<Object?> get _menu => quireMenu([
     menuItem('Open', value: 'open', icon: Icons.description_outlined),
     menuDivider,
@@ -274,53 +294,150 @@ class _NoteRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final snip = snippetOf(widget.note.body);
     return QuireContextMenuRegion(
       menu: _menu,
       onItemSelected: (value) {
-        if (value == 'open') onTap();
-        if (value == 'delete') onDelete();
+        if (value == 'open') widget.onTap();
+        if (value == 'delete') widget.onDelete();
       },
-      child: Material(
-        color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 56),
-            padding: const EdgeInsets.symmetric(horizontal: QuireSpace.xl),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        note.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-                      ),
-                      if (snippetOf(note.body).isNotEmpty)
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: Material(
+          color: widget.selected
+              ? theme.colorScheme.secondaryContainer
+              : _hover
+                  ? theme.colorScheme.surfaceContainerLowest
+                  : Colors.transparent,
+          borderRadius: BorderRadius.circular(QuireRadius.l),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(QuireRadius.l),
+            onTap: widget.onTap,
+            child: Container(
+              decoration: widget.selected
+                  ? null
+                  : _hover
+                      ? BoxDecoration(
+                          borderRadius: BorderRadius.circular(QuireRadius.l),
+                          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                        )
+                      : null,
+              constraints: const BoxConstraints(minHeight: 64),
+              padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          snippetOf(note.body),
+                          widget.note.title.isEmpty ? 'Untitled' : widget.note.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                          style: GoogleFonts.hankenGrotesk(
+                            fontSize: 14,
+                            fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w600,
+                            height: 20 / 14,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
+                        const SizedBox(height: 2),
+                        if (snip.isNotEmpty)
+                          Text(
+                            snip,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w400,
+                              height: 16 / 12.5,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          )
+                        else
+                          Text(
+                            'No additional text',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.5,
+                              fontStyle: FontStyle.italic,
+                              height: 16 / 12.5,
+                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        if (widget.note.tags.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              for (final t in widget.note.tags.take(3))
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    '#$t',
+                                    style: GoogleFonts.splineSansMono(
+                                      fontSize: 10.5,
+                                      letterSpacing: 0.3,
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              if (widget.note.tags.length > 3)
+                                Text(
+                                  '+${widget.note.tags.length - 3}',
+                                  style: GoogleFonts.splineSansMono(
+                                    fontSize: 10.5,
+                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        clockLabel(widget.note.updatedAt ?? DateTime.now()),
+                        style: GoogleFonts.splineSansMono(
+                          fontSize: 11,
+                          letterSpacing: 0.3,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      // Hover actions
+                      AnimatedOpacity(
+                        opacity: _hover || widget.selected ? 1 : 0,
+                        duration: const Duration(milliseconds: 120),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _HoverIcon(icon: Icons.push_pin_outlined, onTap: () {}, tooltip: 'Pin'),
+                              const SizedBox(width: 4),
+                              _HoverIcon(icon: Icons.delete_outline, onTap: widget.onDelete, tooltip: 'Delete'),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(width: QuireSpace.s),
-                Text(
-                  clockLabel(note.updatedAt ?? DateTime.now()),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -329,8 +446,30 @@ class _NoteRow extends StatelessWidget {
   }
 }
 
-/// Collapsed-by-default search: icon until opened, then a filter field that
-/// clears and collapses from its own close button.
+class _HoverIcon extends StatelessWidget {
+  const _HoverIcon({required this.icon, required this.onTap, required this.tooltip});
+  final IconData icon;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(6),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+        ),
+      ),
+    );
+  }
+}
+
 class _FilterField extends StatelessWidget {
   const _FilterField({
     required this.controller,
@@ -348,6 +487,7 @@ class _FilterField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     if (!open) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -366,18 +506,25 @@ class _FilterField extends StatelessWidget {
       focusNode: focusNode,
       autofocus: true,
       onChanged: onChanged,
+      style: GoogleFonts.hankenGrotesk(fontSize: 14, color: theme.colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: 'Filter…',
-        prefixIcon: const Icon(Icons.search, size: 20),
+        hintStyle: GoogleFonts.hankenGrotesk(fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
+        prefixIcon: Icon(Icons.search, size: 18, color: theme.colorScheme.onSurfaceVariant),
         suffixIcon: IconButton(
           tooltip: 'Close search',
-          icon: const Icon(Icons.close, size: 18),
+          icon: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurfaceVariant),
           onPressed: () {
             controller.clear();
             onChanged('');
             onToggle();
           },
         ),
+        filled: true,
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(QuireRadius.m), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(QuireRadius.m), borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.2)),
       ),
     );
   }
@@ -392,16 +539,96 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Nothing here yet.', style: theme.textTheme.titleMedium),
-          const SizedBox(height: QuireSpace.m),
-          FilledButton.tonal(
-            onPressed: onCreate == null ? null : () => onCreate!(),
-            child: const Text('Write the first note'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(Icons.edit_note_rounded, size: 28, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Nothing here yet.',
+              style: GoogleFonts.bricolageGrotesque(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                height: 28 / 22,
+                letterSpacing: -0.3,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Capture a thought in seconds —\nthen find it when you need it.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13,
+                height: 18 / 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onCreate == null ? null : () => onCreate!(),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Write the first note'),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Takes about 10 seconds',
+              style: GoogleFonts.splineSansMono(
+                fontSize: 11,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoResults extends StatelessWidget {
+  const _NoResults({required this.query});
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.search_off_rounded, size: 32, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+            const SizedBox(height: 12),
+            Text(
+              "No notes match '$query'.",
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Try fewer words, or check the spelling.',
+              style: GoogleFonts.hankenGrotesk(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

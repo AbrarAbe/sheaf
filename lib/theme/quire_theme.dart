@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'quire_colors.dart';
 
@@ -85,6 +86,165 @@ ThemeData buildQuireDark() {
   );
 }
 
+TextStyle _safeBricolage(TextStyle s) => safeBricolage(s);
+TextStyle _safeHanken(TextStyle s) => safeHanken(s);
+TextStyle _safeMono(TextStyle s) => safeMono(s);
+
+TextStyle safeBricolage(TextStyle s) {
+  if (!GoogleFonts.config.allowRuntimeFetching) return s.copyWith(fontFamily: 'BricolageGrotesque');
+  try {
+    return GoogleFonts.bricolageGrotesque(textStyle: s);
+  } catch (_) {
+    return s.copyWith(fontFamily: 'BricolageGrotesque');
+  }
+}
+
+TextStyle safeHanken(TextStyle s) {
+  if (!GoogleFonts.config.allowRuntimeFetching) return s.copyWith(fontFamily: 'HankenGrotesk');
+  try {
+    return GoogleFonts.hankenGrotesk(textStyle: s);
+  } catch (_) {
+    return s.copyWith(fontFamily: 'HankenGrotesk');
+  }
+}
+
+TextStyle safeMono(TextStyle s) {
+  if (!GoogleFonts.config.allowRuntimeFetching) return s.copyWith(fontFamily: 'SplineSansMono');
+  try {
+    return GoogleFonts.splineSansMono(textStyle: s);
+  } catch (_) {
+    return s.copyWith(fontFamily: 'SplineSansMono');
+  }
+}
+
+TextTheme _quireTextTheme(Color onSurface, Color onSurfaceVariant) {
+  // Bricolage Grotesque — display moments
+  // Hanken Grotesk — reading / UI
+  // Spline Sans Mono — machine-recorded facts
+  return TextTheme(
+    // display.lg — Bricolage 600 34/40 -0.5% · Empty-state headlines
+    displayLarge: _safeBricolage(TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 34,
+      height: 40 / 34,
+      letterSpacing: -0.17,
+      color: onSurface,
+    )),
+    // display.sm — Bricolage 600 24/30 -0.25% · Title / screen heads
+    displaySmall: _safeBricolage(TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 24,
+      height: 30 / 24,
+      letterSpacing: -0.06,
+      color: onSurface,
+    )),
+    headlineSmall: _safeBricolage(TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 24,
+      height: 30 / 24,
+      letterSpacing: -0.06,
+      color: onSurface,
+    )),
+    // heading — Hanken 700 20/28 · Card titles
+    titleLarge: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w700,
+      fontSize: 20,
+      height: 28 / 20,
+      letterSpacing: 0,
+      color: onSurface,
+    )),
+    titleMedium: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 17,
+      height: 24 / 17,
+      color: onSurface,
+    )),
+    // body — Hanken 400 16/26 · Note bodies, editor
+    bodyLarge: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w400,
+      fontSize: 16,
+      height: 26 / 16,
+      letterSpacing: 0,
+      color: onSurface,
+    )),
+    bodyMedium: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w400,
+      fontSize: 14,
+      height: 20 / 14,
+      letterSpacing: 0.14,
+      color: onSurface,
+    )),
+    // label — Hanken 500 14/20 +1% · Buttons, metadata
+    labelLarge: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w500,
+      fontSize: 14,
+      height: 20 / 14,
+      letterSpacing: 0.14,
+      color: onSurface,
+    )),
+    // caption — Hanken 400 13/18 +1%
+    bodySmall: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w400,
+      fontSize: 13,
+      height: 18 / 13,
+      letterSpacing: 0.13,
+      color: onSurfaceVariant,
+    )),
+    // mono — Spline Sans Mono 400 13/18 +2% · Timestamps, counts, footer
+    labelSmall: _safeMono(TextStyle(
+      fontWeight: FontWeight.w400,
+      fontSize: 13,
+      height: 18 / 13,
+      letterSpacing: 0.26,
+      color: onSurfaceVariant,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    )),
+    // labelMedium used for some chips
+    labelMedium: _safeHanken(TextStyle(
+      fontWeight: FontWeight.w500,
+      fontSize: 13,
+      height: 18 / 13,
+      letterSpacing: 0.13,
+      color: onSurface,
+    )),
+    headlineMedium: _safeBricolage(TextStyle(
+      fontWeight: FontWeight.w700,
+      fontSize: 28,
+      height: 34 / 28,
+      letterSpacing: -0.14,
+      color: onSurface,
+    )),
+  );
+}
+
+/// Eyebrow style — Spline Mono 500 11/16 uppercase +8% — date groups, section labels.
+/// Not part of TextTheme (uppercase transform required at callsite).
+TextStyle quireEyebrow(BuildContext context) {
+  final theme = Theme.of(context);
+  final base = TextStyle(
+    fontWeight: FontWeight.w500,
+    fontSize: 11,
+    height: 16 / 11,
+    letterSpacing: 0.88,
+    color: theme.colorScheme.onSurfaceVariant,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+  return _safeMono(base);
+}
+
+/// Mono utility style — 13/18 +2% for footers, counts.
+TextStyle quireMono(BuildContext context, {Color? color}) {
+  final base = TextStyle(
+    fontWeight: FontWeight.w400,
+    fontSize: 13,
+    height: 18 / 13,
+    letterSpacing: 0.26,
+    color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+  return _safeMono(base);
+}
+
 ThemeData _build({
   required Brightness brightness,
   required Color surface,
@@ -132,8 +292,7 @@ ThemeData _build({
     surfaceTint: primary,
   );
 
-  final baseText = Typography.material2021(platform: TargetPlatform.linux).englishLike
-      .apply(bodyColor: onSurface, displayColor: onSurface);
+  final textTheme = _quireTextTheme(onSurface, onSurfaceVariant);
 
   return ThemeData(
     useMaterial3: true,
@@ -142,7 +301,7 @@ ThemeData _build({
     splashFactory: InkSparkle.splashFactory,
     extensions: extensions,
     scaffoldBackgroundColor: surface,
-    textTheme: baseText,
+    textTheme: textTheme,
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: primary,
       selectionColor: selection,
@@ -162,28 +321,92 @@ ThemeData _build({
       backgroundColor: card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.xl)),
     ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: isLight ? const Color(0xFF191C24) : const Color(0xFFECE7DC),
+      contentTextStyle: _safeHanken(TextStyle(
+        fontSize: 14,
+        color: isLight ? Colors.white : const Color(0xFF131110),
+      )),
+      actionTextColor: isLight ? const Color(0xFF93A8F0) : const Color(0xFF2F4BD7),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.m)),
+      behavior: SnackBarBehavior.floating,
+      elevation: 8,
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: raised,
+      scrolledUnderElevation: 0,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: _safeBricolage(TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+        letterSpacing: -0.12,
+        color: onSurface,
+      )),
+      iconTheme: IconThemeData(color: onSurfaceVariant, size: 20),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: inset,
-      hintStyle: TextStyle(color: onSurfaceVariant),
+      fillColor: inset ?? raised,
+      hintStyle: _safeHanken(TextStyle(
+        fontWeight: FontWeight.w400,
+        fontSize: 14,
+        color: onSurfaceVariant,
+        letterSpacing: 0.14,
+      )),
+      prefixIconColor: onSurfaceVariant,
+      suffixIconColor: onSurfaceVariant,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(QuireRadius.m),
         borderSide: BorderSide.none,
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(QuireRadius.m),
+        borderSide: BorderSide(color: Colors.transparent),
+      ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(QuireRadius.m),
-        borderSide: BorderSide(color: focusColor, width: 2),
+        borderSide: BorderSide(color: primary, width: 1.4),
       ),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: QuireSpace.m,
-        vertical: QuireSpace.m - 2,
+        vertical: QuireSpace.s + 2,
       ),
     ),
     chipTheme: ChipThemeData(
       shape: const StadiumBorder(),
       side: BorderSide.none,
       backgroundColor: secondaryContainer,
-      labelStyle: TextStyle(color: onSurface),
+      labelStyle: _safeHanken(TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 13,
+        color: onSurface,
+      )),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: primary,
+        foregroundColor: onPrimary,
+        textStyle: _safeHanken(TextStyle(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.pill)),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        elevation: 0,
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: primary,
+        textStyle: _safeHanken(TextStyle(fontWeight: FontWeight.w500, fontSize: 14, letterSpacing: 0.14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.s)),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        foregroundColor: WidgetStatePropertyAll(onSurfaceVariant),
+        overlayColor: WidgetStatePropertyAll(primary.withValues(alpha: 0.08)),
+        iconSize: const WidgetStatePropertyAll(20),
+      ),
     ),
     menuTheme: MenuThemeData(
       style: MenuStyle(
@@ -201,7 +424,17 @@ ThemeData _build({
         color: isLight ? const Color(0xFF26231D) : card,
         borderRadius: BorderRadius.circular(QuireRadius.s),
       ),
-      textStyle: TextStyle(color: isLight ? const Color(0xFFECE7DC) : onSurface),
+      textStyle: _safeHanken(TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: isLight ? const Color(0xFFECE7DC) : onSurface,
+      )),
+    ),
+    scrollbarTheme: ScrollbarThemeData(
+      thumbColor: WidgetStatePropertyAll(onSurfaceVariant.withValues(alpha: 0.28)),
+      trackColor: const WidgetStatePropertyAll(Colors.transparent),
+      radius: const Radius.circular(4),
+      thickness: const WidgetStatePropertyAll(6),
     ),
   );
 }

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:taker/theme/quire_colors.dart';
 import 'package:taker/theme/quire_theme.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  GoogleFonts.config.allowRuntimeFetching = false;
   group('Daylight (light) ColorScheme mapping', () {
-    final scheme = buildQuireLight().colorScheme;
-
     test('maps Quire tokens to roles per theming.md', () {
+      final scheme = buildQuireLight().colorScheme;
       expect(scheme.surface, const Color(0xFFF3F4F7)); // surface.canvas
       expect(scheme.surfaceContainerLowest, const Color(0xFFFFFFFF)); // card
       expect(scheme.surfaceContainerHigh, const Color(0xFFEAEDF1)); // raised
@@ -21,14 +23,14 @@ void main() {
     });
 
     test('secondaryContainer is ink wash (ink @ 10%)', () {
+      final scheme = buildQuireLight().colorScheme;
       expect(scheme.secondaryContainer, const Color(0xFF2F4BD7).withValues(alpha: 0.10));
     });
   });
 
   group('Lamplight (dark) ColorScheme mapping', () {
-    final scheme = buildQuireDark().colorScheme;
-
     test('maps Quire tokens to roles per theming.md', () {
+      final scheme = buildQuireDark().colorScheme;
       expect(scheme.surface, const Color(0xFF131110));
       expect(scheme.surfaceContainerLowest, const Color(0xFF1D1B17)); // card
       expect(scheme.surfaceContainerHigh, const Color(0xFF26231D)); // raised
@@ -42,10 +44,12 @@ void main() {
     });
 
     test('secondaryContainer is ink wash (ink @ 16%)', () {
+      final scheme = buildQuireDark().colorScheme;
       expect(scheme.secondaryContainer, const Color(0xFF93A8F0).withValues(alpha: 0.16));
     });
 
     test('never uses pure black/white text in Lamplight', () {
+      final scheme = buildQuireDark().colorScheme;
       expect(scheme.onSurface, isNot(const Color(0xFFFFFFFF)));
       expect(scheme.onSurface, isNot(const Color(0xFF000000)));
     });

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
+import '../../theme/quire_theme.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
@@ -17,7 +19,7 @@ import 'shortcuts.dart';
 /// it in sync with the selected note.
 class Shell extends StatefulWidget {
   Shell({super.key, required this.controller, PaneWidths? paneWidths, this.onCreateNote})
-    : paneWidths = paneWidths ?? _default;
+      : paneWidths = paneWidths ?? _default;
 
   final VaultController controller;
   final PaneWidths paneWidths;
@@ -110,36 +112,44 @@ class _ShellState extends State<Shell> {
               builder: (context, _) => LayoutBuilder(
                 builder: (context, constraints) {
                   final tier = tierForWidth(constraints.maxWidth);
-                  return switch (tier) {
-                    WindowTier.expanded => Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (!widths.sidebarCollapsed)
-                          Sidebar(
-                            controller: controller,
-                            width: widths.sidebar,
-                            onTrashTapped: () => showTrashDialog(context, controller),
-                            onSettingsTapped: () => showSettingsDialog(context, controller),
-                          )
-                        else
-                          const Rail(),
-                        if (!widths.sidebarCollapsed)
-                          DragDivider(onDrag: (dx) => widths.sidebar += dx),
-                        Expanded(child: _listAndEditor(controller, widths)),
-                      ],
-                    ),
-                    WindowTier.full => Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Rail(),
-                        Expanded(child: _listAndEditor(controller, widths)),
-                      ],
-                    ),
-                    WindowTier.stack => _StackShell(
-                      controller: controller,
-                      onCreateNote: _createNote,
-                    ),
-                  };
+                  return Column(
+                    children: [
+                      _HeaderBar(controller: controller, tier: tier),
+                      Expanded(
+                        child: switch (tier) {
+                          WindowTier.expanded => Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (!widths.sidebarCollapsed)
+                                  Sidebar(
+                                    controller: controller,
+                                    width: widths.sidebar,
+                                    onTrashTapped: () => showTrashDialog(context, controller),
+                                    onSettingsTapped: () => showSettingsDialog(context, controller),
+                                  )
+                                else
+                                  Rail(onExpand: widths.toggleSidebar),
+                                if (!widths.sidebarCollapsed)
+                                  DragDivider(onDrag: (dx) => widths.sidebar += dx),
+                                Expanded(child: _listAndEditor(controller, widths)),
+                              ],
+                            ),
+                          WindowTier.full => Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Rail(onExpand: widths.toggleSidebar),
+                                Expanded(child: _listAndEditor(controller, widths)),
+                              ],
+                            ),
+                          WindowTier.stack => _StackShell(
+                              controller: controller,
+                              editor: _editor,
+                              onCreateNote: _createNote,
+                            ),
+                        },
+                      ),
+                    ],
+                  );
                 },
               ),
             ),
@@ -196,18 +206,241 @@ class _ShellState extends State<Shell> {
   }
 }
 
+class _HeaderBar extends StatelessWidget {
+  const _HeaderBar({required this.controller, required this.tier});
+  final VaultController controller;
+  final WindowTier tier;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isLight = theme.brightness == Brightness.light;
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          // Wordmark
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    'T',
+                    style: GoogleFonts.bricolageGrotesque(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: theme.colorScheme.onPrimary,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Taker',
+                style: GoogleFonts.bricolageGrotesque(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  letterSpacing: -0.3,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                ),
+                child: Text(
+                  'QUIRE',
+                  style: GoogleFonts.splineSansMono(
+                    fontSize: 9,
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          // Global search (center) — only on expanded/full
+          if (tier != WindowTier.stack)
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Container(
+                    height: 32,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(QuireRadius.pill),
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Search notes…  ⌘K',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 13,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '⌘K',
+                            style: GoogleFonts.splineSansMono(
+                              fontSize: 10,
+                              letterSpacing: 0.4,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (tier == WindowTier.stack) const Spacer(),
+          // Right controls
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Tooltip(
+                message: 'Cycle theme  (Ctrl+Shift+L)',
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => controller.cycleTheme(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        isLight ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                        size: 18,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Tooltip(
+                message: 'Window controls',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _WinDot(color: const Color(0xFFEB6A5E)),
+                    const SizedBox(width: 6),
+                    _WinDot(color: const Color(0xFFF2C94C)),
+                    const SizedBox(width: 6),
+                    _WinDot(color: const Color(0xFF3FB97F)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WinDot extends StatelessWidget {
+  const _WinDot({required this.color});
+  final Color color;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+      ),
+    );
+  }
+}
+
 class _StackShell extends StatelessWidget {
-  const _StackShell({required this.controller, required this.onCreateNote});
+  const _StackShell({required this.controller, required this.onCreateNote, required this.editor});
 
   final VaultController controller;
+  final EditorController? editor;
   final Future<Note?> Function() onCreateNote;
 
   @override
   Widget build(BuildContext context) {
-    // One pane at a time below 720 dp; list first, editor swaps in place.
-    return SizedBox(
-      key: const Key('pane-list'),
-      child: ListPane(controller: controller, onCreateNote: onCreateNote),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final selected = controller.selectedNote;
+        // If a note is selected, show editor with back affordance.
+        if (selected != null && editor != null) {
+          return Column(
+            children: [
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                  border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, size: 20),
+                      tooltip: 'Back to list',
+                      onPressed: () => controller.selectNote(null),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        selected.title.isEmpty ? 'Untitled' : selected.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(child: EditorPane(controller: editor)),
+            ],
+          );
+        }
+        return SizedBox(
+          key: const Key('pane-list'),
+          child: ListPane(controller: controller, onCreateNote: onCreateNote),
+        );
+      },
     );
   }
 }

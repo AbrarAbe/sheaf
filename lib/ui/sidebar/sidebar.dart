@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/vault_repository.dart' show FolderNode;
 import '../../logic/vault_controller.dart';
@@ -7,6 +8,7 @@ import '../common/context_menus.dart';
 import '../shell/pane_widths.dart';
 
 /// Quick filters, folder tree, tags, and trash — the leftmost pane.
+/// The desk drawer: quiet until touched, tint and weight do the talking.
 class Sidebar extends StatelessWidget {
   const Sidebar({
     super.key,
@@ -23,8 +25,14 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final theme = Theme.of(context);
+    final hairline = theme.colorScheme.outlineVariant;
+    return Container(
       width: width,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(right: BorderSide(color: hairline, width: 1)),
+      ),
       child: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
@@ -33,16 +41,19 @@ class Sidebar extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Section(
+              // Top inset: quick filter + sort placeholder
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                 child: _Entry(
                   label: 'All notes',
+                  icon: Icons.view_quilt_outlined,
                   selected: controller.selectedFolder == null && controller.selectedTag == null,
                   onTap: () => controller
                     ..selectFolder(null)
                     ..selectTag(null),
                 ),
               ),
-              const Divider(height: 1),
+              Divider(height: 1, color: hairline),
               Expanded(
                 child: QuireContextMenuRegion(
                   menu: quireMenu([
@@ -56,53 +67,99 @@ class Sidebar extends StatelessWidget {
                     if (value == 'new-folder-root') _newFolderDialog(context);
                   },
                   child: SingleChildScrollView(
-                    child: _Section(
-                      label: 'Folders',
-                      trailing: IconButton(
-                        tooltip: 'New folder',
-                        icon: const Icon(Icons.create_new_folder_outlined, size: 20),
-                        onPressed: () => _newFolderDialog(context),
-                      ),
-                      child: Column(
-                        children: [
-                          for (final folder in controller.folders)
-                            _FolderRow(controller: controller, node: folder),
-                        if (tags.isNotEmpty) ...[
-                          const SizedBox(height: QuireSpace.m),
+                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Section(
+                          label: 'FOLDERS',
+                          trailing: IconButton(
+                            tooltip: 'New folder',
+                            visualDensity: VisualDensity.compact,
+                            icon: Icon(Icons.create_new_folder_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                            onPressed: () => _newFolderDialog(context),
+                          ),
+                          child: controller.folders.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                                  child: Text(
+                                    'No folders yet.\nCreate one to organize.',
+                                    style: GoogleFonts.hankenGrotesk(
+                                      fontSize: 12,
+                                      height: 16 / 12,
+                                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                )
+                              : Column(children: [
+                                  for (final folder in controller.folders)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 2),
+                                      child: _FolderRow(controller: controller, node: folder),
+                                    ),
+                                ]),
+                        ),
+                        const SizedBox(height: 20),
+                        if (tags.isNotEmpty)
                           _Section(
-                            label: 'Tags',
+                            label: 'TAGS',
                             child: Column(
                               children: [
                                 for (final tag in tags)
-                                  _TagRow(controller: controller, tag: tag, count: counts[tag]!),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: _TagRow(controller: controller, tag: tag, count: counts[tag]!),
+                                  ),
                               ],
                             ),
+                          )
+                        else
+                          _Section(
+                            label: 'TAGS',
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
+                              child: Text(
+                                'Inline #tags appear here.',
+                                style: GoogleFonts.hankenGrotesk(
+                                  fontSize: 12,
+                                  height: 16 / 12,
+                                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
                       ],
                     ),
                   ),
                 ),
               ),
-              ),
-              const Divider(height: 1),
-              Row(
-                children: [
-                  Expanded(
-                    child: _Section(
+              Divider(height: 1, color: hairline),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                child: Row(
+                  children: [
+                    Expanded(
                       child: _Entry(
                         label: 'Trash',
                         icon: Icons.delete_outline,
                         onTap: onTrashTapped ?? () {},
                       ),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'Settings',
-                    onPressed: onSettingsTapped,
-                    icon: const Icon(Icons.settings_outlined, size: 20),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: onSettingsTapped,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(Icons.settings_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -121,20 +178,55 @@ class Sidebar extends StatelessWidget {
 
 /// The collapsed sidebar: a 64 dp icon rail (Full tier).
 class Rail extends StatelessWidget {
-  const Rail({super.key});
+  const Rail({super.key, this.onExpand});
+
+  final VoidCallback? onExpand;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final theme = Theme.of(context);
+    final hairline = theme.colorScheme.outlineVariant;
+    return Container(
       key: const Key('rail'),
       width: PaneWidths.railWidth,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(right: BorderSide(color: hairline)),
+      ),
       child: Column(
         children: [
+          const SizedBox(height: 12),
           IconButton(
-            tooltip: 'Expand sidebar',
-            onPressed: () {},
+            tooltip: 'Expand sidebar  (Ctrl+\\ )',
+            onPressed: onExpand,
             icon: const Icon(Icons.menu_open),
           ),
+          const SizedBox(height: 12),
+          Divider(height: 1, color: hairline),
+          const SizedBox(height: 12),
+          IconButton(
+            tooltip: 'All notes',
+            onPressed: () {},
+            icon: Icon(Icons.view_quilt_outlined, color: theme.colorScheme.primary),
+          ),
+          IconButton(
+            tooltip: 'Folders',
+            onPressed: () {},
+            icon: Icon(Icons.folder_outlined, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const Spacer(),
+          Divider(height: 1, color: hairline),
+          IconButton(
+            tooltip: 'Trash',
+            onPressed: () {},
+            icon: Icon(Icons.delete_outline, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            onPressed: () {},
+            icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -146,11 +238,12 @@ Future<String?> _textPrompt(BuildContext context, {required String title, String
   return showDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(title),
+      title: Text(title, style: GoogleFonts.bricolageGrotesque(fontWeight: FontWeight.w600)),
       content: TextField(
         controller: field,
         autofocus: true,
         onSubmitted: (v) => Navigator.of(context).pop(v),
+        style: GoogleFonts.hankenGrotesk(fontSize: 14),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
@@ -172,37 +265,34 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: QuireSpace.s),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (label != null)
-            Row(
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (label != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+            child: Row(
               children: [
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      QuireSpace.m,
-                      QuireSpace.l,
-                      0,
-                      QuireSpace.xs,
-                    ),
-                    child: Text(
-                      label!.toUpperCase(),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.8,
-                      ),
+                  child: Text(
+                    label!,
+                    style: GoogleFonts.splineSansMono(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.9,
+                      height: 16 / 11,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
                 ),
-                ?trailing,
+                if (trailing != null) trailing!,
               ],
             ),
-          child,
-        ],
-      ),
+          ),
+        child,
+      ],
     );
   }
 }
@@ -218,21 +308,34 @@ class _Entry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ink = theme.colorScheme.primary;
     return Material(
       color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
-      borderRadius: BorderRadius.circular(QuireRadius.s),
+      borderRadius: BorderRadius.circular(QuireRadius.m),
       child: InkWell(
-        borderRadius: BorderRadius.circular(QuireRadius.s),
+        borderRadius: BorderRadius.circular(QuireRadius.m),
         onTap: onTap,
+        hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.04),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: QuireSpace.m, vertical: QuireSpace.s + 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           child: Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: QuireSpace.s),
+                Icon(icon, size: 18, color: selected ? ink : theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
               ],
-              Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13.5,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    height: 20 / 13.5,
+                    letterSpacing: 0.1,
+                    color: selected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -265,6 +368,7 @@ class _FolderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSelected = controller.selectedFolder == node.relPath;
     return QuireContextMenuRegion(
       menu: _menu,
       onItemSelected: (value) async {
@@ -277,11 +381,11 @@ class _FolderRow extends StatelessWidget {
             await controller.deleteFolder(node.relPath);
         }
       },
-      child: _Entry(
-        label: node.name,
-        selected: controller.selectedFolder == node.relPath,
-        icon: Icons.folder_outlined,
+      child: _HoverRow(
+        selected: isSelected,
         onTap: () => controller.selectFolder(node.relPath),
+        icon: isSelected ? Icons.folder_rounded : Icons.folder_outlined,
+        label: node.name,
       ),
     );
   }
@@ -305,6 +409,63 @@ class _FolderRow extends StatelessWidget {
   }
 }
 
+class _HoverRow extends StatefulWidget {
+  const _HoverRow({required this.selected, required this.onTap, required this.icon, required this.label});
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData icon;
+  final String label;
+
+  @override
+  State<_HoverRow> createState() => _HoverRowState();
+}
+
+class _HoverRowState extends State<_HoverRow> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Material(
+        color: widget.selected
+            ? theme.colorScheme.secondaryContainer
+            : _hover
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
+                : Colors.transparent,
+        borderRadius: BorderRadius.circular(QuireRadius.m),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(QuireRadius.m),
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            child: Row(
+              children: [
+                Icon(widget.icon, size: 18, color: widget.selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 13.5,
+                      fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w400,
+                      height: 20 / 13.5,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (_hover && !widget.selected)
+                  Icon(Icons.more_horiz, size: 14, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TagRow extends StatelessWidget {
   const _TagRow({required this.controller, required this.tag, required this.count});
 
@@ -316,7 +477,6 @@ class _TagRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selected = controller.selectedTag == tag;
-    final fg = theme.colorScheme.onSurfaceVariant;
     return Material(
       color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
       borderRadius: BorderRadius.circular(QuireRadius.pill),
@@ -325,15 +485,38 @@ class _TagRow extends StatelessWidget {
         onTap: () => controller.selectTag(selected ? null : tag),
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: QuireSpace.m,
-            vertical: QuireSpace.xs + 2,
+            horizontal: 10,
+            vertical: 6,
           ),
           child: Row(
             children: [
-              Expanded(child: Text('#$tag', style: theme.textTheme.bodyMedium)),
-              Text(
-                '$count',
-                style: theme.textTheme.labelSmall?.copyWith(color: fg, fontFamily: 'monospace'),
+              Expanded(
+                child: Text(
+                  '#$tag',
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    height: 20 / 13,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: selected ? theme.colorScheme.primary.withValues(alpha: 0.14) : theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: GoogleFonts.splineSansMono(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.4,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
               ),
             ],
           ),
