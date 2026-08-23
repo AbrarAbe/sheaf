@@ -5,6 +5,7 @@ import 'package:taker/data/settings_repository.dart';
 import 'package:taker/data/vault_repository.dart';
 import 'package:taker/models/note.dart';
 import 'package:taker/models/settings.dart';
+import 'package:taker/logic/theme_setting_x.dart';
 
 /// App-wide state: which vault is open, what's in it, and user settings.
 class VaultController extends ChangeNotifier {
@@ -107,6 +108,9 @@ class VaultController extends ChangeNotifier {
     await _settingsRepo.save(_settings);
     notifyListeners();
   }
+
+  /// Cycles System → Light → Dark and persists (`Ctrl+Shift+L`).
+  Future<void> cycleTheme() => setTheme(nextThemeSetting(_settings.theme));
 
   Future<Note> createNote({required String title, String? body, String? folder}) async {
     final note = await _requireVault().createNote(

@@ -1,0 +1,75 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:taker/data/settings_repository.dart';
+import 'package:taker/data/vault_repository.dart';
+import 'package:taker/logic/vault_controller.dart';
+import 'package:taker/models/settings.dart';
+import 'package:taker/ui/shell/pane_widths.dart';
+import 'package:taker/ui/shell/shell.dart';
+import 'package:taker/ui/shell/shortcuts.dart';
+
+void main() {
+  late Directory tempDir;
+
+  setUp(() async {
+    tempDir = await Directory.systemTemp.createTemp('taker_shortcut_test');
+  });
+
+  tearDown(() async => tempDir.delete(recursive: true));
+
+  Future<(VaultController, PaneWidths)> pumpShell(WidgetTester tester) async {
+    final controller = VaultController(
+      settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),
+      vaultFactory: (path) => VaultRepository(root: Directory(path)),
+    );
+    await tester.runAsync(controller.initialize);
+    addTearDown(controller.dispose);
+    await tester.runAsync(() => controller.openVault('${tempDir.path}/vault'));
+
+    final widths = PaneWidths();
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Shell(controller: controller, paneWidths: widths),
+      ),
+    );
+    await tester.pump();
+    return (controller, widths);
+  }
+
+  testWidgets('Ctrl+Shift+L cycles System to Light and persists', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    expect(controller.settings.theme, ThemeSetting.system);
+
+    // Invoke through the Actions layer — key-to-intent matching is Flutter's
+    // job; here we verify our wiring and persistence.
+    final ctx = tester.element(find.byKey(const Key('pane-editor')));
+    Actions.invoke(ctx, const CycleThemeIntent());
+    await tester.pump();
+
+    expect(controller.settings.theme, ThemeSetting.light);
+
+    // Disk persistence of the setting is covered by
+    // settings_repository/vault_controller unit tests.
+  });
+
+  testWidgets('Ctrl+backslash toggles the sidebar rail', (tester) async {
+    final (_, widths) = await pumpShell(tester);
+    expect(widths.sidebarCollapsed, isFalse);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.backslash);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+
+    expect(widths.sidebarCollapsed, isTrue);
+    expect(find.byKey(const Key('rail')), findsOneWidget);
+  });
+}

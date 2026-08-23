@@ -8,6 +8,7 @@ import '../sidebar/sidebar.dart';
 import '../sidebar/trash_view.dart';
 import 'drag_divider.dart';
 import 'pane_widths.dart';
+import 'shortcuts.dart';
 
 /// The desktop shell: sidebar | note list | editor, folding through the three
 /// window tiers of layout-and-space.md. Owns the editor controller and keeps
@@ -87,37 +88,56 @@ class _ShellState extends State<Shell> {
     final widths = widget.paneWidths;
 
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: widths,
-        builder: (context, _) => LayoutBuilder(
-          builder: (context, constraints) {
-            final tier = tierForWidth(constraints.maxWidth);
-            return switch (tier) {
-              WindowTier.expanded => Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!widths.sidebarCollapsed)
-                    Sidebar(
-                      controller: controller,
-                      width: widths.sidebar,
-                      onTrashTapped: () => showTrashDialog(context, controller),
-                    )
-                  else
-                    const Rail(),
-                  if (!widths.sidebarCollapsed) DragDivider(onDrag: (dx) => widths.sidebar += dx),
-                  Expanded(child: _listAndEditor(controller, widths)),
-                ],
-              ),
-              WindowTier.full => Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Rail(),
-                  Expanded(child: _listAndEditor(controller, widths)),
-                ],
-              ),
-              WindowTier.stack => _StackShell(controller: controller),
-            };
+      body: Actions(
+        actions: takerActions(
+          onCreateNote: () async {
+            final note = await controller.createNote(title: 'Untitled');
+            controller.selectNote(note);
+            return note;
           },
+          onToggleSidebar: widths.toggleSidebar,
+          onCycleTheme: () => controller.cycleTheme(),
+        ),
+        child: Shortcuts(
+          shortcuts: takerShortcuts(),
+          child: Focus(
+            autofocus: true,
+            child: ListenableBuilder(
+              listenable: widths,
+              builder: (context, _) => LayoutBuilder(
+                builder: (context, constraints) {
+                  final tier = tierForWidth(constraints.maxWidth);
+                  return switch (tier) {
+                    WindowTier.expanded => Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (!widths.sidebarCollapsed)
+                          Sidebar(
+                            controller: controller,
+                            width: widths.sidebar,
+                            onTrashTapped: () =>
+                                showTrashDialog(context, controller),
+                          )
+                        else
+                          const Rail(),
+                        if (!widths.sidebarCollapsed)
+                          DragDivider(onDrag: (dx) => widths.sidebar += dx),
+                        Expanded(child: _listAndEditor(controller, widths)),
+                      ],
+                    ),
+                    WindowTier.full => Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Rail(),
+                        Expanded(child: _listAndEditor(controller, widths)),
+                      ],
+                    ),
+                    WindowTier.stack => _StackShell(controller: controller),
+                  };
+                },
+              ),
+            ),
+          ),
         ),
       ),
     );
