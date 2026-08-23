@@ -30,7 +30,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: tests assert exact token values + ColorScheme role mapping table.
   - Files: `lib/theme/*`, `test/theme/*`
 
-- [ ] **Task 3: Models + Markdown parser** (M)
+- [x] **Task 3: Models + Markdown parser** (M)
   - Acceptance: `Note` model; parser extracts inline `#tags` (skipping code fences
     and URLs), title (H1 else filename stem), image refs incl. `![alt|W](p)` widths.
   - Verify: pure-Dart unit tests with edge cases.
