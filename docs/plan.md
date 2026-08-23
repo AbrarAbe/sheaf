@@ -80,7 +80,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: search-ordering unit tests; widget tests for grouping/filter/empty.
   - Files: `lib/ui/note_list/*`, `lib/logic/search_controller.dart`
 
-- [ ] **Task 10: Editor slice** (L)
+- [x] **Task 10: Editor slice** (L)
   - Acceptance: monospace source editing; debounced autosave writes `.md`; title row
     renames file; tag chips row; mono footer `saved HH:MM`/`saving…`; Del deletes
     with undo toast; `Ctrl+N` creates note in selected folder.
