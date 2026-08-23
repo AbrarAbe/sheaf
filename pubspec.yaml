@@ -11,6 +11,13 @@ dependencies:
     sdk: flutter
   dynamic_color: ^2.1.0
   material_ui: ^1.0.1
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  file_picker: ^12.0.0
+  markdown: ^7.3.1
+  markdown_widget: ^2.3.2+8
+  desktop_drop: ^0.8.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
