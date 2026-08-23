@@ -66,6 +66,21 @@ void main() {
     expect((await vault.readNote(note.path)).body, 'y');
   });
 
+  test('renameCurrent flushes, renames the file, and reopens it', () async {
+    final note = await vault.createNote(title: 'Old Name', body: 'keep me');
+    final controller = EditorController(vault: vault);
+    addTearDown(controller.dispose);
+    await controller.open(note);
+    controller.updateBody('keep me!');
+
+    await controller.renameCurrent('New Name');
+
+    expect(File('${tempDir.path}/New Name.md').existsSync(), isTrue);
+    expect(File('${tempDir.path}/Old Name.md').existsSync(), isFalse);
+    expect((await vault.readNote('New Name.md')).body, 'keep me!');
+    expect(controller.current?.path, 'New Name.md');
+  });
+
   test('rapid edits reset the debounce timer', () async {
     final note = await vault.createNote(title: 'R', body: 'a');
     final controller = EditorController(

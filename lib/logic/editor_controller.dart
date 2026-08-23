@@ -71,6 +71,15 @@ class EditorController extends ChangeNotifier {
     return _save();
   }
 
+  /// Renames the file of the currently open note and reopens it.
+  Future<void> renameCurrent(String newTitle) async {
+    final note = _current;
+    if (note == null) return;
+    await flush();
+    final newPath = await _vault.renameNote(note.path, newTitle);
+    await open(await _vault.readNote(newPath));
+  }
+
   Future<void> _save() async {
     final note = _current;
     if (note == null || _body == note.body) return;
