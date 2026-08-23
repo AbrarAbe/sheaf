@@ -17,13 +17,13 @@ sliced vertically: every phase ends with something runnable.
 
 ### Phase 1: Foundation (pure Dart, headless-testable)
 
-- [ ] **Task 1: Dependencies & scaffold** (XS)
+- [x] **Task 1: Dependencies & scaffold** (XS)
   - Acceptance: pubspec gains `path`, `path_provider`, `file_picker`, `markdown`,
     `markdown_widget`, `desktop_drop`, `intl`; analyze clean; app still boots.
   - Verify: `flutter pub get && flutter analyze && flutter test`
   - Files: `pubspec.yaml`
 
-- [ ] **Task 2: Quire theme module** (M)
+- [x] **Task 2: Quire theme module** (M)
   - Acceptance: `QuireColors` ThemeExtension (4 highlighters, focus ring),
     `buildQuireLight()/buildQuireDark()` matching every token in color.md/theming.md;
     lerp works; no hardcoded hexes anywhere else afterwards.
