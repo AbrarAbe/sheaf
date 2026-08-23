@@ -53,7 +53,7 @@ sliced vertically: every phase ends with something runnable.
 
 ### Phase 2: Core vertical slices
 
-- [ ] **Task 6: Controllers + app bootstrap** (M)
+- [x] **Task 6: Controllers + app bootstrap** (M)
   - Acceptance: `VaultController` (vault path lifecycle, selection state),
     `EditorController` (debounced autosave ≤1 s, dirty flag); no-vault state shows
     chooser (`file_picker`); hello world replaced.
