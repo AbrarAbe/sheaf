@@ -18,6 +18,8 @@ dependencies:
   markdown_widget: ^2.3.2+8
   desktop_drop: ^0.8.0
   intl: ^0.20.3
+  watcher: ^1.2.1
+  flutter_context_menu: ^0.4.2
 
 dev_dependencies:
   flutter_test:
