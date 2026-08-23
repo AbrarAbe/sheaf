@@ -105,7 +105,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: repo-level copy/dedupe unit tests; widget test for insert-at-cursor.
   - Files: `lib/ui/editor/image_insert.dart`, `lib/data/vault_repository.dart`
 
-- [ ] **Task 13: Trash UX** (S)
+- [x] **Task 13: Trash UX** (S)
   - Acceptance: trash view lists deleted notes with restore + "Delete forever";
     restore returns to original folder (recorded in frontmatter-free sidecar or
     path-encoded name — ADR).
