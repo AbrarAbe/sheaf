@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/models/settings.dart';
-import 'package:taker/ui/dialogs/settings_dialog.dart';
+import 'package:sheaf/models/settings.dart';
+import 'package:sheaf/ui/dialogs/settings_dialog.dart';
 
 import '../../helpers/spy_vault_controller.dart';
 
@@ -11,7 +11,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_settings_ui_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_settings_ui_test');
   });
 
   tearDown(() async => tempDir.delete(recursive: true));

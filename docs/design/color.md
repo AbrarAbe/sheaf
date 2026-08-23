@@ -1,6 +1,6 @@
 # Color — Daylight & Lamplight
 
-Color in Taker has three jobs, strictly separated:
+Color in Sheaf has three jobs, strictly separated:
 
 1. **Ink** — interaction. One blue family, constant across themes.
 2. **Highlighters** — semantic state. Four marker hues, applied only as translucent washes.

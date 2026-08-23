@@ -7,7 +7,7 @@ import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
 
 /// First-run screen when no vault folder has been chosen yet.
-/// A quiet, paper-first welcome that states what Taker *is* before asking
+/// A quiet, paper-first welcome that states what Sheaf *is* before asking
 /// for a folder — plain Markdown files in an ordinary folder.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key, required this.controller, this.pickFolder = defaultPickFolder});
@@ -58,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Taker',
+                  'Sheaf',
                   style: GoogleFonts.bricolageGrotesque(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -94,7 +94,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Taker keeps a vault — an ordinary folder of plain Markdown files.\n'
+                  'Sheaf keeps a vault — an ordinary folder of plain Markdown files.\n'
                   'No database. No lock-in. Just files you can open anywhere.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.hankenGrotesk(

@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/ui/sidebar/sidebar.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/ui/sidebar/sidebar.dart';
 
 import '../../helpers/test_vault.dart';
 
@@ -11,7 +11,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_sidebar_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_sidebar_test');
   });
 
   tearDown(() async => tempDir.delete(recursive: true));

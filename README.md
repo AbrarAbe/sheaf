@@ -1,4 +1,4 @@
-# Taker
+# Sheaf
 
 A local-first Markdown notes desk for the Linux desktop. Your vault is just a
 folder of plain `.md` files — no database, no lock-in. Built with Flutter +
@@ -42,11 +42,11 @@ GTK, shipped as a self-contained tarball.
 ## Install (Linux x64)
 
 Download the latest tarball from
-[Releases](https://github.com/AbrarAbe/taker/releases), extract, and run:
+[Releases](https://github.com/AbrarAbe/sheaf/releases), extract, and run:
 
 ```
-tar xzf taker-v0.1.0-linux-x64.tar.gz
-./taker
+tar xzf sheaf-v0.1.0-linux-x64.tar.gz
+./sheaf
 ```
 
 GTK 3 is the only runtime expectation, and it ships with virtually every
@@ -69,7 +69,7 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 
 ## Project docs
 
-- [`docs/spec.md`](docs/spec.md) — what Taker is (living spec)
+- [`docs/spec.md`](docs/spec.md) — what Sheaf is (living spec)
 - [`docs/design/`](docs/design) — design docs (theming, layout, voice)
 - [`docs/adr/`](docs/adr) — architecture decision records
 - [`docs/plan_v0.1.md`](docs/plan_v0.1.md) — v0.1 implementation plan

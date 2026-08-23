@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/editor_controller.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/ui/editor/editor_pane.dart';
-import 'package:taker/ui/editor/markdown_preview.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/editor_controller.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/ui/editor/editor_pane.dart';
+import 'package:sheaf/ui/editor/markdown_preview.dart';
 
 /// Widget tests must route every real-I/O call through [real] because
 /// unwrapped awaits deadlock inside the tester's FakeAsync zone.
@@ -17,7 +17,7 @@ void main() {
   late EditorController editorController;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_editor_ui_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_editor_ui_test');
     final repo = VaultRepository(root: Directory('${tempDir.path}/vault'));
     vaultController = VaultController(
       settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),

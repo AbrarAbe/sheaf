@@ -3,19 +3,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/models/settings.dart';
-import 'package:taker/ui/shell/pane_widths.dart';
-import 'package:taker/ui/shell/shell.dart';
-import 'package:taker/ui/shell/shortcuts.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/settings.dart';
+import 'package:sheaf/ui/shell/pane_widths.dart';
+import 'package:sheaf/ui/shell/shell.dart';
+import 'package:sheaf/ui/shell/shortcuts.dart';
 
 void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_shortcut_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_shortcut_test');
   });
 
   tearDown(() async => tempDir.delete(recursive: true));

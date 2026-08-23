@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/models/settings.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/models/settings.dart';
 
 void main() {
   late Directory tempDir;
@@ -11,7 +11,7 @@ void main() {
   late File file;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_settings_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_settings_test');
     file = File('${tempDir.path}/settings.json');
     repo = SettingsRepository(file: file);
   });

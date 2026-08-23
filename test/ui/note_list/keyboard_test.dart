@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/models/note.dart';
-import 'package:taker/ui/note_list/list_pane.dart';
+import 'package:sheaf/models/note.dart';
+import 'package:sheaf/ui/note_list/list_pane.dart';
 
 import '../../helpers/spy_vault_controller.dart';
 
 void main() {
   Future<SpyVaultController> pumpList(WidgetTester tester) async {
-    final controller = SpyVaultController('/tmp/taker_spy_kb.json');
+    final controller = SpyVaultController('/tmp/sheaf_spy_kb.json');
     addTearDown(controller.dispose);
     controller.fakeNotes = [
       const Note(path: 'A.md', title: 'Alpha', body: 'first'),

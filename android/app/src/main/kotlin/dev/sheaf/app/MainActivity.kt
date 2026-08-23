@@ -1,4 +1,4 @@
-package com.taker.app.taker
+package dev.sheaf.app
 
 import io.flutter.embedding.android.FlutterActivity
 

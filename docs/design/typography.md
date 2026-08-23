@@ -1,6 +1,6 @@
 # Typography
 
-Taker's interface has no illustration budget to lean on — type carries the personality.
+Sheaf's interface has no illustration budget to lean on — type carries the personality.
 Three faces, three jobs, no exceptions.
 
 ## The trio

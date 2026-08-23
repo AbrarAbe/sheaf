@@ -28,7 +28,7 @@ class QuireContextMenuRegion extends StatelessWidget {
   }
 }
 
-/// Base styling applied to every Taker context menu.
+/// Base styling applied to every Sheaf context menu.
 ContextMenu<Object?> quireMenu(List<ContextMenuEntry<Object?>> entries) {
   return ContextMenu<Object?>(entries: entries, maxWidth: 220, padding: EdgeInsets.zero);
 }

@@ -29,7 +29,7 @@ class SelectNoteIntent extends Intent {
   final Note? note;
 }
 
-Map<Type, Action<Intent>> takerActions({
+Map<Type, Action<Intent>> sheafActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
   required VoidCallback onCycleTheme,
@@ -47,7 +47,7 @@ Map<Type, Action<Intent>> takerActions({
   };
 }
 
-Map<ShortcutActivator, Intent> takerShortcuts() => {
+Map<ShortcutActivator, Intent> sheafShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.keyN, control: true): const CreateNoteIntent(),
   const SingleActivator(LogicalKeyboardKey.backslash, control: true): const ToggleSidebarIntent(),
   const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true):

@@ -1,6 +1,6 @@
 # Layout, Space & Surfaces
 
-Taker is **desktop-first**: designed at a desk on Linux, then folded down into a
+Sheaf is **desktop-first**: designed at a desk on Linux, then folded down into a
 pocket shape. Every feature lands on the desktop first; the phone is the same
 structure compressed, never a separate app.
 
@@ -24,7 +24,7 @@ keyboard-reachable; hover does the revealing that long-presses do on touch.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ ◫ Taker          ⌕ Search notes…                        ─ ▢ ✕    │ ← GTK header bar
+│ ◫ Sheaf          ⌕ Search notes…                        ─ ▢ ✕    │ ← GTK header bar
 ├────────────┬─────────────────────────┬───────────────────────────┤
 │ All notes  │ ⌕ Filter…     ⇅ Recent  │ today 9:41         ⭐  ⋮   │
 │ Pinned     │─────────────────────────│                           │
@@ -139,7 +139,7 @@ inline compose field.
 
 ```
 ┌──────────────────────────────┐
-│ ☰  Taker            ⌕    ⋮   │
+│ ☰  Sheaf            ⌕    ⋮   │
 │                              │
 │ TODAY                        │ ← mono eyebrow (real grouping)
 │ ┌──────────────────────────┐ │

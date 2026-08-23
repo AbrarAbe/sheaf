@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/ui/sidebar/trash_view.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/ui/sidebar/trash_view.dart';
 
 import '../../helpers/spy_vault_controller.dart';
 
@@ -11,7 +11,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_trash_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_trash_test');
   });
 
   tearDown(() async => tempDir.delete(recursive: true));

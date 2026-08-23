@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
 
 /// Shared helper for seeding a controller backed by a small real vault.
 class TestVault {

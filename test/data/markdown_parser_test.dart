@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/markdown_parser.dart';
-import 'package:taker/models/note.dart';
+import 'package:sheaf/data/markdown_parser.dart';
+import 'package:sheaf/models/note.dart';
 
 void main() {
   group('extractTitle', () {

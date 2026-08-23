@@ -18,5 +18,5 @@ Future<void> main() async {
   );
   await controller.initialize();
 
-  runApp(TakerApp(controller: controller));
+  runApp(SheafApp(controller: controller));
 }

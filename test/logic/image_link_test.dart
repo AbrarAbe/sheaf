@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/logic/image_link.dart';
+import 'package:sheaf/logic/image_link.dart';
 
 void main() {
   const link = '![pic](attachments/pic.png)';

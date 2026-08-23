@@ -1,4 +1,4 @@
-# Implementation Plan: Taker v0.1
+# Implementation Plan: Sheaf v0.1
 
 Implements [spec.md](spec.md). Order follows the dependency graph bottom-up,
 sliced vertically: every phase ends with something runnable.

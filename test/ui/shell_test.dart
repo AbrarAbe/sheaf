@@ -2,13 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/ui/shell/drag_divider.dart';
-import 'package:taker/ui/shell/pane_widths.dart';
-import 'package:taker/ui/shell/shell.dart';
-import 'package:taker/ui/sidebar/sidebar.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/ui/shell/drag_divider.dart';
+import 'package:sheaf/ui/shell/pane_widths.dart';
+import 'package:sheaf/ui/shell/shell.dart';
+import 'package:sheaf/ui/sidebar/sidebar.dart';
 
 import '../helpers/test_vault.dart';
 
@@ -48,7 +48,7 @@ void main() {
     late Directory tempDir;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('taker_shell_test');
+      tempDir = await Directory.systemTemp.createTemp('sheaf_shell_test');
     });
 
     tearDown(() async => tempDir.delete(recursive: true));

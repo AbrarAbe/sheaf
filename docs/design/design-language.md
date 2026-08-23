@@ -1,6 +1,6 @@
 # Quire — Concept & Principles
 
-Taker is a quick-capture note app, **desktop-first on Linux**, folding down to phones.
+Sheaf is a quick-capture note app, **desktop-first on Linux**, folding down to phones.
 Its users open it dozens of times a day for thirty-second sessions: a thought arrives,
 they get it down, they leave. The design must serve two opposite moods of the same
 person — **the fast hand** (capture in seconds: `Ctrl+Alt+N` at the desk, a thumb on
@@ -11,7 +11,7 @@ the phone) and **the patient eye** (reading notes back later should feel calm, n
 A pen's ink does not change when you move from a desk by the window to a desk
 under a lamp. Only the light on the paper changes.
 
-That is the whole theming story of Taker:
+That is the whole theming story of Sheaf:
 
 - **One accent family, always.** Ink blue (`#2F4BD7` light / `#93A8F0` dark) is
   the same pen in both themes. Selection, links, primary actions — all "written in ink."
@@ -58,11 +58,11 @@ note list, `Ctrl+Alt+N` for a global quick-capture window over whatever you're d
 and `Ctrl+K` to search your way anywhere. On the phone: the docked capture bar expands
 in place into the editor — the app's orchestrated motion moment (see [motion.md](motion.md)).
 
-## What Taker is not (anti-patterns)
+## What Sheaf is not (anti-patterns)
 
 | Not this | Why |
 |---|---|
-| Cream paper + serif display + terracotta accents | The cozy-stationery cliché. Taker's light mode is cool daylight gray, its accent is cobalt ink. |
+| Cream paper + serif display + terracotta accents | The cozy-stationery cliché. Sheaf's light mode is cool daylight gray, its accent is cobalt ink. |
 | Near-black + single acid-green accent | Dark mode is warm charcoal with the same constant ink family — not a hacker terminal. |
 | Hairline-rule broadsheet grids, zero radius | Notes are soft objects on a desk: 16 px card radius, hairlines only as quiet separators. |
 | Decorative color, gradients, glass blur | Color is vocabulary (principle 3), not wallpaper. |

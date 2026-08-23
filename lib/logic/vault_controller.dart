@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/theme_setting_x.dart';
-import 'package:taker/models/note.dart';
-import 'package:taker/models/settings.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/theme_setting_x.dart';
+import 'package:sheaf/models/note.dart';
+import 'package:sheaf/models/settings.dart';
 import 'package:watcher/watcher.dart';
 
 /// App-wide state: which vault is open, what's in it, and user settings.

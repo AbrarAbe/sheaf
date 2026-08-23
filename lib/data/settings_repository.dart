@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:taker/models/settings.dart';
+import 'package:sheaf/models/settings.dart';
 
 /// Persists [AppSettings] as a single JSON file.
 ///

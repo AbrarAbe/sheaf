@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/models/settings.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/settings.dart';
 
 void main() {
   late Directory tempDir;
@@ -12,7 +12,7 @@ void main() {
   late Directory vaultDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_vaultctl_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_vaultctl_test');
     settingsFile = File('${tempDir.path}/settings.json');
     vaultDir = Directory('${tempDir.path}/vault')..createSync();
   });

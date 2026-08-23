@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/ui/editor/markdown_preview.dart';
+import 'package:sheaf/ui/editor/markdown_preview.dart';
 
 // 1×1 transparent PNG.
 final _pngBytes = base64Decode(
@@ -15,7 +15,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_preview_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_preview_test');
     final att = Directory('${tempDir.path}/attachments')..createSync();
     File('${att.path}/pic.png').writeAsBytesSync(_pngBytes);
   });

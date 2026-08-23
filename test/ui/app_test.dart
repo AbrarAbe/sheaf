@@ -1,17 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/app.dart';
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/ui/dialogs/welcome_screen.dart';
+import 'package:sheaf/app.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/ui/dialogs/welcome_screen.dart';
 
 void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_app_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_app_test');
   });
 
   tearDown(() async => tempDir.delete(recursive: true));
@@ -27,10 +27,10 @@ void main() {
     // Real file I/O must run outside the test FakeAsync zone.
     await tester.runAsync(controller.initialize);
 
-    await tester.pumpWidget(TakerApp(controller: controller));
+    await tester.pumpWidget(SheafApp(controller: controller));
     await tester.pump();
 
-    expect(find.text('Taker'), findsOneWidget);
+    expect(find.text('Sheaf'), findsOneWidget);
     expect(find.text('Choose folder…'), findsOneWidget);
   });
 
@@ -40,7 +40,7 @@ void main() {
     addTearDown(controller.dispose);
     await tester.runAsync(controller.initialize);
 
-    await tester.pumpWidget(TakerApp(controller: controller));
+    await tester.pumpWidget(SheafApp(controller: controller));
     await tester.pump();
     await tester.runAsync(() => controller.openVault(vaultDir.path));
     await tester.pump();

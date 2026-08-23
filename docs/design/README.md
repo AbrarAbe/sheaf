@@ -1,7 +1,7 @@
-# Taker Design Language — Quire
+# Sheaf Design Language — Quire
 
 > Codename **Quire**: a quire is a gathering of folded pages — the unit a notebook is built from.
-> This design language is the unit Taker's interface is built from.
+> This design language is the unit Sheaf's interface is built from.
 
 | Doc | What it covers |
 |---|---|

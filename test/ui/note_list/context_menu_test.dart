@@ -1,8 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/models/note.dart';
-import 'package:taker/ui/note_list/list_pane.dart';
+import 'package:sheaf/models/note.dart';
+import 'package:sheaf/ui/note_list/list_pane.dart';
 
 import '../../helpers/spy_vault_controller.dart';
 
@@ -11,7 +11,7 @@ Note _note(String title) =>
 
 void main() {
   Future<SpyVaultController> pumpList(WidgetTester tester) async {
-    final controller = SpyVaultController('/tmp/taker_spy_settings.json');
+    final controller = SpyVaultController('/tmp/sheaf_spy_settings.json');
     addTearDown(controller.dispose);
     controller.fakeNotes = [_note('Alpha'), _note('Beta')];
 

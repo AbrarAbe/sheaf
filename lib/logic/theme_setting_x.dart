@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:taker/models/settings.dart';
+import 'package:sheaf/models/settings.dart';
 
 /// Maps the persisted three-way setting onto Material's theme mode.
 ThemeMode toThemeMode(ThemeSetting setting) => switch (setting) {

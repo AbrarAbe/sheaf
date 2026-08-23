@@ -1,15 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/editor_controller.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/editor_controller.dart';
 
 void main() {
   late Directory tempDir;
   late VaultRepository vault;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_editor_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_editor_test');
     vault = VaultRepository(root: tempDir);
   });
 

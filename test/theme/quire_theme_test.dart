@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:taker/theme/quire_colors.dart';
-import 'package:taker/theme/quire_theme.dart';
+import 'package:sheaf/theme/quire_colors.dart';
+import 'package:sheaf/theme/quire_theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

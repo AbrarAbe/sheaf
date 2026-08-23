@@ -1,7 +1,7 @@
 # ADR-0001: Vault is plain files on disk
 
 - Status: accepted (2026-08-23)
-- Context: Taker must interoperate with other editors and keep user data
+- Context: Sheaf must interoperate with other editors and keep user data
   portable, Obsidian-style.
 - Decision: notes are ordinary `.md` files inside a user-chosen folder;
   `VaultRepository` is the only component doing filesystem I/O. No database,

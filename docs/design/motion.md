@@ -1,6 +1,6 @@
 # Motion
 
-Motion in Taker answers one question: *where did my note go?* Every transition
+Motion in Sheaf answers one question: *where did my note go?* Every transition
 preserves spatial continuity so a thought is never lost between screens. Beyond that,
 the app is quiet.
 

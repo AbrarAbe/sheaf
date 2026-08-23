@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:taker/data/markdown_parser.dart';
-import 'package:taker/models/note.dart';
+import 'package:sheaf/data/markdown_parser.dart';
+import 'package:sheaf/models/note.dart';
 
 /// A folder in the vault tree.
 class FolderNode {

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/models/note.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/models/note.dart';
 
 /// Save lifecycle of the open note.
 enum EditorStatus { clean, dirty, saving, saved }

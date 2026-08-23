@@ -1,4 +1,4 @@
-# Spec: Taker v0.1 — Markdown Notes MVP ("the desk")
+# Spec: Sheaf v0.1 — Markdown Notes MVP ("the desk")
 
 ## Objective
 

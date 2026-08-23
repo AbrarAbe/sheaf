@@ -97,14 +97,14 @@ class _ShellState extends State<Shell> {
 
     return Scaffold(
       body: Actions(
-        actions: takerActions(
+        actions: sheafActions(
           onCreateNote: _createNote,
           onToggleSidebar: widths.toggleSidebar,
           onCycleTheme: () => controller.cycleTheme(),
           onDeleteSelectedNote: () => _deleteSelectedWithUndo(context),
         ),
         child: Shortcuts(
-          shortcuts: takerShortcuts(),
+          shortcuts: sheafShortcuts(),
           child: Focus(
             autofocus: true,
             child: ListenableBuilder(
@@ -249,7 +249,7 @@ class _HeaderBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Taker',
+                'Sheaf',
                 style: GoogleFonts.bricolageGrotesque(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,

@@ -1,6 +1,6 @@
 # Theming — Daylight, Lamplight & System
 
-Taker ships **two color worlds** and **three selection modes**. The worlds are
+Sheaf ships **two color worlds** and **three selection modes**. The worlds are
 Daylight (light) and Lamplight (dark) — see [color.md](color.md) for every token.
 The modes decide which world renders.
 

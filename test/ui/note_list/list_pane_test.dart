@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/models/note.dart';
-import 'package:taker/ui/note_list/list_pane.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/note.dart';
+import 'package:sheaf/ui/note_list/list_pane.dart';
 
 import '../../helpers/test_vault.dart';
 
@@ -13,7 +13,7 @@ void main() {
   late Directory tempDir;
 
   setUp(() async {
-    tempDir = await Directory.systemTemp.createTemp('taker_list_test');
+    tempDir = await Directory.systemTemp.createTemp('sheaf_list_test');
   });
 
   tearDown(() async => tempDir.delete(recursive: true));

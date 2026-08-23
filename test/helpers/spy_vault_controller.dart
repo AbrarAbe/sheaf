@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:taker/data/settings_repository.dart';
-import 'package:taker/data/vault_repository.dart';
-import 'package:taker/logic/vault_controller.dart';
-import 'package:taker/models/note.dart';
-import 'package:taker/models/settings.dart';
+import 'package:sheaf/data/settings_repository.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/note.dart';
+import 'package:sheaf/models/settings.dart';
 
 /// Records mutations without touching disks — lets widget tests verify that
 /// UI wiring calls the right controller methods despite the FakeAsync zone.

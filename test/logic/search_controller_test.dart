@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
-import 'package:taker/logic/search_controller.dart';
-import 'package:taker/models/note.dart';
+import 'package:sheaf/logic/search_controller.dart';
+import 'package:sheaf/models/note.dart';
 
 Note note(String title, {String? body, DateTime? at}) => Note(
   path: '$title.md',

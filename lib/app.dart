@@ -8,8 +8,8 @@ import 'ui/dialogs/welcome_screen.dart';
 
 /// Root widget: wires Quire themes to the persisted [ThemeSetting] and gates
 /// between the welcome (choose-vault) screen and the three-pane shell.
-class TakerApp extends StatelessWidget {
-  const TakerApp({super.key, required this.controller});
+class SheafApp extends StatelessWidget {
+  const SheafApp({super.key, required this.controller});
 
   final VaultController controller;
 
@@ -18,7 +18,7 @@ class TakerApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) => MaterialApp(
-        title: 'Taker',
+        title: 'Sheaf',
         debugShowCheckedModeBanner: false,
         theme: buildQuireLight(),
         darkTheme: buildQuireDark(),
