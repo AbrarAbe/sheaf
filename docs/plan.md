@@ -36,7 +36,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: pure-Dart unit tests with edge cases.
   - Files: `lib/models/note.dart`, `lib/data/markdown_parser.dart`, `test/data/markdown_parser_test.dart`
 
-- [ ] **Task 4: SettingsRepository** (S)
+- [x] **Task 4: SettingsRepository** (S)
   - Acceptance: JSON `{vaultPath, themeMode}` load/save; missing/corrupt → defaults;
     round-trips.
   - Verify: unit tests on `Directory.systemTemp`.
