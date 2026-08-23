@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -28,6 +29,9 @@ class EditorController extends ChangeNotifier {
   Note? get current => _current;
   String get body => _body;
   EditorStatus get status => _status;
+
+  /// Vault directory, for resolving vault-relative image links.
+  Directory get vaultRoot => _vault.root;
 
   /// When the current note was last written to disk, for the mono footer.
   DateTime? get lastSavedAt => _lastSavedAt;

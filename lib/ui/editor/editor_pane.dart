@@ -4,6 +4,7 @@ import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
 import '../../logic/search_controller.dart';
 import '../../theme/quire_theme.dart';
+import 'markdown_preview.dart';
 
 /// The editor pane: title row (renames file), tag chips, monospace body with
 /// debounced autosave, and the mono status footer.
@@ -59,6 +60,7 @@ class _EditorState extends State<_Editor> {
   late final TextEditingController _body;
   late final TextEditingController _title;
   String? _loadedPath;
+  bool _preview = false;
 
   @override
   void initState() {
@@ -123,11 +125,24 @@ class _EditorState extends State<_Editor> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(QuireSpace.xl, QuireSpace.l, QuireSpace.xl, 0),
-          child: TextField(
-            controller: _title,
-            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-            decoration: const InputDecoration(fillColor: Colors.transparent),
-            onSubmitted: _commitRename,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _title,
+                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+                  decoration: const InputDecoration(fillColor: Colors.transparent),
+                  onSubmitted: _commitRename,
+                ),
+              ),
+              IconButton(
+                tooltip: _preview ? 'Edit' : 'Preview',
+                isSelected: _preview,
+                onPressed: () => setState(() => _preview = !_preview),
+                icon: const Icon(Icons.visibility_outlined),
+                selectedIcon: const Icon(Icons.edit_outlined),
+              ),
+            ],
           ),
         ),
         if (tags.isNotEmpty)
@@ -148,16 +163,19 @@ class _EditorState extends State<_Editor> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(QuireSpace.xl),
-            child: TextField(
-              controller: _body,
-              onChanged: controller.updateBody,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              keyboardType: TextInputType.multiline,
-              style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
-              decoration: const InputDecoration(fillColor: Colors.transparent),
-            ),
+            child: _preview
+                ? MarkdownPreview(body: _body.text, vaultRoot: controller.vaultRoot)
+                : TextField(
+                    key: const Key('editor-body'),
+                    controller: _body,
+                    onChanged: controller.updateBody,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    keyboardType: TextInputType.multiline,
+                    style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
+                    decoration: const InputDecoration(fillColor: Colors.transparent),
+                  ),
           ),
         ),
         _StatusFooter(controller: controller),

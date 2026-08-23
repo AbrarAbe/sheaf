@@ -7,6 +7,7 @@ import 'package:taker/data/vault_repository.dart';
 import 'package:taker/logic/editor_controller.dart';
 import 'package:taker/logic/vault_controller.dart';
 import 'package:taker/ui/editor/editor_pane.dart';
+import 'package:taker/ui/editor/markdown_preview.dart';
 
 /// Widget tests must route every real-I/O call through [real] because
 /// unwrapped awaits deadlock inside the tester's FakeAsync zone.
@@ -94,5 +95,23 @@ void main() {
 
     expect(find.text('#work'), findsOneWidget);
     expect(find.text('#q3'), findsOneWidget);
+  });
+
+  testWidgets('preview toggle swaps body field for rendered markdown', (tester) async {
+    final note = await real(
+      () => vaultController.createNote(title: 'Doc', body: '# Rendered Heading\nbody'),
+      tester,
+    );
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    expect(find.byKey(const Key('editor-body')), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Preview'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('editor-body')), findsNothing);
+    expect(find.byType(MarkdownPreview), findsOneWidget);
+    expect(find.text('Rendered Heading', findRichText: true), findsWidgets);
   });
 }
