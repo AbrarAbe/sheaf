@@ -117,6 +117,26 @@ void main() {
     expect(controller.notes.single.tags, ['tagged']);
   });
 
+  test('directory watcher auto-refreshes on external edits', () async {
+    final controller = makeController();
+    addTearDown(controller.dispose);
+    await controller.initialize();
+    await controller.openVault(vaultDir.path);
+    final note = await controller.createNote(title: 'Watched');
+    expect(controller.notes.single.body, '');
+
+    // External edit — no manual refresh call.
+    await File('${controller.vaultPath}/${note.path}').writeAsString('# Watched\nexternal edit');
+
+    // Watcher debounce is 300 ms; poll up to 3 s.
+    final deadline = DateTime.now().add(const Duration(seconds: 3));
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      if (controller.notes.single.body.contains('external edit')) break;
+    }
+    expect(controller.notes.single.body, contains('external edit'));
+  }, timeout: const Timeout(Duration(seconds: 10)));
+
   test('theme setting persists through the controller', () async {
     final controller = makeController();
     addTearDown(controller.dispose);
@@ -182,6 +202,25 @@ void main() {
       expect(controller.folders.map((f) => f.name), ['project-x']);
       // Old path no longer exists; fall back to all-notes.
       expect(controller.selectedFolder, isNull);
+    });
+
+    test('createFolderAt places folders exactly where asked, not in selection', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+      await controller.createFolder('existing');
+
+      // User has 'existing' selected but hits the root "+" button.
+      controller.selectFolder('existing');
+      await controller.createFolderAt('', 'fresh');
+
+      expect(controller.folders.map((f) => f.name).toSet(), {'existing', 'fresh'});
+      expect(
+        controller.folders.singleWhere((f) => f.name == 'existing').children,
+        isEmpty,
+        reason: 'root creation must not nest inside the selected folder',
+      );
     });
 
     test('deleteFolder trashes contents', () async {

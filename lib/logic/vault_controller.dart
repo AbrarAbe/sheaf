@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:taker/data/settings_repository.dart';
 import 'package:taker/data/vault_repository.dart';
+import 'package:taker/logic/theme_setting_x.dart';
 import 'package:taker/models/note.dart';
 import 'package:taker/models/settings.dart';
-import 'package:taker/logic/theme_setting_x.dart';
+import 'package:watcher/watcher.dart';
 
 /// App-wide state: which vault is open, what's in it, and user settings.
 class VaultController extends ChangeNotifier {
@@ -17,6 +19,9 @@ class VaultController extends ChangeNotifier {
 
   AppSettings _settings = const AppSettings();
   VaultRepository? _vault;
+  StreamSubscription<WatchEvent>? _watchSub;
+  Timer? _refreshDebounce;
+  bool _disposed = false;
   List<Note> _notes = [];
   List<FolderNode> _folders = [];
 
@@ -135,6 +140,14 @@ class VaultController extends ChangeNotifier {
     await refresh();
   }
 
+  /// Creates [name] inside [parent] ('' = vault root), independent of the
+  /// current selection so sidebar actions never nest unintentionally.
+  Future<void> createFolderAt(String parent, String name) async {
+    final rel = parent.isEmpty ? name : '$parent/$name';
+    await _requireVault().createFolder(rel);
+    await refresh();
+  }
+
   Future<void> renameFolder(String relPath, String newName) async {
     await _requireVault().renameFolder(relPath, newName);
     if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
@@ -165,11 +178,16 @@ class VaultController extends ChangeNotifier {
     await refresh();
   }
 
-  /// Rescans the vault from disk.
+  /// Rescans the vault from disk. No-op when disposed or vault vanished.
   Future<void> refresh() async {
-    final vault = _requireVault();
-    _notes = await vault.listNotes();
-    _folders = await vault.folderTree();
+    final vault = _vault;
+    if (_disposed || vault == null || !vault.root.existsSync()) return;
+    final notes = await vault.listNotes();
+    final folders = await vault.folderTree();
+    // Dispose may land while the rescan above was in flight.
+    if (_disposed) return;
+    _notes = notes;
+    _folders = folders;
     notifyListeners();
   }
 
@@ -181,11 +199,38 @@ class VaultController extends ChangeNotifier {
     selectedTag = null;
     selectedNote = null;
     await refresh();
+    _startWatching(absolutePath);
+  }
+
+  /// Rescans whenever anything inside the vault changes — internal edits
+  /// (autosave, renames) and external editors alike.
+  void _startWatching(String absolutePath) {
+    _watchSub?.cancel();
+    final subscription = Watcher(absolutePath).events.listen(_onWatchEvent);
+    _watchSub = subscription;
+  }
+
+  void _onWatchEvent(WatchEvent event) {
+    if (_disposed) return;
+    // Debounce bursts (a single save can emit several events).
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (_vault == null || _disposed) return;
+      unawaited(refresh());
+    });
   }
 
   VaultRepository _requireVault() {
     final vault = _vault;
     if (vault == null) throw StateError('No vault open');
     return vault;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _watchSub?.cancel();
+    _refreshDebounce?.cancel();
+    super.dispose();
   }
 }
