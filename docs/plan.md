@@ -60,7 +60,7 @@ sliced vertically: every phase ends with something runnable.
   - Verify: controller unit tests (injectable clock for debounce); widget test for chooser.
   - Files: `lib/logic/*.dart`, `lib/app.dart`, `lib/main.dart`, `lib/ui/dialogs/vault_picker.dart`
 
-- [ ] **Task 7: Responsive three-pane shell** (M)
+- [x] **Task 7: Responsive three-pane shell** (M)
   - Acceptance: Expanded ≥1120 / Full 720–1119 / Stack <720 per layout doc;
     sidebar↔rail collapse persists; draggable dividers clamp (sidebar 200–320,
     list 300–420); min window 360×560.
