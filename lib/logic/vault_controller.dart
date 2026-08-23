@@ -18,7 +18,10 @@ class VaultController extends ChangeNotifier {
   VaultRepository? _vault;
   List<Note> _notes = [];
   List<FolderNode> _folders = [];
-  String selectedFolder = '';
+
+  /// Currently scoped folder, or null for the all-notes view.
+  String? selectedFolder;
+  String? selectedTag;
   String? selectedNotePath;
 
   AppSettings get settings => _settings;
@@ -26,6 +29,38 @@ class VaultController extends ChangeNotifier {
   List<FolderNode> get folders => List.unmodifiable(_folders);
   bool get hasVault => _vault != null;
   String get vaultPath => _vault?.root.path ?? '';
+
+  /// Notes passing the active folder + tag filters.
+  Iterable<Note> get visibleNotes => _notes.where((n) {
+    if (selectedFolder != null && !n.path.startsWith('$selectedFolder/')) {
+      return false;
+    }
+    if (selectedTag != null && !n.tags.contains(selectedTag)) return false;
+    return true;
+  });
+
+  /// Tag → note count across the whole vault (sidebar list).
+  Map<String, int> get tagCounts {
+    final counts = <String, int>{};
+    for (final note in _notes) {
+      for (final tag in note.tags) {
+        counts[tag] = (counts[tag] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  void selectFolder(String? relPath) {
+    if (selectedFolder == relPath) return;
+    selectedFolder = relPath;
+    notifyListeners();
+  }
+
+  void selectTag(String? tag) {
+    if (selectedTag == tag) return;
+    selectedTag = tag;
+    notifyListeners();
+  }
 
   /// Loads persisted settings and reopens the last vault if it still exists.
   Future<void> initialize() async {
@@ -73,10 +108,31 @@ class VaultController extends ChangeNotifier {
   }
 
   Future<void> createFolder(String name) async {
-    final rel = selectedFolder.isEmpty ? name : '$selectedFolder/$name';
+    final base = selectedFolder;
+    final rel = base == null || base.isEmpty ? name : '$base/$name';
     await _requireVault().createFolder(rel);
     await refresh();
   }
+
+  Future<void> renameFolder(String relPath, String newName) async {
+    await _requireVault().renameFolder(relPath, newName);
+    if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
+      // The scoped path no longer exists; fall back to all notes.
+      selectedFolder = null;
+    }
+    await refresh();
+  }
+
+  Future<void> deleteFolder(String relPath) async {
+    await _requireVault().deleteFolder(relPath);
+    if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
+      selectedFolder = null;
+    }
+    await refresh();
+  }
+
+  /// Trash entries, for the sidebar trash view.
+  Future<List<TrashEntry>> trash() => _requireVault().listTrash();
 
   /// Rescans the vault from disk.
   Future<void> refresh() async {
@@ -90,7 +146,8 @@ class VaultController extends ChangeNotifier {
     _vault = _vaultFactory(absolutePath);
     _settings = _settings.copyWith(vaultPath: absolutePath);
     await _settingsRepo.save(_settings);
-    selectedFolder = '';
+    selectedFolder = null;
+    selectedTag = null;
     selectedNotePath = null;
     await refresh();
   }
