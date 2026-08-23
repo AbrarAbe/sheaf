@@ -95,6 +95,22 @@ void main() {
     expect(find.textContaining('saved'), findsOneWidget);
   });
 
+  testWidgets('title and body fields render without fill background', (tester) async {
+    final note = await real(() => vaultController.createNote(title: 'Clean'), tester);
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    final fields = tester.widgetList<TextField>(find.byType(TextField));
+    expect(fields.length, 2); // title + body
+    for (final field in fields) {
+      expect(
+        field.decoration?.filled,
+        isFalse,
+        reason: 'editor prose sits on the card, not in a well',
+      );
+    }
+  });
+
   testWidgets('tag chips render from body tags', (tester) async {
     final note = await real(
       () => vaultController.createNote(title: 'Tagged', body: '#work #q3\nbody'),

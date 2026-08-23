@@ -180,7 +180,7 @@ class _EditorState extends State<_Editor> {
                 child: TextField(
                   controller: _title,
                   style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
-                  decoration: const InputDecoration(fillColor: Colors.transparent),
+                  decoration: const InputDecoration(filled: false),
                   onSubmitted: _commitRename,
                 ),
               ),
@@ -239,7 +239,7 @@ class _EditorState extends State<_Editor> {
                         textAlignVertical: TextAlignVertical.top,
                         keyboardType: TextInputType.multiline,
                         style: theme.textTheme.bodyLarge?.copyWith(fontFamily: 'monospace'),
-                        decoration: const InputDecoration(fillColor: Colors.transparent),
+                        decoration: const InputDecoration(filled: false),
                       ),
                     ),
                   ),
