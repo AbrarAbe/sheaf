@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
+import '../../models/note.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
 import '../sidebar/sidebar.dart';
@@ -14,11 +15,15 @@ import 'shortcuts.dart';
 /// window tiers of layout-and-space.md. Owns the editor controller and keeps
 /// it in sync with the selected note.
 class Shell extends StatefulWidget {
-  Shell({super.key, required this.controller, PaneWidths? paneWidths})
+  Shell({super.key, required this.controller, PaneWidths? paneWidths, this.onCreateNote})
     : paneWidths = paneWidths ?? _default;
 
   final VaultController controller;
   final PaneWidths paneWidths;
+
+  /// Injectable note factory for tests; defaults to creating 'Untitled'
+  /// in the selected folder.
+  final Future<Note?> Function()? onCreateNote;
 
   static final PaneWidths _default = PaneWidths();
 
@@ -90,11 +95,7 @@ class _ShellState extends State<Shell> {
     return Scaffold(
       body: Actions(
         actions: takerActions(
-          onCreateNote: () async {
-            final note = await controller.createNote(title: 'Untitled');
-            controller.selectNote(note);
-            return note;
-          },
+          onCreateNote: _createNote,
           onToggleSidebar: widths.toggleSidebar,
           onCycleTheme: () => controller.cycleTheme(),
         ),
@@ -115,8 +116,7 @@ class _ShellState extends State<Shell> {
                           Sidebar(
                             controller: controller,
                             width: widths.sidebar,
-                            onTrashTapped: () =>
-                                showTrashDialog(context, controller),
+                            onTrashTapped: () => showTrashDialog(context, controller),
                           )
                         else
                           const Rail(),
@@ -132,7 +132,10 @@ class _ShellState extends State<Shell> {
                         Expanded(child: _listAndEditor(controller, widths)),
                       ],
                     ),
-                    WindowTier.stack => _StackShell(controller: controller),
+                    WindowTier.stack => _StackShell(
+                      controller: controller,
+                      onCreateNote: _createNote,
+                    ),
                   };
                 },
               ),
@@ -143,13 +146,22 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  /// Shared by Ctrl+N and the list pane's New-note affordance.
+  Future<Note?> _createNote() async {
+    final custom = widget.onCreateNote;
+    final controller = widget.controller;
+    final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
+    if (note != null) controller.selectNote(note);
+    return note;
+  }
+
   Widget _listAndEditor(VaultController controller, PaneWidths widths) {
     return Row(
       children: [
         SizedBox(
           key: const Key('pane-list'),
           width: widths.list,
-          child: ListPane(controller: controller),
+          child: ListPane(controller: controller, onCreateNote: _createNote),
         ),
         DragDivider(onDrag: (dx) => widths.list += dx),
         Expanded(
@@ -162,16 +174,17 @@ class _ShellState extends State<Shell> {
 }
 
 class _StackShell extends StatelessWidget {
-  const _StackShell({required this.controller});
+  const _StackShell({required this.controller, required this.onCreateNote});
 
   final VaultController controller;
+  final Future<Note?> Function() onCreateNote;
 
   @override
   Widget build(BuildContext context) {
     // One pane at a time below 720 dp; list first, editor swaps in place.
     return SizedBox(
       key: const Key('pane-list'),
-      child: ListPane(controller: controller),
+      child: ListPane(controller: controller, onCreateNote: onCreateNote),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taker/data/vault_repository.dart';
 import 'package:taker/logic/vault_controller.dart';
+import 'package:taker/models/note.dart';
 import 'package:taker/ui/note_list/list_pane.dart';
 
 import '../../helpers/test_vault.dart';
@@ -20,13 +21,16 @@ void main() {
   Future<VaultController> pumpList(
     WidgetTester tester, {
     required Future<void> Function(VaultRepository vault) seed,
+    Future<Note?> Function()? onCreate,
   }) async {
     final controller = (await tester.runAsync(() => TestVault.seeded(tempDir, seed: seed)))!;
     addTearDown(controller.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: ListPane(controller: controller)),
+        home: Scaffold(
+          body: ListPane(controller: controller, onCreateNote: onCreate),
+        ),
       ),
     );
     await tester.pump();
@@ -77,5 +81,43 @@ void main() {
     await tester.pump();
 
     expect(controller.selectedNotePath, 'Pick me.md');
+  });
+
+  testWidgets('New note affordance is visible with notes present and invokes handler', (
+    tester,
+  ) async {
+    var invoked = 0;
+    await pumpList(
+      tester,
+      onCreate: () async {
+        invoked++;
+        return null;
+      },
+      seed: (vault) async {
+        await vault.createNote(title: 'Existing');
+      },
+    );
+
+    expect(find.text('New note'), findsOneWidget);
+    await tester.tap(find.text('New note'));
+    await tester.pump();
+    expect(invoked, 1);
+  });
+
+  testWidgets('empty state offers writing the first note', (tester) async {
+    var invoked = 0;
+    await pumpList(
+      tester,
+      onCreate: () async {
+        invoked++;
+        return null;
+      },
+      seed: (vault) async {},
+    );
+
+    expect(find.text('Nothing here yet.'), findsOneWidget);
+    await tester.tap(find.text('Write the first note'));
+    await tester.pump();
+    expect(invoked, 1);
   });
 }

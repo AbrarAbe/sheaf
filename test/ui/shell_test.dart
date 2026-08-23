@@ -142,5 +142,42 @@ void main() {
 
       expect(find.widgetWithText(TextField, 'Wire me'), findsOneWidget);
     });
+
+    testWidgets('New note button creates and opens a note', (tester) async {
+      final controller = (await tester.runAsync(
+        () => TestVault.seeded(tempDir, seed: (vault) async {}),
+      ))!;
+      addTearDown(controller.dispose);
+
+      // Create through real I/O up front; the factory below just hands it
+      // back so the widget flow stays zone-safe.
+      final created = (await tester.runAsync(() => controller.createNote(title: 'Untitled')))!;
+      var calls = 0;
+
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Shell(
+            controller: controller,
+            onCreateNote: () async {
+              calls++;
+              return created;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('New note'));
+      await tester.pump();
+
+      expect(calls, 1);
+      expect(controller.selectedNotePath, 'Untitled.md');
+      expect(find.widgetWithText(TextField, 'Untitled'), findsOneWidget);
+    });
   });
 }

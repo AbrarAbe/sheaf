@@ -36,14 +36,26 @@ class _ListPaneState extends State<ListPane> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.all(QuireSpace.m),
-            child: TextField(
-              controller: _filter,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'Filter…',
-                prefixIcon: Icon(Icons.search, size: 20),
-              ),
+            padding: const EdgeInsets.fromLTRB(QuireSpace.m, QuireSpace.m, QuireSpace.m, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _filter,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'Filter…',
+                      prefixIcon: Icon(Icons.search, size: 20),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: QuireSpace.s),
+                FilledButton.tonalIcon(
+                  onPressed: widget.onCreateNote == null ? null : () => widget.onCreateNote!(),
+                  icon: const Icon(Icons.note_add_outlined, size: 18),
+                  label: const Text('New note'),
+                ),
+              ],
             ),
           ),
           Expanded(child: _buildList(theme)),
