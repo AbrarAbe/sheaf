@@ -25,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - Add context menus, note deletion, and expanding filter
 - Add keyboard navigation for the note list
 - Implement Quire typography via Google Fonts
+- Add git-cliff config and v0.1.0 changelog
+- Add tag-triggered Linux release workflow
 
 ### Changed
 
@@ -53,6 +55,7 @@ All notable changes to this project will be documented in this file.
 - Use null-aware list element in _Section
 - Archive v0.1 implementation plan as plan_v0.1.md
 - Rename app from taker to sheaf
+- Reindex codebase as sheaf
 
 ### Fixed
 
@@ -64,5 +67,5 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
-[0.1.0]: https://github.com/AbrarAbe/taker/tree/v0.1.0
+[0.1.0]: https://github.com/AbrarAbe/sheaf/tree/v0.1.0
 
