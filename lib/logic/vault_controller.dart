@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/theme_setting_x.dart';
+import 'package:sheaf/logic/zoom.dart';
 import 'package:sheaf/models/note.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:watcher/watcher.dart';
@@ -114,8 +115,17 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Cycles System → Light → Dark and persists (`Ctrl+Shift+L`).
   Future<void> cycleTheme() => setTheme(nextThemeSetting(_settings.theme));
+
+  /// Persists the app-wide view zoom (spec story 11). Out-of-range input is
+  /// clamped here so corrupt callers cannot poison the stored value.
+  Future<void> setZoom(double factor) async {
+    final clamped = clampZoom(factor);
+    if (clamped == _settings.zoomFactor) return;
+    _settings = _settings.copyWith(zoomFactor: clamped);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
 
   Future<Note> createNote({required String title, String? body, String? folder}) async {
     final note = await _requireVault().createNote(

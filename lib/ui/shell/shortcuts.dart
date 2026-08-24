@@ -29,11 +29,29 @@ class SelectNoteIntent extends Intent {
   final Note? note;
 }
 
+/// Intent for stepping the app-wide view zoom up (`Ctrl+=`/`Ctrl++`).
+class ZoomInIntent extends Intent {
+  const ZoomInIntent();
+}
+
+/// Intent for stepping the app-wide view zoom down (`Ctrl+-`).
+class ZoomOutIntent extends Intent {
+  const ZoomOutIntent();
+}
+
+/// Intent for resetting the view zoom to 100% (`Ctrl+0`).
+class ZoomResetIntent extends Intent {
+  const ZoomResetIntent();
+}
+
 Map<Type, Action<Intent>> sheafActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
   required VoidCallback onCycleTheme,
   required VoidCallback onDeleteSelectedNote,
+  required VoidCallback onZoomIn,
+  required VoidCallback onZoomOut,
+  required VoidCallback onZoomReset,
 }) {
   return {
     CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
@@ -44,6 +62,9 @@ Map<Type, Action<Intent>> sheafActions({
     DeleteNoteIntent: CallbackAction<DeleteNoteIntent>(
       onInvoke: (intent) => onDeleteSelectedNote(),
     ),
+    ZoomInIntent: CallbackAction<ZoomInIntent>(onInvoke: (intent) => onZoomIn()),
+    ZoomOutIntent: CallbackAction<ZoomOutIntent>(onInvoke: (intent) => onZoomOut()),
+    ZoomResetIntent: CallbackAction<ZoomResetIntent>(onInvoke: (intent) => onZoomReset()),
   };
 }
 
@@ -53,4 +74,11 @@ Map<ShortcutActivator, Intent> sheafShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true):
       const CycleThemeIntent(),
   const SingleActivator(LogicalKeyboardKey.delete): const DeleteNoteIntent(),
+  // Ctrl+= and Ctrl++ (shifted plus) and numpad add all zoom in.
+  const SingleActivator(LogicalKeyboardKey.equal, control: true): const ZoomInIntent(),
+  const SingleActivator(LogicalKeyboardKey.equal, control: true, shift: true): const ZoomInIntent(),
+  const SingleActivator(LogicalKeyboardKey.add, control: true): const ZoomInIntent(),
+  const SingleActivator(LogicalKeyboardKey.minus, control: true): const ZoomOutIntent(),
+  const SingleActivator(LogicalKeyboardKey.numpadSubtract, control: true): const ZoomOutIntent(),
+  const SingleActivator(LogicalKeyboardKey.digit0, control: true): const ZoomResetIntent(),
 };

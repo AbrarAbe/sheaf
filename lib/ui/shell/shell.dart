@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
+import '../../logic/zoom.dart';
 import '../../models/note.dart';
 import '../../theme/quire_theme.dart';
 import '../dialogs/settings_dialog.dart';
@@ -19,7 +20,7 @@ import 'shortcuts.dart';
 /// it in sync with the selected note.
 class Shell extends StatefulWidget {
   Shell({super.key, required this.controller, PaneWidths? paneWidths, this.onCreateNote})
-      : paneWidths = paneWidths ?? _default;
+    : paneWidths = paneWidths ?? _default;
 
   final VaultController controller;
   final PaneWidths paneWidths;
@@ -102,6 +103,9 @@ class _ShellState extends State<Shell> {
           onToggleSidebar: widths.toggleSidebar,
           onCycleTheme: () => controller.cycleTheme(),
           onDeleteSelectedNote: () => _deleteSelectedWithUndo(context),
+          onZoomIn: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
+          onZoomOut: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
+          onZoomReset: () => controller.setZoom(1.0),
         ),
         child: Shortcuts(
           shortcuts: sheafShortcuts(),
@@ -118,34 +122,34 @@ class _ShellState extends State<Shell> {
                       Expanded(
                         child: switch (tier) {
                           WindowTier.expanded => Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (!widths.sidebarCollapsed)
-                                  Sidebar(
-                                    controller: controller,
-                                    width: widths.sidebar,
-                                    onTrashTapped: () => showTrashDialog(context, controller),
-                                    onSettingsTapped: () => showSettingsDialog(context, controller),
-                                  )
-                                else
-                                  Rail(onExpand: widths.toggleSidebar),
-                                if (!widths.sidebarCollapsed)
-                                  DragDivider(onDrag: (dx) => widths.sidebar += dx),
-                                Expanded(child: _listAndEditor(controller, widths)),
-                              ],
-                            ),
-                          WindowTier.full => Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (!widths.sidebarCollapsed)
+                                Sidebar(
+                                  controller: controller,
+                                  width: widths.sidebar,
+                                  onTrashTapped: () => showTrashDialog(context, controller),
+                                  onSettingsTapped: () => showSettingsDialog(context, controller),
+                                )
+                              else
                                 Rail(onExpand: widths.toggleSidebar),
-                                Expanded(child: _listAndEditor(controller, widths)),
-                              ],
-                            ),
+                              if (!widths.sidebarCollapsed)
+                                DragDivider(onDrag: (dx) => widths.sidebar += dx),
+                              Expanded(child: _listAndEditor(controller, widths)),
+                            ],
+                          ),
+                          WindowTier.full => Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Rail(onExpand: widths.toggleSidebar),
+                              Expanded(child: _listAndEditor(controller, widths)),
+                            ],
+                          ),
                           WindowTier.stack => _StackShell(
-                              controller: controller,
-                              editor: _editor,
-                              onCreateNote: _createNote,
-                            ),
+                            controller: controller,
+                            editor: _editor,
+                            onCreateNote: _createNote,
+                          ),
                         },
                       ),
                     ],
@@ -263,7 +267,9 @@ class _HeaderBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
                 ),
                 child: Text(
                   'QUIRE',
@@ -290,7 +296,9 @@ class _HeaderBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerLowest,
                       borderRadius: BorderRadius.circular(QuireRadius.pill),
-                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7)),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -410,7 +418,9 @@ class _StackShell extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                  border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                  ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(

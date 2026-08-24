@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/logic/zoom.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
@@ -71,5 +72,38 @@ void main() {
 
     expect(widths.sidebarCollapsed, isTrue);
     expect(find.byKey(const Key('rail')), findsOneWidget);
+  });
+
+  testWidgets('zoom intents step and reset the persisted factor', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    final ctx = tester.element(find.byKey(const Key('pane-editor')));
+
+    Actions.invoke(ctx, const ZoomInIntent());
+    await tester.pump();
+    expect(controller.settings.zoomFactor, 1.1);
+
+    Actions.invoke(ctx, const ZoomInIntent());
+    await tester.pump();
+    expect(controller.settings.zoomFactor, 1.2);
+
+    Actions.invoke(ctx, const ZoomOutIntent());
+    await tester.pump();
+    expect(controller.settings.zoomFactor, 1.1);
+
+    Actions.invoke(ctx, const ZoomResetIntent());
+    await tester.pump();
+    expect(controller.settings.zoomFactor, 1.0);
+  });
+
+  testWidgets('zoom respects its bounds through the shortcuts', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    final ctx = tester.element(find.byKey(const Key('pane-editor')));
+
+    for (var i = 0; i < 30; i++) {
+      await tester.runAsync(() async {});
+      Actions.invoke(ctx, const ZoomInIntent());
+      await tester.pump();
+    }
+    expect(controller.settings.zoomFactor, kZoomMax);
   });
 }

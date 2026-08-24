@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/app.dart';
 import 'package:sheaf/data/settings_repository.dart';
@@ -46,5 +47,32 @@ void main() {
     await tester.pump();
 
     expect(find.byType(WelcomeScreen), findsNothing);
+  });
+
+  testWidgets('applies the persisted zoom as the inherited text scaler', (tester) async {
+    final controller = makeController();
+    addTearDown(controller.dispose);
+    await tester.runAsync(() async {
+      controller.initialize;
+      await controller.setZoom(1.5);
+    });
+
+    late TextScaler observed;
+    await tester.pumpWidget(
+      SheafApp(
+        controller: controller,
+        // Probe sits under MaterialApp's navigator, i.e. inside the builder's
+        // MediaQuery override — exactly where user surfaces live.
+        homeOverride: Builder(
+          builder: (context) {
+            observed = MediaQuery.textScalerOf(context);
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(observed, TextScaler.linear(1.5));
   });
 }
