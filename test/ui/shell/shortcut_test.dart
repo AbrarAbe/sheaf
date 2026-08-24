@@ -9,6 +9,7 @@ import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/logic/zoom.dart';
 import 'package:sheaf/models/settings.dart';
+import 'package:sheaf/ui/common/corner_toast.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
 import 'package:sheaf/ui/shell/shortcuts.dart';
@@ -31,7 +32,12 @@ void _registerTests() {
     tempDir = await Directory.systemTemp.createTemp('sheaf_shortcut_test');
   });
 
-  tearDown(() async => tempDir.delete(recursive: true));
+  tearDown(() async {
+    // Deletion flows spawn corner toasts; drop their timers before the
+    // next test's FakeAsync zone can see them.
+    CornerToast.reset();
+    await tempDir.delete(recursive: true);
+  });
 
   Future<(VaultController, PaneWidths)> pumpShell(WidgetTester tester) async {
     final controller = VaultController(

@@ -7,6 +7,7 @@ import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
 import '../../theme/quire_theme.dart';
 import '../common/context_menus.dart';
+import '../common/corner_toast.dart';
 
 /// The note list pane: filter field, day-grouped compact rows, full keyboard
 /// navigation (arrows move selection, Enter opens, Esc dismisses, Ctrl+F
@@ -55,14 +56,12 @@ class _ListPaneState extends State<ListPane> {
     if (!mounted) return;
     final entries = await controller.trash();
     if (!mounted || entries.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Deleted "${note.title}"'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () => controller.restoreFromTrash(entries.first.trashedName),
-        ),
-      ),
+    CornerToast.show(
+      context,
+      message: 'Deleted "${note.title}"',
+      actionLabel: 'Undo',
+      icon: Icons.delete_outline_rounded,
+      onAction: () => controller.restoreFromTrash(entries.first.trashedName),
     );
   }
 
@@ -180,13 +179,19 @@ class _ListPaneState extends State<ListPane> {
                           label: const Text('New note'),
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            textStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600, fontSize: 13),
+                            textStyle: GoogleFonts.hankenGrotesk(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+                  Divider(
+                    height: 1,
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                  ),
                   Expanded(child: _buildList(theme)),
                 ],
               ),
@@ -308,8 +313,8 @@ class _NoteRowState extends State<_NoteRow> {
           color: widget.selected
               ? theme.colorScheme.secondaryContainer
               : _hover
-                  ? theme.colorScheme.surfaceContainerLowest
-                  : Colors.transparent,
+              ? theme.colorScheme.surfaceContainerLowest
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(QuireRadius.l),
           child: InkWell(
             borderRadius: BorderRadius.circular(QuireRadius.l),
@@ -318,11 +323,13 @@ class _NoteRowState extends State<_NoteRow> {
               decoration: widget.selected
                   ? null
                   : _hover
-                      ? BoxDecoration(
-                          borderRadius: BorderRadius.circular(QuireRadius.l),
-                          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
-                        )
-                      : null,
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(QuireRadius.l),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                      ),
+                    )
+                  : null,
               constraints: const BoxConstraints(minHeight: 64),
               padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
               child: Row(
@@ -395,7 +402,9 @@ class _NoteRowState extends State<_NoteRow> {
                                   '+${widget.note.tags.length - 3}',
                                   style: GoogleFonts.splineSansMono(
                                     fontSize: 10.5,
-                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                                      alpha: 0.7,
+                                    ),
                                   ),
                                 ),
                             ],
@@ -427,9 +436,17 @@ class _NoteRowState extends State<_NoteRow> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _HoverIcon(icon: Icons.push_pin_outlined, onTap: () {}, tooltip: 'Pin'),
+                              _HoverIcon(
+                                icon: Icons.push_pin_outlined,
+                                onTap: () {},
+                                tooltip: 'Pin',
+                              ),
                               const SizedBox(width: 4),
-                              _HoverIcon(icon: Icons.delete_outline, onTap: widget.onDelete, tooltip: 'Delete'),
+                              _HoverIcon(
+                                icon: Icons.delete_outline,
+                                onTap: widget.onDelete,
+                                tooltip: 'Delete',
+                              ),
                             ],
                           ),
                         ),
@@ -509,7 +526,10 @@ class _FilterField extends StatelessWidget {
       style: GoogleFonts.hankenGrotesk(fontSize: 14, color: theme.colorScheme.onSurface),
       decoration: InputDecoration(
         hintText: 'Filter…',
-        hintStyle: GoogleFonts.hankenGrotesk(fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
+        hintStyle: GoogleFonts.hankenGrotesk(
+          fontSize: 14,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
         prefixIcon: Icon(Icons.search, size: 18, color: theme.colorScheme.onSurfaceVariant),
         suffixIcon: IconButton(
           tooltip: 'Close search',
@@ -523,8 +543,14 @@ class _FilterField extends StatelessWidget {
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(QuireRadius.m), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(QuireRadius.m), borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.2)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(QuireRadius.m),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(QuireRadius.m),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.2),
+        ),
       ),
     );
   }
@@ -608,7 +634,11 @@ class _NoResults extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off_rounded, size: 32, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+            Icon(
+              Icons.search_off_rounded,
+              size: 32,
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 12),
             Text(
               "No notes match '$query'.",

@@ -5,6 +5,7 @@ import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/note.dart';
+import '../common/corner_toast.dart';
 import '../../theme/quire_theme.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
@@ -230,14 +231,12 @@ class _ShellState extends State<Shell> {
     await controller.deleteNote(note.path);
     final entries = await controller.trash();
     if (!context.mounted || entries.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Deleted "${note.title}"'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () => controller.restoreFromTrash(entries.first.trashedName),
-        ),
-      ),
+    CornerToast.show(
+      context,
+      message: 'Deleted "${note.title}"',
+      actionLabel: 'Undo',
+      icon: Icons.delete_outline_rounded,
+      onAction: () => controller.restoreFromTrash(entries.first.trashedName),
     );
   }
 

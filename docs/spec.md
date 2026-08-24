@@ -31,13 +31,15 @@ changes how the app looks (worlds, zoom, type size, typeface).
 
 10. **Formatting keys** — While editing (either editing mode):
     `Ctrl+B` toggles `**bold**`, `Ctrl+I` toggles `*italic*`, `Ctrl+U` toggles
-    `<u>underline</u>` around the selection — wrapping when there is a
-    selection, inserting an empty pair and placing the caret inside when not;
-    invoking on any text already inside a wrapped span (exact selection,
-    partial selection, or bare caret inside) unwraps that span. Terminal-style
-    `Ctrl+Shift+C` / `Ctrl+Shift+V` copy/paste the focused editor selection
-    (plain `Ctrl+C/V/X` keep working natively). Preview renders `<u>`
-    underlined; all other raw HTML stays literal.
+    `<u>underline</u>`. With a selection the span wraps/unwraps as before;
+    with a bare caret **touching a word, the whole word is selected and
+    wrapped** (never splitting it with an empty pair — feedback F10); only a
+    caret on whitespace/punctuation inserts an empty pair. Invoking inside an
+    existing span always unwraps it. Terminal-style `Ctrl+Shift+C` /
+    `Ctrl+Shift+V` copy/paste the focused editor selection (plain `Ctrl+C/V/X`
+    keep working natively). Preview renders `<u>` underlined — which is why
+    the Ctrl+U binding is justified despite vanilla Markdown lacking
+    underline; all other raw HTML stays literal.
 11. **Navigation & zoom keys** — `Ctrl+Tab` / `Ctrl+Shift+Tab` select the
     next/previous note in the current list order. `Ctrl+D` selects the word
     at the caret (VS Code-style) in either editing mode. `Ctrl+=` / `Ctrl+-`
