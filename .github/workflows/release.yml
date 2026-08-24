@@ -1,0 +1,66 @@
+name: Release (Linux)
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: write
+
+jobs:
+    build-linux:
+        runs-on: ubuntu-latest
+        steps:
+            # Full history and tags so git-cliff can render notes for the tagged release.
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            # pubspec.yaml constrains sdk to ^3.14.0-95.2.beta (beta channel).
+            # Move this to stable when the constraint no longer needs beta.
+            - uses: subosito/flutter-action@v2
+              with:
+                  channel: beta
+                  cache: true
+
+            - name: Install Linux build dependencies
+              run: >
+                  sudo apt-get update &&
+                  sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+            - name: Pub get
+              run: flutter pub get
+
+            - name: Analyze
+              run: flutter analyze
+
+            - name: Test
+              run: flutter test
+
+            - name: Build Linux (x64, release)
+              run: flutter build linux --release
+
+            - name: Package tarball
+              run: |
+                  cd build/linux/x64/release/bundle
+                  tar czf "$GITHUB_WORKSPACE/sheaf-$GITHUB_REF_NAME-linux-x64.tar.gz" .
+
+            - name: Generate release notes (git-cliff)
+              id: notes
+              uses: orhun/git-cliff-action@v4
+              with:
+                  args: --latest --strip header
+
+            - name: Upload build artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sheaf-linux-x64
+                  path: sheaf-*-linux-x64.tar.gz
+
+            - name: Publish GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  body: ${{ steps.notes.outputs.content }}
+                  files: sheaf-*-linux-x64.tar.gz
