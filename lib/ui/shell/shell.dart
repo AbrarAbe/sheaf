@@ -106,7 +106,19 @@ class _ShellState extends State<Shell> {
           onCreateNote: _createNote,
           onToggleSidebar: widths.toggleSidebar,
           onCycleTheme: () => controller.cycleTheme(),
-          onDeleteSelectedNote: () => _deleteSelectedWithUndo(context),
+          onDeleteSelectedNote: () {
+            // Del keeps its text-editing meaning while an editor holds focus
+            // (feedback F7): re-dispatch the native character-delete so the
+            // shell binding doesn't swallow it.
+            if (_focusInsideEditable()) {
+              final editCtx = FocusManager.instance.primaryFocus?.context;
+              if (editCtx != null && editCtx.mounted) {
+                Actions.invoke(editCtx, const DeleteCharacterIntent(forward: true));
+              }
+              return;
+            }
+            _deleteSelectedWithUndo(context);
+          },
           onZoomIn: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
           onZoomOut: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
           onZoomReset: () => controller.setZoom(1.0),
@@ -176,6 +188,21 @@ class _ShellState extends State<Shell> {
     final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
     if (note != null) controller.selectNote(note);
     return note;
+  }
+
+  /// True when the primary focus sits inside any text field.
+  bool _focusInsideEditable() {
+    final ctx = FocusManager.instance.primaryFocus?.context;
+    if (ctx == null || !ctx.mounted) return false;
+    var inside = false;
+    ctx.visitAncestorElements((element) {
+      if (element.widget is EditableText) {
+        inside = true;
+        return false;
+      }
+      return true;
+    });
+    return inside;
   }
 
   /// Moves the selection through the visible list order, wrapping at the

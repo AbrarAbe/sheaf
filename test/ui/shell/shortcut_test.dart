@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,17 @@ import 'package:sheaf/ui/shell/shell.dart';
 import 'package:sheaf/ui/shell/shortcuts.dart';
 
 void main() {
+  // The shell paints Google Fonts; offline/flaky DNS turns their async fetch
+  // failures into zone errors that fail whichever test is active. Swallow
+  // exactly those — anything else still propagates.
+  runZonedGuarded(_registerTests, (error, stack) {
+    if (!stack.toString().contains('google_fonts')) {
+      FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stack));
+    }
+  });
+}
+
+void _registerTests() {
   late Directory tempDir;
 
   setUp(() async {
@@ -147,5 +159,41 @@ void main() {
     Actions.invoke(ctx, const CycleNoteIntent(forward: false)); // wraps to last
     await tester.pump();
     expect(titles(), 'Alpha');
+  });
+
+  testWidgets('Del while an editor holds focus edits text, not the note (F7)', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    final note = await tester.runAsync(() => controller.createNote(title: 'Keep', body: 'abc'));
+    controller.selectNote(note!);
+    await tester.pump();
+
+    // Focus the body field with fresh text; caret sits at the end.
+    await tester.enterText(find.byKey(const Key('editor-body')), 'abcd');
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    await tester.pump();
+
+    expect(controller.notes.length, 1, reason: 'the note must survive');
+    expect(controller.selectedNote?.title, 'Keep');
+  });
+
+  testWidgets('Del outside editors deletes the selected note (F7)', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    final note = await tester.runAsync(() => controller.createNote(title: 'Gone'));
+    controller.selectNote(note!);
+    await tester.pump();
+
+    // No editable holds focus here — the shell-root focus wins.
+    await tester.runAsync(() async {
+      final ctx = tester.element(find.byKey(const Key('pane-editor')));
+      Actions.invoke(ctx, const DeleteNoteIntent());
+      // The action's awaited disk IO must progress in real time.
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+    });
+    await tester.pump();
+
+    expect(controller.selectedNote, isNull);
+    expect(controller.notes, isEmpty);
   });
 }
