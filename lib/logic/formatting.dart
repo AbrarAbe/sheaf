@@ -14,6 +14,25 @@ class FormatEdit {
   final int selEnd;
 }
 
+/// The three formatting toggles bound to Ctrl+B / Ctrl+I / Ctrl+U.
+enum FormatKind {
+  bold,
+  italic,
+  underline;
+
+  String get open => switch (this) {
+    FormatKind.bold => '**',
+    FormatKind.italic => '*',
+    FormatKind.underline => '<u>',
+  };
+
+  String get close => switch (this) {
+    FormatKind.bold => '**',
+    FormatKind.italic => '*',
+    FormatKind.underline => '</u>',
+  };
+}
+
 /// Toggles [open]…[close] (default [close] = [open]) around the selection.
 ///
 /// - Non-empty selection already wrapped exactly → unwrap it.

@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart' as p;
 
 import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
+import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
 import '../../logic/search_controller.dart';
 import '../../models/settings.dart';
@@ -171,6 +173,43 @@ class _EditorState extends State<_Editor> {
       _syncedMode = widget.controller.mode;
       if (mounted) setState(() {});
     }
+  }
+
+  /// Key map for the editing surfaces. Formatting keys are bound only in
+  /// Normal mode (story 12: Markdown is raw source, keys inert).
+  Map<ShortcutActivator, Intent> _editShortcuts() => {
+    const SingleActivator(LogicalKeyboardKey.keyC, control: true, shift: true):
+        CopySelectionTextIntent.copy,
+    const SingleActivator(LogicalKeyboardKey.keyV, control: true, shift: true):
+        const PasteTextIntent(SelectionChangedCause.keyboard),
+    if (widget.controller.mode == EditorMode.normal) ...{
+      const SingleActivator(LogicalKeyboardKey.keyB, control: true): const FormatIntent(
+        FormatKind.bold,
+      ),
+      const SingleActivator(LogicalKeyboardKey.keyI, control: true): const FormatIntent(
+        FormatKind.italic,
+      ),
+      const SingleActivator(LogicalKeyboardKey.keyU, control: true): const FormatIntent(
+        FormatKind.underline,
+      ),
+    },
+  };
+
+  void _applyFormat(FormatIntent intent) {
+    final selection = _body.selection;
+    if (!selection.isValid) return;
+    final result = toggleWrap(
+      text: _body.text,
+      selStart: selection.start < 0 ? 0 : selection.start,
+      selEnd: selection.end < 0 ? 0 : selection.end,
+      open: intent.kind.open,
+      close: intent.kind.close,
+    );
+    _body.value = TextEditingValue(
+      text: result.text,
+      selection: TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd),
+    );
+    widget.controller.updateBody(result.text);
   }
 
   Future<void> _load() async {
@@ -365,57 +404,68 @@ class _EditorState extends State<_Editor> {
                       body: _body.text,
                       vaultRoot: controller.vaultRoot,
                     ),
-                    _ => DropTarget(
-                      onDragDone: (details) => _insertDroppedImages(details.files),
-                      onDragEntered: (_) => setState(() => _dragging = true),
-                      onDragExited: (_) => setState(() => _dragging = false),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 140),
-                        decoration: BoxDecoration(
-                          color: _dragging
-                              ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(QuireRadius.m),
-                          border: _dragging
-                              ? Border.all(color: theme.colorScheme.primary, width: 1.6)
-                              : Border.all(color: Colors.transparent),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: TextField(
-                          key: const Key('editor-body'),
-                          controller: _body,
-                          onChanged: controller.updateBody,
-                          maxLines: null,
-                          expands: true,
-                          textAlignVertical: TextAlignVertical.top,
-                          keyboardType: TextInputType.multiline,
-                          style: controller.mode == EditorMode.markdown
-                              ? GoogleFonts.splineSansMono(
-                                  fontSize: 14.5,
-                                  height: 24 / 14.5,
-                                  fontWeight: FontWeight.w400,
-                                  color: theme.colorScheme.onSurface,
-                                )
-                              : GoogleFonts.hankenGrotesk(
+                    _ => Shortcuts(
+                      shortcuts: _editShortcuts(),
+                      child: Actions(
+                        actions: {
+                          FormatIntent: CallbackAction<FormatIntent>(
+                            onInvoke: (intent) => _applyFormat(intent),
+                          ),
+                        },
+                        child: DropTarget(
+                          onDragDone: (details) => _insertDroppedImages(details.files),
+                          onDragEntered: (_) => setState(() => _dragging = true),
+                          onDragExited: (_) => setState(() => _dragging = false),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 140),
+                            decoration: BoxDecoration(
+                              color: _dragging
+                                  ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(QuireRadius.m),
+                              border: _dragging
+                                  ? Border.all(color: theme.colorScheme.primary, width: 1.6)
+                                  : Border.all(color: Colors.transparent),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: TextField(
+                              key: const Key('editor-body'),
+                              controller: _body,
+                              onChanged: controller.updateBody,
+                              maxLines: null,
+                              expands: true,
+                              textAlignVertical: TextAlignVertical.top,
+                              keyboardType: TextInputType.multiline,
+                              style: controller.mode == EditorMode.markdown
+                                  ? GoogleFonts.splineSansMono(
+                                      fontSize: 14.5,
+                                      height: 24 / 14.5,
+                                      fontWeight: FontWeight.w400,
+                                      color: theme.colorScheme.onSurface,
+                                    )
+                                  : GoogleFonts.hankenGrotesk(
+                                      fontSize: 16,
+                                      height: 26 / 16,
+                                      fontWeight: FontWeight.w400,
+                                      color: theme.colorScheme.onSurface,
+                                    ),
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Take a note…  Type #tags, drag images, write in Markdown.',
+                                hintStyle: GoogleFonts.hankenGrotesk(
                                   fontSize: 16,
                                   height: 26 / 16,
-                                  fontWeight: FontWeight.w400,
-                                  color: theme.colorScheme.onSurface,
+                                  color: quire.textTertiary.withValues(alpha: 0.9),
                                 ),
-                          decoration: InputDecoration(
-                            hintText: 'Take a note…  Type #tags, drag images, write in Markdown.',
-                            hintStyle: GoogleFonts.hankenGrotesk(
-                              fontSize: 16,
-                              height: 26 / 16,
-                              color: quire.textTertiary.withValues(alpha: 0.9),
+                                filled: false,
+                                border: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              cursorColor: theme.colorScheme.primary,
                             ),
-                            filled: false,
-                            border: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
                           ),
-                          cursorColor: theme.colorScheme.primary,
                         ),
                       ),
                     ),
@@ -488,6 +538,13 @@ class _StatusFooter extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Ctrl+B / Ctrl+I / Ctrl+U formatting request (Normal mode only).
+class FormatIntent extends Intent {
+  const FormatIntent(this.kind);
+
+  final FormatKind kind;
 }
 
 /// Normal / Markdown / Preview segmented control (spec story 12).

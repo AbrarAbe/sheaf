@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/editor_controller.dart';
+import 'package:sheaf/logic/formatting.dart';
 import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/editor/editor_pane.dart';
@@ -167,6 +168,88 @@ void main() {
     // Cancel the pending autosave timer; persistence of the link lands via
     // the debounced write covered in editor_controller_test.
     await tester.runAsync(editorController.flush);
+  });
+
+  group('formatting keys (spec story 10)', () {
+    Future<void> openNormal(WidgetTester tester, {String body = 'hello world'}) async {
+      final note = await real(() => vaultController.createNote(title: 'Fmt', body: body), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+    }
+
+    void selectAll(WidgetTester tester) {
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: state.widget.controller.text.length,
+      );
+    }
+
+    testWidgets('Ctrl+B wraps selection in bold markers', (tester) async {
+      await openNormal(tester);
+      selectAll(tester);
+      await tester.pump();
+
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+      Actions.invoke(ctx, const FormatIntent(FormatKind.bold));
+      await tester.pump();
+
+      expect(editorController.body, '**hello world**');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('repeating the wrap on wrapped text unwraps', (tester) async {
+      await openNormal(tester, body: '**bold**');
+      selectAll(tester);
+      await tester.pump();
+
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+      Actions.invoke(ctx, const FormatIntent(FormatKind.bold));
+      await tester.pump();
+
+      expect(editorController.body, 'bold');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('italic and underline use their own markers', (tester) async {
+      await openNormal(tester, body: 'word');
+      selectAll(tester);
+      await tester.pump();
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+
+      Actions.invoke(ctx, const FormatIntent(FormatKind.italic));
+      expect(editorController.body, '*word*');
+
+      // Unwrap italic, then underline the same span.
+      selectAll(tester);
+      Actions.invoke(ctx, const FormatIntent(FormatKind.italic));
+      selectAll(tester);
+      Actions.invoke(ctx, const FormatIntent(FormatKind.underline));
+      await tester.pump();
+      expect(editorController.body, '<u>word</u>');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('formatting is inert in markdown mode', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Raw', body: 'plain'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      editorController.setMode(EditorMode.markdown);
+      await pumpEditor(tester);
+
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+      Actions.invoke(ctx, const FormatIntent(FormatKind.bold));
+      await tester.pump();
+
+      expect(editorController.body, 'plain');
+    });
   });
 
   group('editor modes (spec story 12)', () {
