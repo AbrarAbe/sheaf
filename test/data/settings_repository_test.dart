@@ -31,6 +31,32 @@ void main() {
       expect(await repo.load(), s);
     });
 
+    test('round-trips every v2 field through the file', () async {
+      const s = AppSettings(
+        vaultPath: '/home/me/notes',
+        theme: ThemeSetting.light,
+        editorMode: EditorMode.markdown,
+        zoomFactor: 1.25,
+        editorFontSize: 18.5,
+        themeWorld: 'sepia',
+        fontFamily: 'Iosevka',
+        fontPath: '/usr/share/fonts/iosevka.ttf',
+      );
+      await repo.save(s);
+      expect(await repo.load(), s);
+    });
+
+    test('a v0.1 settings file loads with v2 defaults intact', () async {
+      // Exact shape v0.1 wrote: only vaultPath and theme.
+      await file.writeAsString(jsonEncode({'vaultPath': '/old/vault', 'theme': 'light'}));
+      final s = await repo.load();
+      expect(s.vaultPath, '/old/vault');
+      expect(s.theme, ThemeSetting.light);
+      expect(s.editorMode, EditorMode.normal);
+      expect(s.zoomFactor, 1.0);
+      expect(s.themeWorld, 'quire');
+    });
+
     test('falls back to defaults on corrupt json', () async {
       await file.writeAsString('{not valid json');
       final s = await repo.load();
@@ -63,6 +89,13 @@ void main() {
       for (final t in ThemeSetting.values) {
         expect(ThemeSetting.fromJson(t.toJson()), t);
       }
+    });
+  });
+
+  group('EditorMode', () {
+    test('maps unknown stored modes back to normal on load', () async {
+      await file.writeAsString(jsonEncode({'editorMode': 'rich'}));
+      expect((await repo.load()).editorMode, EditorMode.normal);
     });
   });
 }
