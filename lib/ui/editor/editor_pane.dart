@@ -213,11 +213,25 @@ class _EditorState extends State<_Editor> {
 
   void _applyFormat(FormatIntent intent) {
     final selection = _body.selection;
-    if (!selection.isValid) return;
+    if (!selection.isValid || selection.start < 0 || selection.end < 0) return;
+    var start = selection.start;
+    var end = selection.end;
+
+    // Bare caret on a word → format that whole word rather than splicing an
+    // empty pair into it (feedback F10; also why Ctrl+U looked dead — its
+    // inserted pair rendered hidden).
+    if (start == end) {
+      final (wordStart, wordEnd) = wordBoundary(_body.text, start);
+      if (wordEnd > wordStart && RegExp(r'\w').hasMatch(_body.text[wordStart])) {
+        start = wordStart;
+        end = wordEnd;
+      }
+    }
+
     final result = toggleWrap(
       text: _body.text,
-      selStart: selection.start < 0 ? 0 : selection.start,
-      selEnd: selection.end < 0 ? 0 : selection.end,
+      selStart: start,
+      selEnd: end,
       open: intent.kind.open,
       close: intent.kind.close,
     );

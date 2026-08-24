@@ -344,6 +344,82 @@ void main() {
       expect(editorController.body, '**plain**');
       await real(editorController.flush, tester);
     });
+
+    testWidgets('F10: Ctrl+U with bare caret on a word underlines that word', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'U', body: 'plain word here'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // enterText leaves the caret at the end, sitting on 'here'.
+      await tester.enterText(find.byKey(const Key('editor-body')), 'plain word here');
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyU);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(editorController.body, 'plain word <u>here</u>');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('F10: Ctrl+B mid-word bolds the whole word instead of splitting', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'B', body: 'plain word'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // Caret inside 'word' (offset 7), nothing selected.
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = const TextSelection.collapsed(offset: 7);
+      await tester.pump();
+
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+      Actions.invoke(ctx, const FormatIntent(FormatKind.bold));
+      await tester.pump();
+
+      expect(editorController.body, 'plain **word**');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Ctrl+U untoggles from a bare caret inside the span (feedback round 3)', (
+      tester,
+    ) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'U2', body: '<u>under</u> rest'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = const TextSelection.collapsed(offset: 6);
+      state.widget.focusNode.requestFocus();
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyU);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(editorController.body, 'under rest');
+      await real(editorController.flush, tester);
+    });
   });
 
   group('feedback round 1', () {
