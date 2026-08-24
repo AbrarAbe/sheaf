@@ -48,7 +48,11 @@ class _ShellState extends State<Shell> {
 
   void _ensureEditor() {
     if (_editor == null && widget.controller.hasVault) {
-      _editor = EditorController(vault: widget.controller.repository);
+      _editor = EditorController(
+        vault: widget.controller.repository,
+        initialMode: widget.controller.settings.editorMode,
+        onModeChanged: widget.controller.setEditorMode,
+      );
     }
   }
 
@@ -106,6 +110,7 @@ class _ShellState extends State<Shell> {
           onZoomIn: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
           onZoomOut: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
           onZoomReset: () => controller.setZoom(1.0),
+          onCycleEditorMode: () => _editor?.cycleMode(),
         ),
         child: Shortcuts(
           shortcuts: sheafShortcuts(),

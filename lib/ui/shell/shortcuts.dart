@@ -44,6 +44,11 @@ class ZoomResetIntent extends Intent {
   const ZoomResetIntent();
 }
 
+/// Intent for cycling Normal → Markdown → Preview (`Ctrl+Shift+M`).
+class CycleEditorModeIntent extends Intent {
+  const CycleEditorModeIntent();
+}
+
 Map<Type, Action<Intent>> sheafActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
@@ -52,6 +57,7 @@ Map<Type, Action<Intent>> sheafActions({
   required VoidCallback onZoomIn,
   required VoidCallback onZoomOut,
   required VoidCallback onZoomReset,
+  required VoidCallback onCycleEditorMode,
 }) {
   return {
     CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
@@ -65,6 +71,9 @@ Map<Type, Action<Intent>> sheafActions({
     ZoomInIntent: CallbackAction<ZoomInIntent>(onInvoke: (intent) => onZoomIn()),
     ZoomOutIntent: CallbackAction<ZoomOutIntent>(onInvoke: (intent) => onZoomOut()),
     ZoomResetIntent: CallbackAction<ZoomResetIntent>(onInvoke: (intent) => onZoomReset()),
+    CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
+      onInvoke: (intent) => onCycleEditorMode(),
+    ),
   };
 }
 
@@ -81,4 +90,6 @@ Map<ShortcutActivator, Intent> sheafShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.minus, control: true): const ZoomOutIntent(),
   const SingleActivator(LogicalKeyboardKey.numpadSubtract, control: true): const ZoomOutIntent(),
   const SingleActivator(LogicalKeyboardKey.digit0, control: true): const ZoomResetIntent(),
+  const SingleActivator(LogicalKeyboardKey.keyM, control: true, shift: true):
+      const CycleEditorModeIntent(),
 };

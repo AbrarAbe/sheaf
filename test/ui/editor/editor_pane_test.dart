@@ -6,6 +6,7 @@ import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/editor_controller.dart';
 import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/editor/editor_pane.dart';
 import 'package:sheaf/ui/editor/markdown_preview.dart';
 
@@ -133,7 +134,7 @@ void main() {
 
     expect(find.byKey(const Key('editor-body')), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Preview'));
+    await tester.tap(find.byKey(const Key('mode-preview')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('editor-body')), findsNothing);
@@ -166,5 +167,67 @@ void main() {
     // Cancel the pending autosave timer; persistence of the link lands via
     // the debounced write covered in editor_controller_test.
     await tester.runAsync(editorController.flush);
+  });
+
+  group('editor modes (spec story 12)', () {
+    Future<void> openAndPump(WidgetTester tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Modes', body: '# Modes\nbody text'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+    }
+
+    testWidgets('normal mode edits with proportional type by default', (tester) async {
+      await openAndPump(tester);
+
+      expect(find.byKey(const Key('editor-body')), findsOneWidget);
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      expect(field.style?.fontFamily, isNot(contains('Spline Sans Mono')));
+    });
+
+    testWidgets('markdown segment switches to monospace source', (tester) async {
+      await openAndPump(tester);
+
+      await tester.tap(find.byKey(const Key('mode-markdown')));
+      await tester.pump();
+
+      expect(editorController.mode, EditorMode.markdown);
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      expect(field.style?.fontFamily, contains('SplineSansMono'));
+      // Still editable in markdown mode.
+      await tester.enterText(find.byKey(const Key('editor-body')), 'raw');
+      expect(editorController.body, 'raw');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('preview segment swaps to rendered output', (tester) async {
+      await openAndPump(tester);
+
+      await tester.tap(find.byKey(const Key('mode-preview')));
+      await tester.pump();
+
+      expect(editorController.mode, EditorMode.preview);
+      expect(find.byKey(const Key('editor-body')), findsNothing);
+      expect(find.byType(MarkdownPreview), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MarkdownPreview),
+          matching: find.text('Modes', findRichText: true),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('mode survives reopening the pane via controller state', (tester) async {
+      await openAndPump(tester);
+      await tester.tap(find.byKey(const Key('mode-preview')));
+      await tester.pump();
+
+      // A brand-new pane reading the same controller opens in preview too.
+      await pumpEditor(tester);
+      expect(editorController.mode, EditorMode.preview);
+    });
   });
 }

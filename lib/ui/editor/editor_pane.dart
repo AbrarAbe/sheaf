@@ -9,6 +9,7 @@ import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
 import '../../logic/image_link.dart';
 import '../../logic/search_controller.dart';
+import '../../models/settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
 import 'markdown_preview.dart';
@@ -99,7 +100,11 @@ class _Placeholder extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.keyboard_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                    Icon(
+                      Icons.keyboard_outlined,
+                      size: 14,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
@@ -138,7 +143,7 @@ class _EditorState extends State<_Editor> {
   late final TextEditingController _body;
   late final TextEditingController _title;
   String? _loadedPath;
-  bool _preview = false;
+  EditorMode? _syncedMode;
   bool _dragging = false;
 
   @override
@@ -162,6 +167,10 @@ class _EditorState extends State<_Editor> {
 
   void _syncFromController() {
     if (_loadedPath != widget.controller.current?.path) _load();
+    if (_syncedMode != widget.controller.mode) {
+      _syncedMode = widget.controller.mode;
+      if (mounted) setState(() {});
+    }
   }
 
   Future<void> _load() async {
@@ -231,7 +240,9 @@ class _EditorState extends State<_Editor> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final controller = widget.controller;
-    final quire = theme.extension<QuireColors>() ?? (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
+    final quire =
+        theme.extension<QuireColors>() ??
+        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
     final tags = extractTags(_body.text);
     final words = _body.text.trim().isEmpty ? 0 : _body.text.trim().split(RegExp(r'\s+')).length;
 
@@ -245,7 +256,9 @@ class _EditorState extends State<_Editor> {
             padding: const EdgeInsets.fromLTRB(24, 18, 16, 14),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerLowest,
-              border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
+              border: Border(
+                bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -290,31 +303,17 @@ class _EditorState extends State<_Editor> {
                       onTap: _insertImageFromPicker,
                       child: Padding(
                         padding: const EdgeInsets.all(8),
-                        child: Icon(Icons.image_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: _preview ? 'Edit' : 'Preview',
-                  child: Material(
-                    color: _preview ? theme.colorScheme.primary : theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(QuireRadius.s),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(QuireRadius.s),
-                      onTap: () => setState(() => _preview = !_preview),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
                         child: Icon(
-                          _preview ? Icons.edit_outlined : Icons.visibility_outlined,
+                          Icons.image_outlined,
                           size: 18,
-                          color: _preview ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                _ModeSwitch(mode: controller.mode, onSelected: controller.setMode),
               ],
             ),
           ),
@@ -324,7 +323,11 @@ class _EditorState extends State<_Editor> {
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 10),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerLowest,
-                border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3))),
+                border: Border(
+                  bottom: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
+                ),
               ),
               child: Wrap(
                 spacing: 6,
@@ -357,53 +360,66 @@ class _EditorState extends State<_Editor> {
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 680),
-                  child: _preview
-                      ? MarkdownPreview(body: _body.text, vaultRoot: controller.vaultRoot)
-                      : DropTarget(
-                          onDragDone: (details) => _insertDroppedImages(details.files),
-                          onDragEntered: (_) => setState(() => _dragging = true),
-                          onDragExited: (_) => setState(() => _dragging = false),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
-                            decoration: BoxDecoration(
-                              color: _dragging ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3) : Colors.transparent,
-                              borderRadius: BorderRadius.circular(QuireRadius.m),
-                              border: _dragging
-                                  ? Border.all(color: theme.colorScheme.primary, width: 1.6)
-                                  : Border.all(color: Colors.transparent),
-                            ),
-                            padding: const EdgeInsets.all(12),
-                            child: TextField(
-                              key: const Key('editor-body'),
-                              controller: _body,
-                              onChanged: controller.updateBody,
-                              maxLines: null,
-                              expands: true,
-                              textAlignVertical: TextAlignVertical.top,
-                              keyboardType: TextInputType.multiline,
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 16,
-                                height: 26 / 16,
-                                fontWeight: FontWeight.w400,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Take a note…  Type #tags, drag images, write in Markdown.',
-                                hintStyle: GoogleFonts.hankenGrotesk(
+                  child: switch (controller.mode) {
+                    EditorMode.preview => MarkdownPreview(
+                      body: _body.text,
+                      vaultRoot: controller.vaultRoot,
+                    ),
+                    _ => DropTarget(
+                      onDragDone: (details) => _insertDroppedImages(details.files),
+                      onDragEntered: (_) => setState(() => _dragging = true),
+                      onDragExited: (_) => setState(() => _dragging = false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 140),
+                        decoration: BoxDecoration(
+                          color: _dragging
+                              ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(QuireRadius.m),
+                          border: _dragging
+                              ? Border.all(color: theme.colorScheme.primary, width: 1.6)
+                              : Border.all(color: Colors.transparent),
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: TextField(
+                          key: const Key('editor-body'),
+                          controller: _body,
+                          onChanged: controller.updateBody,
+                          maxLines: null,
+                          expands: true,
+                          textAlignVertical: TextAlignVertical.top,
+                          keyboardType: TextInputType.multiline,
+                          style: controller.mode == EditorMode.markdown
+                              ? GoogleFonts.splineSansMono(
+                                  fontSize: 14.5,
+                                  height: 24 / 14.5,
+                                  fontWeight: FontWeight.w400,
+                                  color: theme.colorScheme.onSurface,
+                                )
+                              : GoogleFonts.hankenGrotesk(
                                   fontSize: 16,
                                   height: 26 / 16,
-                                  color: quire.textTertiary.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w400,
+                                  color: theme.colorScheme.onSurface,
                                 ),
-                                filled: false,
-                                border: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              cursorColor: theme.colorScheme.primary,
+                          decoration: InputDecoration(
+                            hintText: 'Take a note…  Type #tags, drag images, write in Markdown.',
+                            hintStyle: GoogleFonts.hankenGrotesk(
+                              fontSize: 16,
+                              height: 26 / 16,
+                              color: quire.textTertiary.withValues(alpha: 0.9),
                             ),
+                            filled: false,
+                            border: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
                           ),
+                          cursorColor: theme.colorScheme.primary,
                         ),
+                      ),
+                    ),
+                  },
                 ),
               ),
             ),
@@ -425,7 +441,9 @@ class _StatusFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final quire = theme.extension<QuireColors>() ?? (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
+    final quire =
+        theme.extension<QuireColors>() ??
+        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
     final mono = GoogleFonts.splineSansMono(
       fontSize: 12,
       letterSpacing: 0.2,
@@ -436,17 +454,26 @@ class _StatusFooter extends StatelessWidget {
       EditorStatus.clean => '',
       EditorStatus.dirty => 'unsaved · $words words',
       EditorStatus.saving => 'saving… · $words words',
-      EditorStatus.saved => 'saved ${clockLabel(controller.lastSavedAt ?? DateTime.now())} · $words words',
+      EditorStatus.saved =>
+        'saved ${clockLabel(controller.lastSavedAt ?? DateTime.now())} · $words words',
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
-        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5))),
+        border: Border(
+          top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.circle, size: 6, color: controller.status == EditorStatus.saved ? quire.hlGrowBase : theme.colorScheme.primary),
+          Icon(
+            Icons.circle,
+            size: 6,
+            color: controller.status == EditorStatus.saved
+                ? quire.hlGrowBase
+                : theme.colorScheme.primary,
+          ),
           const SizedBox(width: 8),
           Expanded(child: Text(status.isEmpty ? '$words words' : status, style: mono)),
           Text(
@@ -457,6 +484,82 @@ class _StatusFooter extends StatelessWidget {
               color: quire.textTertiary,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Normal / Markdown / Preview segmented control (spec story 12).
+class _ModeSwitch extends StatelessWidget {
+  const _ModeSwitch({required this.mode, required this.onSelected});
+
+  final EditorMode mode;
+  final ValueChanged<EditorMode> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget segment(EditorMode value, IconData icon, String label, String tooltip) {
+      final selected = mode == value;
+      return Tooltip(
+        message: tooltip,
+        child: Material(
+          color: selected ? theme.colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(QuireRadius.s),
+          child: InkWell(
+            key: Key('mode-${value.name}'),
+            borderRadius: BorderRadius.circular(QuireRadius.s),
+            onTap: () => onSelected(value),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 15,
+                    color: selected
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    label,
+                    style: GoogleFonts.hankenGrotesk(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: selected
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(QuireRadius.s + 3),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          segment(
+            EditorMode.normal,
+            Icons.notes_outlined,
+            'Normal',
+            'Word-like editing (Ctrl+Shift+M)',
+          ),
+          segment(EditorMode.markdown, Icons.code_outlined, 'Markdown', 'Raw markdown source'),
+          segment(EditorMode.preview, Icons.visibility_outlined, 'Preview', 'Rendered output'),
         ],
       ),
     );

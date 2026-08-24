@@ -106,4 +106,18 @@ void main() {
     }
     expect(controller.settings.zoomFactor, kZoomMax);
   });
+
+  testWidgets('Ctrl+Shift+M cycles the editor mode and persists it', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    final ctx = tester.element(find.byKey(const Key('pane-editor')));
+    expect(controller.settings.editorMode, EditorMode.normal);
+
+    Actions.invoke(ctx, const CycleEditorModeIntent());
+    await tester.pump();
+    expect(controller.settings.editorMode, EditorMode.markdown);
+
+    Actions.invoke(ctx, const CycleEditorModeIntent());
+    await tester.pump();
+    expect(controller.settings.editorMode, EditorMode.preview);
+  });
 }

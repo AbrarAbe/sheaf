@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/editor_controller.dart';
+import 'package:sheaf/models/settings.dart';
 
 void main() {
   late Directory tempDir;
@@ -113,5 +114,49 @@ void main() {
 
     expect((await vault.readNote(a.path)).body, 'one!');
     expect(controller.current?.path, b.path);
+  });
+
+  group('editor mode (spec story 12)', () {
+    test('defaults to normal and notifies only on real changes', () {
+      final controller = EditorController(vault: vault);
+      addTearDown(controller.dispose);
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+
+      expect(controller.mode, EditorMode.normal);
+      controller.setMode(EditorMode.markdown);
+      expect(controller.mode, EditorMode.markdown);
+      expect(notifications, 1);
+
+      controller.setMode(EditorMode.markdown);
+      expect(notifications, 1);
+    });
+
+    test('cycles normal → markdown → preview → normal', () {
+      final controller = EditorController(vault: vault);
+      addTearDown(controller.dispose);
+
+      expect(controller.mode, EditorMode.normal);
+      controller.cycleMode();
+      expect(controller.mode, EditorMode.markdown);
+      controller.cycleMode();
+      expect(controller.mode, EditorMode.preview);
+      controller.cycleMode();
+      expect(controller.mode, EditorMode.normal);
+    });
+
+    test('mode change reaches the persistence callback', () {
+      final seen = <EditorMode>[];
+      final controller = EditorController(
+        vault: vault,
+        initialMode: EditorMode.preview,
+        onModeChanged: seen.add,
+      );
+      addTearDown(controller.dispose);
+
+      expect(controller.mode, EditorMode.preview);
+      controller.setMode(EditorMode.normal);
+      expect(seen, [EditorMode.normal]);
+    });
   });
 }

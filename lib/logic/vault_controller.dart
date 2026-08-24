@@ -127,6 +127,13 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persists the editor's opening surface (spec story 12).
+  Future<void> setEditorMode(EditorMode mode) async {
+    if (mode == _settings.editorMode) return;
+    _settings = _settings.copyWith(editorMode: mode);
+    await _settingsRepo.save(_settings);
+  }
+
   Future<Note> createNote({required String title, String? body, String? folder}) async {
     final note = await _requireVault().createNote(
       title: title,
