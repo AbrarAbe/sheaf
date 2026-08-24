@@ -32,7 +32,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 
 ### Phase 1 — Foundations
 
-- [ ] **Task 1: Settings schema v2**
+- [x] **Task 1: Settings schema v2**
   Add to `AppSettings`: `editorMode`, `zoomFactor`, `editorFontSize`,
   `fontFamily`/`fontPath`, `themeWorld`; keep `theme` (mode). Tolerant
   `fromJson` (old JSON → defaults; unknown world → quire).
@@ -41,7 +41,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `lib/models/settings.dart`, `lib/data/settings_repository_test.dart`
   - Scope: S
 
-- [ ] **Task 2: Zoom engine + global wiring**
+- [x] **Task 2: Zoom engine + global wiring**
   `ZoomController` (factor get/set/step/reset, clamp 0.5–2.0 step .1,
   persist via controller). SheafApp wraps home in `MediaQuery(textScaler)`
   override. Shortcuts `Ctrl+=`, `Ctrl+-`, `Ctrl+0`.
@@ -51,7 +51,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
     `lib/app.dart`, `lib/ui/shell/shortcuts.dart`, tests.
   - Scope: M
 
-- [ ] **Task 3: Formatting engine (pure logic)**
+- [x] **Task 3: Formatting engine (pure logic)**
   `lib/logic/formatting.dart`: `toggleWrap(text, selection, marker)` handling
   selected text, collapsed caret, and already-wrapped unwrap. Markers:
   `**`, `*`, `<u>`…`</u>`.
@@ -60,7 +60,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: new logic file + test.
   - Scope: S
 
-- [ ] **Task 4: Preview renders `<u>` only**
+- [x] **Task 4: Preview renders `<u>` only**
   Minimal inline pass converting `<u>x</u>` → underlined span; all other
   `<` stays literal.
   - Acceptance: `<u>hi</u>` underlines; `<script>` shows literally.
@@ -70,7 +70,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 
 ### Phase 2 — Editor modes & keys
 
-- [ ] **Task 5: Three editor modes**
+- [x] **Task 5: Three editor modes**
   `EditorMode {normal, markdown, preview}` on `EditorController` (persisted);
   segmented control in header replaces preview toggle; Normal = current
   proportional field + formatting enabled; Markdown = Spline Sans Mono raw;
@@ -82,7 +82,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
     `shortcuts.dart`, `shell.dart`, tests.
   - Scope: M
 
-- [ ] **Task 6: Formatting keybindings in editor**
+- [x] **Task 6: Formatting keybindings in editor**
   Editor-scoped `Shortcuts/Actions`: Ctrl+B/I/U call formatting engine on the
   live body controller (Normal mode only); `Ctrl+Shift+C/V` copy/paste
   terminal-style on focused editable.
@@ -92,7 +92,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `editor_pane.dart`, tests.
   - Scope: M (depends 3, 5)
 
-- [ ] **Task 7: List continuation on Enter**
+- [x] **Task 7: List continuation on Enter**
   Pure logic `continueList(text, caretOffset)`: carries `- `/`* `/`- [ ] `
   markers, increments ordered numbers, preserves indentation; empty-marker
   line clears instead. Wired into body field's newline handling in editing
@@ -104,7 +104,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
     tests.
   - Scope: S (depends 5)
 
-- [ ] **Task 8: Ctrl+Tab note cycling**
+- [x] **Task 8: Ctrl+Tab note cycling**
   Shell action selects next/prev note in displayed list order (wraps);
   disabled when list empty.
   - Acceptance: order matches visible list incl. pinned group after Task 10.
@@ -112,7 +112,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `shortcuts.dart`, `shell.dart`, tests.
   - Scope: S
 
-- [ ] **Task 9: Find-in-note bar**
+- [x] **Task 9: Find-in-note bar**
   `FindController` (pure scan → match offsets) + find bar widget docked over
   editor header. Ctrl+F opens (pre-fill selection), Enter/Shift+Enter/buttons
   traverse with caret jump + counter, Esc closes restoring focus.
@@ -152,7 +152,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `shell.dart`, `pubspec.yaml`, `main.dart`, tests.
   - Scope: M
 
-### Checkpoint A (after Task 9): modes+keys usable end-to-end; analyze/test green.
+### Checkpoint A (after Task 9): ✅ REACHED 2026-08-24 — modes+keys usable end-to-end; analyze clean, 194 tests green.
 ### Checkpoint B (after Task 12): pane/focus/fullscreen verified on running app.
 
 ### Phase 4 — Appearance & audit polish
