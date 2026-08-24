@@ -29,11 +29,12 @@ changes how the app looks (worlds, zoom, type size, typeface).
 
 ### User stories — v0.2
 
-10. **Formatting keys** — While editing (Normal or Markdown mode):
+10. **Formatting keys** — While editing (either editing mode):
     `Ctrl+B` toggles `**bold**`, `Ctrl+I` toggles `*italic*`, `Ctrl+U` toggles
     `<u>underline</u>` around the selection — wrapping when there is a
     selection, inserting an empty pair and placing the caret inside when not;
-    invoking on an already-wrapped selection unwraps it. Terminal-style
+    invoking on any text already inside a wrapped span (exact selection,
+    partial selection, or bare caret inside) unwraps that span. Terminal-style
     `Ctrl+Shift+C` / `Ctrl+Shift+V` copy/paste the focused editor selection
     (plain `Ctrl+C/V/X` keep working natively). Preview renders `<u>`
     underlined; all other raw HTML stays literal.
@@ -43,11 +44,14 @@ changes how the app looks (worlds, zoom, type size, typeface).
     zoom level persists across restarts and scales text everywhere
     (list, sidebar, editor, preview) — icons and layout metrics are unaffected.
 12. **Editor modes** — Three-way switch (segmented control in the editor
-    header, cycled by `Ctrl+Shift+M`): **Normal** — proportional type,
-    word-like editing, formatting keys active; **Markdown** — monospace source
-    view, formatting keys inert (raw text only); **Preview** — rendered
-    read-only output. Autosave behaves identically in all modes. The last-used
-    mode persists as the opening mode for the next session.
+    header, cycled by `Ctrl+Shift+M`). Both editing modes share the same
+    buffer and the same keyboard behaviors (formatting, list continuation,
+    find): **Normal** — word-like reading surface: written formatting
+    *renders live* (bold looks bold, italics slant, `<u>` underlines, headings
+    scale) with markers dimmed rather than hidden, proportional type;
+    **Markdown** — raw source view in monospace, no styling; **Preview** —
+    rendered read-only output. Autosave behaves identically in all modes.
+    The last-used mode persists as the opening mode for the next session.
 13. **Pinning** — Notes can be pinned from the row's hover pin button (today a
     dead stub) and the note context menu. Pinned notes sort into a **Pinned**
     group above the rest of the list with a filled-pin indicator; unpinning
@@ -100,9 +104,10 @@ Google Fonts as offline assets.
 
 1. v0.1 assumptions carry over (files-on-disk vault, source-mode editor +
    preview, inline tags, H1/filename titles, Linux-only).
-2. **Normal vs Markdown distinction**: Normal is "word-like" — proportional
-   font, smart formatting keys; Markdown is the raw source view — monospace,
-   no key magic. Both are plain-text fields over the same buffer (no WYSIWYG).
+2. **Normal vs Markdown distinction**: same buffer, same keybindings;
+    Normal *renders* formatting live (styled spans, dimmed markers — not
+    full WYSIWYG: markers stay selectable/editable), Markdown shows the raw
+    monospace source. True marker-hiding WYSIWYG stays deferred.
 3. **Underline** has no native Markdown; we use `<u></u>` and teach the
    preview's renderer that one tag (minimal inline-HTML support, nothing else).
 4. **Pin storage** adds `<vault>/.sheaf/meta.json` (JSON map of path → flags).

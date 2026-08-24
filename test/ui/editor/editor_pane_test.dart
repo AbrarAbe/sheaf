@@ -326,7 +326,7 @@ void main() {
       await real(editorController.flush, tester);
     });
 
-    testWidgets('formatting is inert in markdown mode', (tester) async {
+    testWidgets('formatting keys work in markdown mode too (feedback F2)', (tester) async {
       final note = await real(
         () => vaultController.createNote(title: 'Raw', body: 'plain'),
         tester,
@@ -335,11 +335,78 @@ void main() {
       editorController.setMode(EditorMode.markdown);
       await pumpEditor(tester);
 
+      selectAll(tester);
+      await tester.pump();
       final ctx = tester.element(find.byKey(const Key('editor-body')));
       Actions.invoke(ctx, const FormatIntent(FormatKind.bold));
       await tester.pump();
 
-      expect(editorController.body, 'plain');
+      expect(editorController.body, '**plain**');
+      await real(editorController.flush, tester);
+    });
+  });
+
+  group('feedback round 1', () {
+    testWidgets('F3: rendered output hugs the top of the pane', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Top', body: '# Topline\n\nshort body'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+      await tester.tap(find.byKey(const Key('mode-preview')));
+      await tester.pumpAndSettle();
+
+      final heading = find
+          .descendant(
+            of: find.byType(MarkdownPreview),
+            matching: find.text('Topline', findRichText: true),
+          )
+          .first;
+      final box = tester.renderObject<RenderBox>(heading);
+      // Vertically centered output would sit near ~350 px in this harness.
+      expect(box.localToGlobal(Offset.zero).dy, lessThan(120));
+    });
+
+    testWidgets('F4a: Normal mode renders bold live with dimmed markers', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'HL', body: '**loud** word'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      final spans = _bodySpans(tester);
+      expect(
+        spans.any(
+          (ts) => (ts.text ?? '').contains('loud') && ts.style?.fontWeight == FontWeight.w700,
+        ),
+        isTrue,
+        reason: 'inner bold text should carry a bold style',
+      );
+      expect(
+        spans.any((ts) => ts.text == '**' && (ts.style?.color?.a ?? 1) < 1),
+        isTrue,
+        reason: 'markers should be dimmed',
+      );
+    });
+
+    testWidgets('F4b: Markdown mode shows unstyled source', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'HM', body: '**loud** word'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      editorController.setMode(EditorMode.markdown);
+      await pumpEditor(tester);
+
+      final spans = _bodySpans(tester);
+      expect(
+        spans.any(
+          (ts) => (ts.text ?? '').contains('loud') && ts.style?.fontWeight == FontWeight.w700,
+        ),
+        isFalse,
+      );
     });
   });
 
@@ -404,4 +471,22 @@ void main() {
       expect(editorController.mode, EditorMode.preview);
     });
   });
+}
+
+/// Collects every TextSpan the body field paints (via its RenderEditable).
+List<TextSpan> _bodySpans(WidgetTester tester) {
+  final out = <TextSpan>[];
+  void walk(InlineSpan span) {
+    if (span is TextSpan) {
+      out.add(span);
+      span.children?.forEach(walk);
+    }
+  }
+
+  final state = tester.state<EditableTextState>(
+    find.descendant(of: find.byKey(const Key('editor-body')), matching: find.byType(EditableText)),
+  );
+  final root = state.renderEditable.text;
+  if (root != null) walk(root);
+  return out;
 }

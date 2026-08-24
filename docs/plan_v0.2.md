@@ -153,6 +153,17 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Scope: M
 
 ### Checkpoint A (after Task 9): ✅ REACHED 2026-08-24 — modes+keys usable end-to-end; analyze clean, 194 tests green.
+
+### Feedback round 1 (2026-08-24, post-checkpoint)
+
+- [x] **F1: toggle unwrap anywhere** — Ctrl+B/I/U unwraps when the caret or
+  any partial selection sits inside a wrapped span (was: exact selection only).
+- [x] **F2: formatting keys in Markdown mode too** — both editing modes share
+  keybindings; modes differ visually only.
+- [x] **F3: preview top-aligned** — rendered output was vertically centered
+  by the shared Center wrapper; align top-left (horizontal centering kept).
+- [x] **F4: Normal mode renders formatting live** — styled spans via a
+  TextEditingController.buildTextSpan highlighter; markers dimmed, not hidden.
 ### Checkpoint B (after Task 12): pane/focus/fullscreen verified on running app.
 
 ### Phase 4 — Appearance & audit polish

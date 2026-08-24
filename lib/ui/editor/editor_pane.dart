@@ -16,6 +16,7 @@ import '../../logic/search_controller.dart';
 import '../../models/settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
+import 'highlighting_controller.dart';
 import 'markdown_preview.dart';
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
@@ -144,7 +145,7 @@ class _Editor extends StatefulWidget {
 }
 
 class _EditorState extends State<_Editor> {
-  late final TextEditingController _body;
+  late final HighlightingController _body;
   late final TextEditingController _title;
   late final FocusNode _bodyFocus;
   String? _loadedPath;
@@ -160,7 +161,8 @@ class _EditorState extends State<_Editor> {
   void initState() {
     super.initState();
     widget.controller.addListener(_syncFromController);
-    _body = TextEditingController();
+    _body = HighlightingController();
+    _body.highlight = widget.controller.mode == EditorMode.normal;
     _title = TextEditingController();
     _bodyFocus = FocusNode();
     _load();
@@ -180,6 +182,7 @@ class _EditorState extends State<_Editor> {
     if (_loadedPath != widget.controller.current?.path) _load();
     if (_syncedMode != widget.controller.mode) {
       _syncedMode = widget.controller.mode;
+      _body.highlight = _syncedMode == EditorMode.normal;
       if (mounted) setState(() {});
     }
   }
@@ -494,7 +497,10 @@ class _EditorState extends State<_Editor> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              child: Center(
+              // Top-aligned (feedback F3): the preview's scroll view shrink-
+              // wraps its content, and Center would float it mid-pane.
+              child: Align(
+                alignment: Alignment.topCenter,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 680),
                   child: switch (controller.mode) {
