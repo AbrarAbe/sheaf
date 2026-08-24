@@ -111,6 +111,7 @@ class _ShellState extends State<Shell> {
           onZoomOut: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
           onZoomReset: () => controller.setZoom(1.0),
           onCycleEditorMode: () => _editor?.cycleMode(),
+          onCycleNote: _cycleNote,
         ),
         child: Shortcuts(
           shortcuts: sheafShortcuts(),
@@ -175,6 +176,22 @@ class _ShellState extends State<Shell> {
     final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
     if (note != null) controller.selectNote(note);
     return note;
+  }
+
+  /// Moves the selection through the visible list order, wrapping at the
+  /// ends (story 11). With nothing selected, forward picks the first and
+  /// backward picks the last note.
+  void _cycleNote(bool forward) {
+    final controller = widget.controller;
+    final visible = controller.visibleNotes.toList(growable: false);
+    if (visible.isEmpty) return;
+
+    final current = controller.selectedNote;
+    final index = current == null ? -1 : visible.indexWhere((n) => n.path == current.path);
+    final step = forward ? 1 : -1;
+    // +visible.length keeps negative indexes (nothing selected) in range.
+    final next = visible[(index + step + visible.length) % visible.length];
+    controller.selectNote(next);
   }
 
   /// Deletes the selected note and offers an undo toast backed by trash.

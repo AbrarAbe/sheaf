@@ -120,4 +120,32 @@ void main() {
     await tester.pump();
     expect(controller.settings.editorMode, EditorMode.preview);
   });
+
+  testWidgets('note intents walk visible notes and wrap at the ends', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    await tester.runAsync(() => controller.createNote(title: 'Alpha'));
+    await tester.runAsync(() => controller.createNote(title: 'Beta'));
+    await tester.runAsync(() => controller.createNote(title: 'Gamma'));
+    await tester.pump();
+    // List renders newest-first: Gamma, Beta, Alpha.
+
+    final ctx = tester.element(find.byKey(const Key('pane-editor')));
+    String? titles() => controller.selectedNote?.title;
+
+    Actions.invoke(ctx, const CycleNoteIntent(forward: true)); // nothing → first
+    await tester.pump();
+    expect(titles(), 'Gamma');
+
+    Actions.invoke(ctx, const CycleNoteIntent(forward: true));
+    await tester.pump();
+    expect(titles(), 'Beta');
+
+    Actions.invoke(ctx, const CycleNoteIntent(forward: false)); // back to top
+    await tester.pump();
+    expect(titles(), 'Gamma');
+
+    Actions.invoke(ctx, const CycleNoteIntent(forward: false)); // wraps to last
+    await tester.pump();
+    expect(titles(), 'Alpha');
+  });
 }

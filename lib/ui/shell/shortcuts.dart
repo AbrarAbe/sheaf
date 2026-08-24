@@ -49,6 +49,14 @@ class CycleEditorModeIntent extends Intent {
   const CycleEditorModeIntent();
 }
 
+/// Intent to select the next ([forward]) or previous note in list order
+/// (`Ctrl+Tab` / `Ctrl+Shift+Tab`).
+class CycleNoteIntent extends Intent {
+  const CycleNoteIntent({required this.forward});
+
+  final bool forward;
+}
+
 Map<Type, Action<Intent>> sheafActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
@@ -58,6 +66,7 @@ Map<Type, Action<Intent>> sheafActions({
   required VoidCallback onZoomOut,
   required VoidCallback onZoomReset,
   required VoidCallback onCycleEditorMode,
+  required ValueChanged<bool> onCycleNote,
 }) {
   return {
     CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
@@ -73,6 +82,9 @@ Map<Type, Action<Intent>> sheafActions({
     ZoomResetIntent: CallbackAction<ZoomResetIntent>(onInvoke: (intent) => onZoomReset()),
     CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
       onInvoke: (intent) => onCycleEditorMode(),
+    ),
+    CycleNoteIntent: CallbackAction<CycleNoteIntent>(
+      onInvoke: (intent) => onCycleNote(intent.forward),
     ),
   };
 }
@@ -92,4 +104,10 @@ Map<ShortcutActivator, Intent> sheafShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.digit0, control: true): const ZoomResetIntent(),
   const SingleActivator(LogicalKeyboardKey.keyM, control: true, shift: true):
       const CycleEditorModeIntent(),
+  const SingleActivator(LogicalKeyboardKey.tab, control: true): const CycleNoteIntent(
+    forward: true,
+  ),
+  const SingleActivator(LogicalKeyboardKey.tab, control: true, shift: true): const CycleNoteIntent(
+    forward: false,
+  ),
 };
