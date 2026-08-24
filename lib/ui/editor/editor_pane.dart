@@ -10,6 +10,7 @@ import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
 import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
+import '../../logic/list_continuation.dart';
 import '../../logic/search_controller.dart';
 import '../../models/settings.dart';
 import '../../theme/quire_colors.dart';
@@ -178,6 +179,8 @@ class _EditorState extends State<_Editor> {
   /// Key map for the editing surfaces. Formatting keys are bound only in
   /// Normal mode (story 12: Markdown is raw source, keys inert).
   Map<ShortcutActivator, Intent> _editShortcuts() => {
+    const SingleActivator(LogicalKeyboardKey.enter): const ContinueListIntent(),
+    const SingleActivator(LogicalKeyboardKey.numpadEnter): const ContinueListIntent(),
     const SingleActivator(LogicalKeyboardKey.keyC, control: true, shift: true):
         CopySelectionTextIntent.copy,
     const SingleActivator(LogicalKeyboardKey.keyV, control: true, shift: true):
@@ -210,6 +213,28 @@ class _EditorState extends State<_Editor> {
       selection: TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd),
     );
     widget.controller.updateBody(result.text);
+  }
+
+  /// Enter handler: continues markdown lists (story 15); outside lists a
+  /// plain newline is inserted so normal typing is unaffected.
+  void _handleEnter() {
+    final selection = _body.selection;
+    var caret = selection.isValid ? selection.baseOffset : -1;
+    if (caret < 0 || caret > _body.text.length) caret = _body.text.length;
+
+    final result = continueList(text: _body.text, caret: caret);
+    if (result != null) {
+      _body.value = TextEditingValue(
+        text: result.text,
+        selection: TextSelection.collapsed(offset: result.selStart),
+      );
+    } else {
+      _body.value = TextEditingValue(
+        text: _body.text.replaceRange(caret, caret, '\n'),
+        selection: TextSelection.collapsed(offset: caret + 1),
+      );
+    }
+    widget.controller.updateBody(_body.text);
   }
 
   Future<void> _load() async {
@@ -411,6 +436,9 @@ class _EditorState extends State<_Editor> {
                           FormatIntent: CallbackAction<FormatIntent>(
                             onInvoke: (intent) => _applyFormat(intent),
                           ),
+                          ContinueListIntent: CallbackAction<ContinueListIntent>(
+                            onInvoke: (intent) => _handleEnter(),
+                          ),
                         },
                         child: DropTarget(
                           onDragDone: (details) => _insertDroppedImages(details.files),
@@ -545,6 +573,11 @@ class FormatIntent extends Intent {
   const FormatIntent(this.kind);
 
   final FormatKind kind;
+}
+
+/// Enter pressed inside an editing surface; handled as list continuation.
+class ContinueListIntent extends Intent {
+  const ContinueListIntent();
 }
 
 /// Normal / Markdown / Preview segmented control (spec story 12).

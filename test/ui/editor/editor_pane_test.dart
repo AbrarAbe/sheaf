@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
@@ -168,6 +169,36 @@ void main() {
     // Cancel the pending autosave timer; persistence of the link lands via
     // the debounced write covered in editor_controller_test.
     await tester.runAsync(editorController.flush);
+  });
+
+  group('list continuation (spec story 15)', () {
+    testWidgets('Enter continues a dash list', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'L', body: '- item'), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      await tester.enterText(find.byKey(const Key('editor-body')), '- item');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+
+      expect(editorController.body, '- item\n- ');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Enter on prose inserts a plain newline', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'P', body: ''), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      await tester.enterText(find.byKey(const Key('editor-body')), 'prose line');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+
+      expect(editorController.body, 'prose line\n');
+      await real(editorController.flush, tester);
+    });
   });
 
   group('formatting keys (spec story 10)', () {
