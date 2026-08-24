@@ -70,6 +70,10 @@ FormatEdit _toggleAroundSelection(String text, int start, int stop, String open,
     return FormatEdit(unwrapped, start, start + innerLength);
   }
 
+  // Selection sits (even partially) inside an existing span → unwrap it.
+  final enclosing = _enclosingSpan(text, start, stop, open, end);
+  if (enclosing != null) return enclosing;
+
   final wrapped = '${text.substring(0, start)}$open$selected$end${text.substring(stop)}';
   return FormatEdit(wrapped, start + open.length, stop + open.length);
 }
@@ -84,6 +88,36 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
     return FormatEdit(removed, at, at);
   }
 
+  // Caret rests inside an existing span → unwrap that span.
+  final enclosing = _enclosingSpan(text, caret, caret, open, end);
+  if (enclosing != null) return enclosing;
+
   final inserted = '$before$open$end$after';
   return FormatEdit(inserted, caret + open.length, caret + open.length);
+}
+
+/// Unwraps the smallest `<open>…<end>` span whose inner content contains the
+/// given range, remapping the selection into unwrapped coordinates. Null when
+/// no single span encloses the range.
+FormatEdit? _enclosingSpan(String text, int start, int stop, String open, String end) {
+  final pattern = RegExp('${RegExp.escape(open)}(.*?)${RegExp.escape(end)}');
+  Match? best;
+  for (final m in pattern.allMatches(text)) {
+    final innerStart = m.start + open.length;
+    final innerEnd = innerStart + m.group(1)!.length;
+    if (start >= innerStart && stop <= innerEnd) {
+      if (best == null || m.group(1)!.length < best.group(1)!.length) best = m;
+    }
+  }
+  if (best == null) return null;
+
+  final innerStart = best.start + open.length;
+  final innerEnd = innerStart + best.group(1)!.length;
+  final unwrapped = text
+      .replaceRange(best.end - end.length, best.end, '')
+      .replaceRange(best.start, innerStart, '');
+
+  int map(int offset) =>
+      offset >= innerEnd ? offset - open.length - end.length : offset - open.length;
+  return FormatEdit(unwrapped, map(start), map(stop));
 }
