@@ -164,6 +164,21 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   by the shared Center wrapper; align top-left (horizontal centering kept).
 - [x] **F4: Normal mode renders formatting live** — styled spans via a
   TextEditingController.buildTextSpan highlighter; markers dimmed, not hidden.
+
+### Feedback round 2 (2026-08-24)
+
+- [ ] **F5: hide markers until touched** — in Normal view `#`/`*`/`` ` ``/`<u>`
+  markers render zero-width while the caret is elsewhere; touching the span
+  reveals them dimmed (upgrades F4 to true live-preview).
+- [ ] **F6: Ctrl+D selects the word at the caret** (editing modes).
+- [ ] **F7: Del rescoped** — global note-delete binding removed; Del edits
+  text when an editor holds focus, deletes the note only from the list pane.
+- [ ] **F8: undo toast → bottom-right corner toast** (moved here per request).
+  Research: `delightful_toast` hardcodes full-width bars (left:0/right:0,
+  top/bottom only) and cannot honor bottom-right placement. Options:
+  (a) hand-rolled Quire-styled overlay toast, no new dep — recommended;
+  (b) `toastification` package (supports Alignment.bottomRight) — needs
+  dependency approval. Awaiting pick before implementing.
 ### Checkpoint B (after Task 12): pane/focus/fullscreen verified on running app.
 
 ### Phase 4 — Appearance & audit polish

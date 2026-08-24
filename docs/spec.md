@@ -39,19 +39,23 @@ changes how the app looks (worlds, zoom, type size, typeface).
     (plain `Ctrl+C/V/X` keep working natively). Preview renders `<u>`
     underlined; all other raw HTML stays literal.
 11. **Navigation & zoom keys** — `Ctrl+Tab` / `Ctrl+Shift+Tab` select the
-    next/previous note in the current list order. `Ctrl+=` / `Ctrl+-` step the
-    app-wide text scale by 10% within 50%–200%, `Ctrl+0` resets to 100%. The
-    zoom level persists across restarts and scales text everywhere
+    next/previous note in the current list order. `Ctrl+D` selects the word
+    at the caret (VS Code-style) in either editing mode. `Ctrl+=` / `Ctrl+-`
+    step the app-wide text scale by 10% within 50%–200%, `Ctrl+0` resets to
+    100%. The zoom level persists across restarts and scales text everywhere
     (list, sidebar, editor, preview) — icons and layout metrics are unaffected.
+    `Delete`/`Backspace` always edit text when an editor holds focus; the
+    delete-selected-note binding fires only while the note list has focus.
 12. **Editor modes** — Three-way switch (segmented control in the editor
     header, cycled by `Ctrl+Shift+M`). Both editing modes share the same
     buffer and the same keyboard behaviors (formatting, list continuation,
     find): **Normal** — word-like reading surface: written formatting
-    *renders live* (bold looks bold, italics slant, `<u>` underlines, headings
-    scale) with markers dimmed rather than hidden, proportional type;
-    **Markdown** — raw source view in monospace, no styling; **Preview** —
-    rendered read-only output. Autosave behaves identically in all modes.
-    The last-used mode persists as the opening mode for the next session.
+    *renders live* with **markers hidden until the caret touches that span**
+    (Obsidian-style live preview — touch reveals them dimmed); proportional
+    type. **Markdown** — raw source view in monospace, every marker visible;
+    **Preview** — rendered read-only output. Autosave behaves identically in
+    all modes. The last-used mode persists as the opening mode for the next
+    session.
 13. **Pinning** — Notes can be pinned from the row's hover pin button (today a
     dead stub) and the note context menu. Pinned notes sort into a **Pinned**
     group above the rest of the list with a filled-pin indicator; unpinning
