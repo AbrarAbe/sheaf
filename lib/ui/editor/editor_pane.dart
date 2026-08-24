@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 
 import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
+import '../../logic/find_controller.dart';
 import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
 import '../../logic/list_continuation.dart';
@@ -145,9 +146,15 @@ class _Editor extends StatefulWidget {
 class _EditorState extends State<_Editor> {
   late final TextEditingController _body;
   late final TextEditingController _title;
+  late final FocusNode _bodyFocus;
   String? _loadedPath;
   EditorMode? _syncedMode;
   bool _dragging = false;
+  bool _findOpen = false;
+  TextEditingController? _findCtrl;
+  List<int> _matches = [];
+  int _matchIndex = -1;
+  String _lastQuery = '';
 
   @override
   void initState() {
@@ -155,6 +162,7 @@ class _EditorState extends State<_Editor> {
     widget.controller.addListener(_syncFromController);
     _body = TextEditingController();
     _title = TextEditingController();
+    _bodyFocus = FocusNode();
     _load();
   }
 
@@ -181,6 +189,7 @@ class _EditorState extends State<_Editor> {
   Map<ShortcutActivator, Intent> _editShortcuts() => {
     const SingleActivator(LogicalKeyboardKey.enter): const ContinueListIntent(),
     const SingleActivator(LogicalKeyboardKey.numpadEnter): const ContinueListIntent(),
+    const SingleActivator(LogicalKeyboardKey.keyF, control: true): const OpenFindIntent(),
     const SingleActivator(LogicalKeyboardKey.keyC, control: true, shift: true):
         CopySelectionTextIntent.copy,
     const SingleActivator(LogicalKeyboardKey.keyV, control: true, shift: true):
@@ -237,6 +246,57 @@ class _EditorState extends State<_Editor> {
     widget.controller.updateBody(_body.text);
   }
 
+  // --- Find in note (spec story 14) ---------------------------------------
+
+  void _openFind() {
+    final selection = _body.selection;
+    var prefill = '';
+    if (selection.isValid && selection.start >= 0 && selection.end > selection.start) {
+      prefill = _body.text.substring(selection.start, selection.end);
+    }
+    _findCtrl?.dispose();
+    _findCtrl = TextEditingController(text: prefill);
+    setState(() => _findOpen = true);
+    _runFind(prefill);
+  }
+
+  void _closeFind() {
+    _findCtrl?.dispose();
+    _findCtrl = null;
+    setState(() => _findOpen = false);
+    _bodyFocus.requestFocus();
+  }
+
+  void _runFind(String query) {
+    _lastQuery = query.trim();
+    _matches = matchOffsets(_body.text, _lastQuery);
+    _matchIndex = _matches.isEmpty ? -1 : 0;
+    _jumpToCurrentMatch();
+    if (mounted) setState(() {});
+  }
+
+  void _nextMatch() => _stepMatch(1);
+
+  void _prevMatch() => _stepMatch(-1);
+
+  void _stepMatch(int step) {
+    if (_matches.isEmpty) return;
+    _matchIndex = (_matchIndex + step) % _matches.length;
+    _jumpToCurrentMatch();
+    if (mounted) setState(() {});
+  }
+
+  void _jumpToCurrentMatch() {
+    if (_matchIndex < 0 || _matchIndex >= _matches.length) return;
+    final start = _matches[_matchIndex];
+    _body.value = TextEditingValue(
+      text: _body.text,
+      selection: TextSelection(baseOffset: start, extentOffset: start + _lastQuery.length),
+    );
+  }
+
+  String get _counterLabel => _matches.isEmpty ? '0/0' : '${_matchIndex + 1}/${_matches.length}';
+
   Future<void> _load() async {
     final note = widget.controller.current;
     if (note == null || note.path == _loadedPath) return;
@@ -251,6 +311,8 @@ class _EditorState extends State<_Editor> {
     widget.controller.removeListener(_syncFromController);
     _body.dispose();
     _title.dispose();
+    _bodyFocus.dispose();
+    _findCtrl?.dispose();
     super.dispose();
   }
 
@@ -381,6 +443,17 @@ class _EditorState extends State<_Editor> {
               ],
             ),
           ),
+          // Find bar (story 14)
+          if (_findOpen && _findCtrl != null)
+            _FindBar(
+              controller: _findCtrl!,
+              counter: _counterLabel,
+              hasMatches: _matches.isNotEmpty,
+              onChanged: _runFind,
+              onNext: _nextMatch,
+              onPrev: _prevMatch,
+              onClose: _closeFind,
+            ),
           // Tag chips: highlighter washes
           if (tags.isNotEmpty)
             Container(
@@ -439,6 +512,9 @@ class _EditorState extends State<_Editor> {
                           ContinueListIntent: CallbackAction<ContinueListIntent>(
                             onInvoke: (intent) => _handleEnter(),
                           ),
+                          OpenFindIntent: CallbackAction<OpenFindIntent>(
+                            onInvoke: (intent) => _openFind(),
+                          ),
                         },
                         child: DropTarget(
                           onDragDone: (details) => _insertDroppedImages(details.files),
@@ -459,6 +535,7 @@ class _EditorState extends State<_Editor> {
                             child: TextField(
                               key: const Key('editor-body'),
                               controller: _body,
+                              focusNode: _bodyFocus,
                               onChanged: controller.updateBody,
                               maxLines: null,
                               expands: true,
@@ -578,6 +655,137 @@ class FormatIntent extends Intent {
 /// Enter pressed inside an editing surface; handled as list continuation.
 class ContinueListIntent extends Intent {
   const ContinueListIntent();
+}
+
+/// Ctrl+F — open the find-in-note bar.
+class OpenFindIntent extends Intent {
+  const OpenFindIntent();
+}
+
+/// Enter in the find bar — jump to the next match.
+class FindNextIntent extends Intent {
+  const FindNextIntent();
+}
+
+/// Shift+Enter in the find bar — jump to the previous match.
+class FindPrevIntent extends Intent {
+  const FindPrevIntent();
+}
+
+/// Escape in the find bar — close it and restore editor focus.
+class CloseFindIntent extends Intent {
+  const CloseFindIntent();
+}
+
+/// Slim query bar docked under the editor header: live count, prev/next,
+/// Esc to close (spec story 14).
+class _FindBar extends StatelessWidget {
+  const _FindBar({
+    required this.controller,
+    required this.counter,
+    required this.hasMatches,
+    required this.onChanged,
+    required this.onNext,
+    required this.onPrev,
+    required this.onClose,
+  });
+
+  final TextEditingController controller;
+  final String counter;
+  final bool hasMatches;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onNext;
+  final VoidCallback onPrev;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Shortcuts(
+      shortcuts: const {
+        SingleActivator(LogicalKeyboardKey.enter): FindNextIntent(),
+        SingleActivator(LogicalKeyboardKey.numpadEnter): FindNextIntent(),
+        SingleActivator(LogicalKeyboardKey.enter, shift: true): FindPrevIntent(),
+        SingleActivator(LogicalKeyboardKey.escape): CloseFindIntent(),
+      },
+      child: Actions(
+        actions: {
+          FindNextIntent: CallbackAction<FindNextIntent>(onInvoke: (_) => onNext()),
+          FindPrevIntent: CallbackAction<FindPrevIntent>(onInvoke: (_) => onPrev()),
+          CloseFindIntent: CallbackAction<CloseFindIntent>(onInvoke: (_) => onClose()),
+        },
+        child: Container(
+          key: const Key('find-bar'),
+          padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLowest,
+            border: Border(
+              bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.search, size: 15, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  key: const Key('find-field'),
+                  controller: controller,
+                  autofocus: true,
+                  onChanged: onChanged,
+                  style: GoogleFonts.hankenGrotesk(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Find in note…',
+                    hintStyle: GoogleFonts.hankenGrotesk(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    ),
+                    filled: false,
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                  ),
+                ),
+              ),
+              Text(
+                counter,
+                style: GoogleFonts.splineSansMono(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              IconButton(
+                key: const Key('find-prev'),
+                tooltip: 'Previous match (Shift+Enter)',
+                visualDensity: VisualDensity.compact,
+                onPressed: hasMatches ? onPrev : null,
+                icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+              ),
+              IconButton(
+                key: const Key('find-next'),
+                tooltip: 'Next match (Enter)',
+                visualDensity: VisualDensity.compact,
+                onPressed: hasMatches ? onNext : null,
+                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+              ),
+              IconButton(
+                key: const Key('find-close'),
+                tooltip: 'Close (Esc)',
+                visualDensity: VisualDensity.compact,
+                onPressed: onClose,
+                icon: const Icon(Icons.close, size: 18),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Normal / Markdown / Preview segmented control (spec story 12).

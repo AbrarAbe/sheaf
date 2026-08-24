@@ -171,6 +171,66 @@ void main() {
     await tester.runAsync(editorController.flush);
   });
 
+  group('find in note (spec story 14)', () {
+    Future<void> openBody(WidgetTester tester, String body) async {
+      final note = await real(() => vaultController.createNote(title: 'F', body: body), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+    }
+
+    void invokeOpen(WidgetTester tester) {
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+      Actions.invoke(ctx, const OpenFindIntent());
+    }
+
+    testWidgets('Ctrl+F opens the bar and counts matches live', (tester) async {
+      await openBody(tester, 'one two one');
+      invokeOpen(tester);
+      await tester.pump();
+
+      expect(find.byKey(const Key('find-bar')), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('find-field')), 'one');
+      await tester.pump();
+      expect(find.text('1/2'), findsOneWidget);
+    });
+
+    testWidgets('Enter walks matches and wraps around', (tester) async {
+      await openBody(tester, 'one two one');
+      invokeOpen(tester);
+      await tester.pump();
+      await tester.enterText(find.byKey(const Key('find-field')), 'one');
+      await tester.pump();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('2/2'), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('1/2'), findsOneWidget);
+    });
+
+    testWidgets('no matches shows a friendly zero count', (tester) async {
+      await openBody(tester, 'nothing here');
+      invokeOpen(tester);
+      await tester.pump();
+      await tester.enterText(find.byKey(const Key('find-field')), 'zzz');
+      await tester.pump();
+      expect(find.text('0/0'), findsOneWidget);
+    });
+
+    testWidgets('close button dismisses the bar', (tester) async {
+      await openBody(tester, 'some text');
+      invokeOpen(tester);
+      await tester.pump();
+
+      await tester.tap(find.byKey(const Key('find-close')));
+      await tester.pump();
+      expect(find.byKey(const Key('find-bar')), findsNothing);
+    });
+  });
+
   group('list continuation (spec story 15)', () {
     testWidgets('Enter continues a dash list', (tester) async {
       final note = await real(() => vaultController.createNote(title: 'L', body: '- item'), tester);
