@@ -1,0 +1,209 @@
+# Implementation Plan: Sheaf v0.2 — "the editor"
+
+Derived from `docs/spec.md` stories 10–16. Ordered by dependency; each task
+lands as its own Conventional Commit after analyze+test gates.
+
+## Overview
+
+Six feature areas: keyboard bindings, 3-mode editor, component audit fixes
+(pin/find), pane control + fullscreen, appearance customization. Foundation
+tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
+
+## Architecture Decisions
+
+- **Pin state in `.sheaf/meta.json`** — keeps note files pristine/portable;
+  mirrors the existing `.trash/index.json` precedent. (ADR)
+- **Zoom** = global text scaler applied at the app root (`MediaQuery`);
+  every surface scales together, crisp at any factor. Fixed-dp icons and
+  layout metrics stay constant (scaling painted pixels would blur them).
+  Editor font size is the separate per-editor control. (ADR)
+- **Theme worlds registry** in `lib/theme`: `worlds: Map<String, World>`
+  where `World` = light/dark `ThemeData` builders; settings gain
+  `(worldId, mode)` replacing bare mode; migration maps old values to
+  `(quire, oldMode)`. (ADR)
+- **Fonts**: scan standard dirs for `.ttf/.otf/.ttc`, load chosen file once at
+  startup via `FontLoader`, register under a stable family name
+  (`SheafUserFont`); settings store family display name + path.
+- **Editor modes** replace `_preview` bool with an enum owned by
+  `EditorController` (persisted), so shell shortcuts can act on it without
+  widget-state reach-arounds.
+
+## Task List
+
+### Phase 1 — Foundations
+
+- [ ] **Task 1: Settings schema v2**
+  Add to `AppSettings`: `editorMode`, `zoomFactor`, `editorFontSize`,
+  `fontFamily`/`fontPath`, `themeWorld`; keep `theme` (mode). Tolerant
+  `fromJson` (old JSON → defaults; unknown world → quire).
+  - Acceptance: round-trip tests; v0.1 settings.json loads unchanged behavior.
+  - Verify: `flutter test test/data test/models`
+  - Files: `lib/models/settings.dart`, `lib/data/settings_repository_test.dart`
+  - Scope: S
+
+- [ ] **Task 2: Zoom engine + global wiring**
+  `ZoomController` (factor get/set/step/reset, clamp 0.5–2.0 step .1,
+  persist via controller). SheafApp wraps home in `MediaQuery(textScaler)`
+  override. Shortcuts `Ctrl+=`, `Ctrl+-`, `Ctrl+0`.
+  - Acceptance: keys adjust scale within bounds and persist; restart keeps it.
+  - Verify: unit tests + shortcut widget test.
+  - Files: `lib/logic/zoom_controller.dart` (new),
+    `lib/app.dart`, `lib/ui/shell/shortcuts.dart`, tests.
+  - Scope: M
+
+- [ ] **Task 3: Formatting engine (pure logic)**
+  `lib/logic/formatting.dart`: `toggleWrap(text, selection, marker)` handling
+  selected text, collapsed caret, and already-wrapped unwrap. Markers:
+  `**`, `*`, `<u>`…`</u>`.
+  - Acceptance: table of cases green incl. nested/partial overlaps.
+  - Verify: `flutter test test/logic/formatting_test.dart`
+  - Files: new logic file + test.
+  - Scope: S
+
+- [ ] **Task 4: Preview renders `<u>` only**
+  Minimal inline pass converting `<u>x</u>` → underlined span; all other
+  `<` stays literal.
+  - Acceptance: `<u>hi</u>` underlines; `<script>` shows literally.
+  - Verify: markdown_preview_test additions.
+  - Files: `lib/ui/editor/markdown_preview.dart` + test.
+  - Scope: S
+
+### Phase 2 — Editor modes & keys
+
+- [ ] **Task 5: Three editor modes**
+  `EditorMode {normal, markdown, preview}` on `EditorController` (persisted);
+  segmented control in header replaces preview toggle; Normal = current
+  proportional field + formatting enabled; Markdown = Spline Sans Mono raw;
+  Preview = rendered. `Ctrl+Shift+M` cycles.
+  - Acceptance: switch renders correct surface; autosave fires in all modes;
+    mode persists across restart.
+  - Verify: widget tests per mode + persistence test.
+  - Files: `lib/logic/editor_controller.dart`, `lib/ui/editor/editor_pane.dart`,
+    `shortcuts.dart`, `shell.dart`, tests.
+  - Scope: M
+
+- [ ] **Task 6: Formatting keybindings in editor**
+  Editor-scoped `Shortcuts/Actions`: Ctrl+B/I/U call formatting engine on the
+  live body controller (Normal mode only); `Ctrl+Shift+C/V` copy/paste
+  terminal-style on focused editable.
+  - Acceptance: wrap/unwrap through real TextField selection; inert in
+    Markdown/Preview.
+  - Verify: widget tests driving selections.
+  - Files: `editor_pane.dart`, tests.
+  - Scope: M (depends 3, 5)
+
+- [ ] **Task 7: List continuation on Enter**
+  Pure logic `continueList(text, caretOffset)`: carries `- `/`* `/`- [ ] `
+  markers, increments ordered numbers, preserves indentation; empty-marker
+  line clears instead. Wired into body field's newline handling in editing
+  modes.
+  - Acceptance: unit cases for each marker type + nesting + smart exit;
+    Enter through real TextField continues lists.
+  - Verify: logic tests + editor widget test.
+  - Files: `lib/logic/list_continuation.dart` (new), `editor_pane.dart`,
+    tests.
+  - Scope: S (depends 5)
+
+- [ ] **Task 8: Ctrl+Tab note cycling**
+  Shell action selects next/prev note in displayed list order (wraps);
+  disabled when list empty.
+  - Acceptance: order matches visible list incl. pinned group after Task 10.
+  - Verify: widget test on spy controller.
+  - Files: `shortcuts.dart`, `shell.dart`, tests.
+  - Scope: S
+
+- [ ] **Task 9: Find-in-note bar**
+  `FindController` (pure scan → match offsets) + find bar widget docked over
+  editor header. Ctrl+F opens (pre-fill selection), Enter/Shift+Enter/buttons
+  traverse with caret jump + counter, Esc closes restoring focus.
+  - Acceptance: counts case-insensitive matches; traversal wraps; works
+    Normal+Markdown.
+  - Verify: logic unit tests + widget test.
+  - Files: `lib/logic/find_controller.dart` (new), `editor_pane.dart`, tests.
+  - Scope: M
+
+### Phase 3 — Panes, pinning, fullscreen
+
+- [ ] **Task 10: User-owned sidebar visibility**
+  `PaneWidths` gains per-tier visibility model; Full tier drops forced rail
+  (toggle hides completely); Stack tier drawer toggle; header menu button
+  always present; persist per tier.
+  - Acceptance: each tier honors story 15; states survive restart.
+  - Verify: shell widget tests across tiers.
+  - Files: `pane_widths.dart`, `shell.dart`, tests.
+  - Scope: M
+
+- [ ] **Task 11: Pinning**
+  VaultRepository meta.json API (load/save/corrupt-recover, drop-on-delete);
+  VaultController pin toggles; ListPane Pinned section + filled-pin indicator +
+  working hover button + context-menu entry.
+  - Acceptance: pin persists, sorts first, unpin restores, delete cleans up.
+  - Verify: repo round-trip tests + list widget tests.
+  - Files: `vault_repository.dart`, `vault_controller.dart`, `list_pane.dart`,
+    `context_menus.dart`, tests.
+  - Scope: L (split if needed)
+
+- [ ] **Task 12: Focus mode + OS fullscreen**
+  Focus-mode header button + `F10` hides sidebar+list (editor fills window);
+  `F11` via `window_manager` toggles native fullscreen.
+  - Acceptance: focus collapses/expands cleanly from any tier; F11 fullscreens
+    on Linux desktop.
+  - Verify: widget tests (F10 path); manual F11 check on running app.
+  - Files: `shell.dart`, `pubspec.yaml`, `main.dart`, tests.
+  - Scope: M
+
+### Checkpoint A (after Task 9): modes+keys usable end-to-end; analyze/test green.
+### Checkpoint B (after Task 12): pane/focus/fullscreen verified on running app.
+
+### Phase 4 — Appearance & audit polish
+
+- [ ] **Task 13: Theme worlds**
+  `lib/theme/worlds.dart` registry; add Graphite + Sepia token sets; settings
+  dialog: world picker + System/Light/Dark radio; migrate old setting.
+  - Acceptance: ≥3 worlds render both modes; no hex outside lib/theme;
+    old settings load as Quire.
+  - Verify: theme tests + settings dialog test.
+  - Files: `lib/theme/*`, `settings_dialog.dart`, models/tests.
+  - Scope: M
+
+- [ ] **Task 14: Typography & zoom settings UI**
+  Settings Appearance section: default zoom %, editor size slider (12–24),
+  font dropdown from `FontScanner`; startup loads chosen font via FontLoader
+  with silent fallback.
+  - Acceptance: choices apply immediately and persist; missing font falls back.
+  - Verify: scanner unit tests (fixture dirs), dialog widget test.
+  - Files: `lib/data/font_scanner.dart` (new), `app.dart`/`main.dart`,
+    `settings_dialog.dart`, editor styles, tests.
+  - Scope: L
+
+- [ ] **Task 15: Component audit fixes**
+  Sweep findings from spec review: remove decorative fake window dots (SSD
+  titlebar already exists), wire or remove dead "⌘K" search pill, verify
+  divider hitpoints, QUIRE badge decision, empty-state copy consistency.
+  Present diff-level findings before applying.
+  - Acceptance: no dead controls remain; audit notes recorded.
+  - Verify: widget tests updated; manual sweep on running app.
+  - Files: `shell.dart`, `header` widgets, tests.
+  - Scope: M
+
+- [ ] **Task 16: Docs & release prep**
+  ADRs (meta.json sidecar, zoom model, theme worlds), README feature list,
+  archive plan, final gates + coverage report.
+  - Acceptance: docs merged; all gates green.
+  - Verify: `flutter analyze && flutter test --coverage`.
+  - Files: `docs/adr/*`, `README.md`, `docs/plan_v0.2.md`.
+  - Scope: S
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| window_manager API drift / Linux quirks | Med | Isolate behind small service; F11 degrades gracefully |
+| FontLoader family naming mismatch | Med | Register explicit family name; fallback stack on failure |
+| EditorPane rewrite regressions | High | Keep _EditorState structure; mode swap swaps body widget only |
+| meta.json corruption | Low | Recover-to-empty + rewrite on parse error (trash precedent) |
+| Theme refactor touches many files | Med | Worlds additive; Quire stays default; golden-free tests |
+
+## Open Questions
+
+None — all four resolved 2026-08-24; see spec "Decisions".

@@ -1,150 +1,226 @@
-# Spec: Sheaf v0.1 — Markdown Notes MVP ("the desk")
+# Spec: Sheaf — living product spec
+
+Milestone history: v0.1 ("the desk") shipped and released as `v0.1.0`. This
+revision adds milestone **v0.2 ("the editor")**: keyboard-complete editing,
+editor modes, real pinning, find-in-note, user-controlled panes, fullscreen,
+and appearance customization.
 
 ## Objective
 
-Turn the hello-world Flutter shell into a working desktop-first note app for Linux,
-following the Quire design language in `docs/design/`. Users keep a **vault** — an
-ordinary folder of plain Markdown files — exactly like Obsidian. Success looks like:
-open the app, pick/create a vault folder, and take, find, organize, and read back
-notes with images and tags, all persisted as portable `.md` files.
+Make the desk feel like a mature editor. A v0.1 user can take notes but edits
+with bare hands: no formatting keys, no find-in-note, no way to pin, forced
+pane layouts, one look. Success looks like: every common action reachable from
+the keyboard, the editor offers Normal/Markdown/Preview like Obsidian, panes
+obey the user instead of the window width, and the settings page meaningfully
+changes how the app looks (worlds, zoom, type size, typeface).
 
-### User stories (acceptance criteria)
+### User stories — v0.1 (shipped)
 
-1. **Vault** — As a user I choose a folder as my vault (or create one). The choice
-   persists across restarts. My notes are plain files I could open in any editor.
-2. **Notes** — I create, edit, rename, and delete notes. Deleting moves the file to
-   `<vault>/.trash/` and I can restore it. Edits autosave within ~1 second of typing.
-3. **Folders** — The sidebar shows my vault's folder tree. I create, rename, and
-   delete folders; new notes land in the selected folder; notes can be moved.
-4. **Tags** — Inline `#tag` syntax in note bodies is parsed, shown as chips, listed
-   in the sidebar, and clicking one filters the note list.
-5. **Markdown** — The editor writes raw Markdown (monospace, per design doc).
-   Preview renders headings, emphasis, lists, task lists, blockquotes, fenced code,
-   links, tables, and images.
-6. **Images** — `![alt|400](attachments/foo.png)` renders at 400 px wide (Obsidian
-   resize syntax; bare `![alt](path)` renders natural size). Inserting an image
-   copies it into `<vault>/attachments/` and emits the relative link. Resizing is
-   editable by changing the number.
-7. **Search** — The list filter matches title and body across the vault, ranking
-   title hits first; results update as I type.
-8. **Shell** — Three-pane desktop shell per `layout-and-space.md` (sidebar /
-   note list / editor) with Expanded ≥1120 dp, Full 720–1119 dp, Stack <720 dp;
-   sidebar collapses to a rail; panes resize by dragging.
-9. **Theme** — Daylight/Lamplight/System per `theming.md`, cycled with
-   `Ctrl+Shift+L`, choice persisted; no hardcoded colors outside the theme module.
+1. **Vault** ✅ pick/create folder, persists, plain `.md` files on disk
+2. **Notes** ✅ CRUD, `.trash/` soft-delete with restore, ~1 s debounced autosave
+3. **Folders** ✅ tree create/rename/delete, notes land in selected folder
+4. **Tags** ✅ inline `#tag` parse → chips → sidebar → click-to-filter
+5. **Markdown** ✅ GFM-subset preview (headings, emphasis, lists, tasks,
+   quotes, code, links, tables, images)
+6. **Images** ✅ `![alt|400](…)` resize syntax, insert copies into `attachments/`
+7. **Search** ✅ vault-wide filter, title-priority ranking
+8. **Shell** ✅ three tiers (≥1120 / 720–1119 / <720), draggable dividers
+9. **Theme** ✅ Daylight/Lamplight/System, `Ctrl+Shift+L`, persisted
 
-Explicitly **deferred** (tracked in Open Questions): global hotkey capture window,
-command palette, reminders, sync, mobile fold-down polish, WYSIWYG editing.
+### User stories — v0.2
 
-## Assumptions (correct me and I'll amend the spec)
+10. **Formatting keys** — While editing (Normal or Markdown mode):
+    `Ctrl+B` toggles `**bold**`, `Ctrl+I` toggles `*italic*`, `Ctrl+U` toggles
+    `<u>underline</u>` around the selection — wrapping when there is a
+    selection, inserting an empty pair and placing the caret inside when not;
+    invoking on an already-wrapped selection unwraps it. Terminal-style
+    `Ctrl+Shift+C` / `Ctrl+Shift+V` copy/paste the focused editor selection
+    (plain `Ctrl+C/V/X` keep working natively). Preview renders `<u>`
+    underlined; all other raw HTML stays literal.
+11. **Navigation & zoom keys** — `Ctrl+Tab` / `Ctrl+Shift+Tab` select the
+    next/previous note in the current list order. `Ctrl+=` / `Ctrl+-` step the
+    app-wide text scale by 10% within 50%–200%, `Ctrl+0` resets to 100%. The
+    zoom level persists across restarts and scales text everywhere
+    (list, sidebar, editor, preview) — icons and layout metrics are unaffected.
+12. **Editor modes** — Three-way switch (segmented control in the editor
+    header, cycled by `Ctrl+Shift+M`): **Normal** — proportional type,
+    word-like editing, formatting keys active; **Markdown** — monospace source
+    view, formatting keys inert (raw text only); **Preview** — rendered
+    read-only output. Autosave behaves identically in all modes. The last-used
+    mode persists as the opening mode for the next session.
+13. **Pinning** — Notes can be pinned from the row's hover pin button (today a
+    dead stub) and the note context menu. Pinned notes sort into a **Pinned**
+    group above the rest of the list with a filled-pin indicator; unpinning
+    restores normal ordering. Pin state must not modify note `.md` files — it
+    lives in a vault-sidecar `<vault>/.sheaf/meta.json` (same philosophy as
+    `.trash/index.json`). Deleting a note drops its pin record.
+14. **Find in note** — `Ctrl+F` opens a find bar docked in the editor: query
+    field (pre-filled with the selection if any), match counter `n/m`,
+    next/previous (`Enter` / `Shift+Enter` plus buttons), highlight of the
+    current match via selection jump, `Esc` closes and restores focus. Works
+    in Normal and Markdown modes.
+15. **List continuation** — Pressing `Enter` at the end of a list item
+    continues the list: `- `, `* `, `- [ ] ` carry over verbatim; `1. `
+    increments to `2. `; leading indentation is preserved. `Enter` on a line
+    holding only a marker clears it (smart exit), matching Obsidian. Active
+    in Normal and Markdown editing.
+15. **Pane control** — Sidebar visibility is user-owned, not tier-forced:
+    - Expanded (≥1120): `Ctrl+\` and a header toggle collapse to the rail or
+      restore (unchanged).
+    - Full (720–1119): a header toggle button shows/hides the sidebar
+      completely; no forced rail.
+    - Stack (<720): the same button opens/closes the sidebar as an overlay
+      drawer.
+    - Choice persists per tier across sessions (per layout-and-space.md).
+    - **Focus mode**: a header button (and `F10`) hides sidebar and note list
+      so the editor fills the window; any pane toggle or `F10` again exits.
+    - **OS fullscreen**: `F11` toggles true window fullscreen via a window
+      manager plugin.
+16. **Appearance settings** — The settings page grows an Appearance section:
+    - **Theme worlds**: curated hardcoded worlds beyond Daylight/Lamplight
+      (launch set: **Graphite** neutral light/dark, **Sepia** paper-warm
+      light/dark), selected alongside the existing System/Light/Dark mode —
+      i.e. pick a world *and* a mode. All worlds defined purely as token sets
+      in `lib/theme`; nothing outside reads hex.
+    - **Zoom**: default view zoom percent (persisted; story 11 keys adjust it).
+    - **Type size**: editor base font size (12–24 px) applied to editor body
+      and preview.
+    - **Typeface**: font family picker listing fonts discovered in standard
+      Linux directories (`~/.fonts`, `~/.local/share/fonts`,
+      `/usr/share/fonts`); the chosen font loads at runtime (`dart:ui`
+      FontLoader) and applies to editor body + preview; falls back silently
+      to the bundled stack if the file is missing at launch.
 
-1. Files-on-disk vault model — no database, no hidden index files in v1.
-2. Source-mode editor + rendered preview toggle (like Obsidian's edit/read modes),
-   not WYSIWYG.
-3. Tags are inline `#tags` only (no YAML frontmatter in v1).
-4. Note title = H1 if present, else filename stem. Renaming a note renames its file.
-5. Images referenced by vault-relative paths; `attachments/` is the default home.
-6. Linux desktop is the only launch target this milestone (matches `linux/` dir).
-7. New pub.dev dependencies are allowed (listed under Tech Stack) — flag if you want
-   any swapped.
+Explicitly **deferred**: command palette (`Ctrl+K`), global hotkeys
+(`Ctrl+Alt+N`), reminders, sync/mobile polish, WYSIWYG editing, parsing local
+GTK themes' CSS into color worlds (see Open Questions), bundling additional
+Google Fonts as offline assets.
+
+## Assumptions
+
+1. v0.1 assumptions carry over (files-on-disk vault, source-mode editor +
+   preview, inline tags, H1/filename titles, Linux-only).
+2. **Normal vs Markdown distinction**: Normal is "word-like" — proportional
+   font, smart formatting keys; Markdown is the raw source view — monospace,
+   no key magic. Both are plain-text fields over the same buffer (no WYSIWYG).
+3. **Underline** has no native Markdown; we use `<u></u>` and teach the
+   preview's renderer that one tag (minimal inline-HTML support, nothing else).
+4. **Pin storage** adds `<vault>/.sheaf/meta.json` (JSON map of path → flags).
+   This touches the vault contract — flagged for review below.
+5. **Zoom** is app-wide *text* scaling via the framework text scaler — every
+   surface (list, sidebar, editor, preview, menus) grows/shrinks together,
+   crisp at every step. Fixed-dp icons and layout metrics intentionally stay
+   constant: Flutter re-renders text at any scale without quality loss, but
+   scaling painted pixels would blur them. The settings' editor **font size**
+   tunes note-body type independently of zoom.
+6. Plain `Ctrl+C/V/X` are native Flutter text behaviors already; only the
+   `Ctrl+Shift+` variants are added explicitly.
+7. Focus mode is session-scoped; OS fullscreen state follows the WM, not us.
 
 ## Tech Stack
 
-- Flutter (SDK ^3.14) targeting Linux desktop, Material 3
-- State: `ChangeNotifier` controllers (no state-framework dependency)
-- New dependencies: `file_picker` (folder chooser), `shared_preferences`
-  (lightweight prefs), `path`, `markdown` + `markdown_widget` (GFM rendering),
-  `desktop_drop` (image drop-in), `intl` (day grouping)
-- Dev: `flutter_lints`, `flutter_test`
+Unchanged from v0.1 (Flutter ^3.14 Linux desktop, Material 3,
+ChangeNotifier controllers, google_fonts, markdown/markdown_widget,
+desktop_drop, watcher, flutter_context_menu, dynamic_color/material_ui) plus:
+
+- **New dependency:** `window_manager` (^0.5.x) — F11 OS fullscreen. Nothing
+  on the current stack can fullscreen the native window.
+- **No new deps** for fonts (directory scan + `dart:ui` FontLoader) or pins
+  (hand-rolled JSON sidecar).
 
 ## Commands
 
-```sh
-flutter pub get            # install deps
-flutter analyze            # lint — must be clean
-flutter test               # all unit + widget tests — must pass
-flutter run -d linux       # launch desktop app
-flutter test --coverage    # coverage report
+```bash
+flutter run -d linux          # dev run
+flutter analyze               # lint gate
+flutter test                  # test gate
+flutter test --coverage       # coverage gate (data+logic ≥80%)
 ```
 
 ## Project Structure
 
 ```
-lib/
-  main.dart              # entrypoint
-  app.dart               # MaterialApp, theme wiring, theme-mode controller
-  theme/                 # Quire tokens → ColorScheme + QuireColors extension
-  models/                # Note, TagRef, FolderNode (pure Dart)
-  data/
-    vault_repository.dart    # all filesystem I/O for notes/folders/trash
-    settings_repository.dart # vault path + theme preference persistence
-    markdown_parser.dart     # tag extraction, image-ref extraction, title
-  logic/                 # VaultController, EditorController, SearchController
-  ui/
-    shell/               # three-pane responsive scaffold
-    sidebar/  note_list/  editor/  dialogs/  common/
-test/
-  data/  logic/          # pure-Dart unit tests (real temp dirs, no mocks)
-  ui/                    # widget tests
-docs/
-  spec.md  plan_v0.1.md adr/ # this file, archived v0.1 plan, decisions
+lib/theme/         → Quire tokens; NEW: world registry (Quire/Graphite/Sepia)
+lib/models/        → NEW fields on AppSettings (mode, world, zoom, sizes, fonts)
+lib/data/          → NEW: font_scanner.dart; vault_repository gains meta.json API
+lib/logic/         → NEW: formatting.dart, find_controller.dart, zoom_controller.dart
+lib/ui/editor/     → 3-mode editor, find bar, formatting keybindings
+lib/ui/shell/      → pane visibility model, focus mode, new shortcuts
+lib/ui/dialogs/    → settings dialog: Appearance section
+docs/adr/          → decisions: meta.json sidecar, zoom model, theme worlds
 ```
 
 ## Code Style
 
-Follow `analysis_options.yaml` (flutter_lints) and existing formatting. Pure logic
-lives outside widgets so it is testable headlessly:
+Carried from v0.1: `ChangeNotifier` + `switch` expressions, private widgets
+prefixed `_`, injectable platform seams for tests (`pickFolder` pattern),
+2-space indent, single quotes. Pure logic lives in `lib/logic` with zero
+Flutter imports wherever possible (e.g. `formatting.dart` operates on
+`String` + offsets, not controllers):
 
 ```dart
-// GOOD: testable service, injected root, no Flutter imports
-class VaultRepository {
-  VaultRepository({required Directory root}) : _root = root;
-  final Directory _root;
-
-  Future<Note> createNote(String folder, String title) async { /* … */ }
-}
-
-// Widgets stay thin: read state from controllers, emit intents back.
+FormatEdit toggleWrap({required String text, required TextSelection sel, required String marker});
+// returns new text + adjusted selection — trivially unit-testable
 ```
-
-UI resolves every color through `Theme.of(context)` + `QuireColors` — never literals.
 
 ## Testing Strategy
 
-- **Unit (dart:test via flutter_test):** `data/` and `logic/` run against real
-  temporary directories (`Directory.systemTemp`) — no filesystem mocks. Parser
-  cases cover tags, titles, image links, edge whitespace.
-- **Widget:** shell tier switching, sidebar interactions, editor autosave debounce,
-  empty states, theme cycling.
-- **Coverage expectation:** ≥80% lines for `lib/data` + `lib/logic`.
-- Every bug fix lands with a failing-first regression test.
+Carried from v0.1: real temp dirs for `data/`+`logic/`, widget tests via
+`flutter_test` with `tester.runAsync` for disk, spy controllers for dialogs,
+failing-first regression tests for bugs. New coverage targets:
+
+- `formatting.dart`, `find_controller.dart`, `zoom_controller.dart`,
+  `font_scanner.dart`: ≥90% lines (pure logic).
+- Meta.json round-trip incl. corrupt-file recovery and delete-cleanup.
+- Widget: mode switch renders correct surface per mode; find bar counts and
+  jumps; pane toggle in all three tiers; settings dialog new controls.
 
 ## Boundaries
 
-- **Always:** `flutter analyze` + `flutter test` green before calling work done;
-  follow Quire tokens/copy from the design docs; document deviations as ADRs.
-- **Ask first:** changing the vault file format or settings schema, adding
-  dependencies beyond the stack above, touching `android/` targets.
-- **Never:** write outside the chosen vault except its `.trash/`/`attachments/`;
-  hard-delete user content (trash only); hardcode colors/hex outside `lib/theme`.
+- **Always:** `flutter analyze` + `flutter test` green before done; Quire
+  tokens/design docs govern visuals; hot reload pushed to running app after
+  Dart edits; commit per task with Conventional Commits ≤72 chars.
+- **Ask first:** adding dependencies (`window_manager` requested here);
+  changing the vault contract (`.sheaf/meta.json` requested here); settings
+  schema growth (fields enumerated in story 16, backward-compatible).
+- **Never:** hard-delete user content; hardcode colors outside `lib/theme`;
+  write outside the vault except `.trash/`, `attachments/`, `.sheaf/`;
+  regress v0.1 stories (all 130+ existing tests stay green).
 
 ## Success Criteria
 
-- [ ] `flutter run -d linux` shows the three-pane shell in all three window tiers
-- [ ] Pick/create vault persists across restart; reopening restores tree + selection
-- [ ] Note CRUD round-trips to real `.md` files; delete → `.trash/` → restore works
-- [ ] Autosave fires ≤1 s after last keystroke; status footer shows mono `saved HH:MM`
-- [ ] `#tags` extracted, sidebar-listed, click-to-filter works
-- [ ] Markdown preview renders the feature list above; `![alt|400](…)` sizes images
-- [ ] Image insert copies into `attachments/` and rewrites the link vault-relative
-- [ ] Search filters by title/body with title-priority ordering
-- [ ] `flutter analyze` clean; `flutter test` all green; data+logic coverage ≥80%
+v0.1 criteria remain true (regression gate). v0.2 adds:
 
-## Open Questions
+- [ ] `Ctrl+B/I/U` wrap/unwrap correctly with selection, empty caret, and
+      repeat-invocation; preview shows `<u>` underlined
+- [ ] `Ctrl+Tab`/`Ctrl+Shift+Tab` walk the note list cyclically
+- [ ] `Ctrl+=/-/0` change/reset persistent app-wide text scale, clamped
+      50–200%
+- [ ] Mode switcher + `Ctrl+Shift+M` swap Normal/Markdown/Preview; mode
+      persists; autosave works in every mode
+- [ ] `Enter` continues `- `/`* `/`1. ` lists with correct increments and
+      exits cleanly when the marker line is empty
+- [ ] Pin from hover + context menu; Pinned group orders first; survives
+      restart; deleting removes the pin record
+- [ ] `Ctrl+F` find bar: count, Enter/Shift+Enter traversal, Esc closes;
+      selection lands on each match
+- [ ] Header toggle shows/hides sidebar in Full tier and drawers it in Stack;
+      per-tier state persists
+- [ ] `F10` focus mode collapses to editor-only; `F11` true fullscreen
+- [ ] Settings offer ≥3 worlds × 3 modes, zoom %, editor size 12–24, font
+      picker from system dirs; choices persist and survive missing-font launch
+- [ ] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
+      data+logic ≥80%
 
-1. Global hotkey quick-capture (`Ctrl+Alt+N`) needs tray/window-manager plugins —
-   separate milestone?
-2. Command palette (`Ctrl+K`) — same question.
-3. Reminders quick-filter appears in the design but wasn't in your feature list —
-   out of scope for v0.1?
-4. Should renaming a folder rewrite note paths silently, or prompt?
+## Decisions (resolved 2026-08-24)
+
+1. **GTK themes** — deferred. Curated hardcoded worlds + system accent cover
+   v0.2; parsing arbitrary `gtk.css` is fragile.
+2. **Font sources** — standard directories only (`~/.fonts`,
+   `~/.local/share/fonts`, `/usr/share/fonts`). No file-browser entry.
+3. **List continuation** — approved (story 15).
+4. **Zoom scope** — app-wide text scaling; editor font size is the
+   independent per-editor control (assumption 5 records the icon/padding
+   tradeoff).
+5. **New dependency** `window_manager` and the **`.sheaf/meta.json` vault
+   sidecar** were reviewed and approved alongside these answers.
