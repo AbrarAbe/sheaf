@@ -34,6 +34,22 @@ class HighlightingController extends TextEditingController {
 
     final children = <InlineSpan>[];
     final text = this.text;
+
+    // Live-preview reveal rule (F5): markers render zero-width while the
+    // selection is elsewhere, and come back dimmed when touched.
+    final sel = selection;
+    final int selLo;
+    final int selHi;
+    if (sel.isValid && sel.baseOffset >= 0) {
+      selLo = sel.start < 0 ? 0 : sel.start;
+      selHi = sel.end < 0 ? 0 : sel.end;
+    } else {
+      selLo = -1;
+      selHi = -1;
+    }
+    bool touches(int start, int end) => selLo <= end && selHi >= start;
+    TextStyle markerStyle(int start, int end) => touches(start, end) ? _dim(base) : _hidden(base);
+
     void plain(int start, int end) {
       if (end > start) children.add(TextSpan(text: text.substring(start, end), style: base));
     }
@@ -52,8 +68,13 @@ class HighlightingController extends TextEditingController {
         final contentStart =
             lineStart + heading.start + heading.group(1)!.length + heading.group(2)!.length;
         plain(lineStart, hashStart);
-        children.add(TextSpan(text: heading.group(1), style: _dim(base)));
-        plain(hashEnd, spaceEnd);
+        children.add(TextSpan(text: heading.group(1), style: markerStyle(lineStart, lineEnd)));
+        if (!touches(lineStart, lineEnd)) {
+          // Swallow the separator space too so nothing precedes the heading.
+          children.add(TextSpan(text: ' ', style: _hidden(base)));
+        } else {
+          plain(hashEnd, spaceEnd);
+        }
         children.add(
           TextSpan(
             text: text.substring(contentStart, lineEnd),
@@ -61,7 +82,7 @@ class HighlightingController extends TextEditingController {
           ),
         );
       } else {
-        _emitInline(children, base, text, lineStart, lineEnd);
+        _emitInline(children, base, text, lineStart, lineEnd, touches, markerStyle);
       }
 
       if (!hadBreak) break;
@@ -72,7 +93,15 @@ class HighlightingController extends TextEditingController {
     return TextSpan(style: base, children: children);
   }
 
-  void _emitInline(List<InlineSpan> children, TextStyle base, String text, int from, int to) {
+  void _emitInline(
+    List<InlineSpan> children,
+    TextStyle base,
+    String text,
+    int from,
+    int to,
+    bool Function(int start, int end) touches,
+    TextStyle Function(int start, int end) markerStyle,
+  ) {
     final region = text.substring(from, to);
     var cursor = 0;
     for (final m in _inline.allMatches(region)) {
@@ -83,10 +112,16 @@ class HighlightingController extends TextEditingController {
       final inner = m[1] ?? m[2] ?? m[3] ?? m[4]!;
       final innerStart = m.start + markerLen;
       final innerEnd = innerStart + inner.length;
+      final absStart = from + m.start;
+      final absEnd = from + m.end;
 
-      children.add(TextSpan(text: region.substring(m.start, innerStart), style: _dim(base)));
+      children.add(
+        TextSpan(text: region.substring(m.start, innerStart), style: markerStyle(absStart, absEnd)),
+      );
       children.add(TextSpan(text: inner, style: _innerStyle(base, m)));
-      children.add(TextSpan(text: region.substring(innerEnd, m.end), style: _dim(base)));
+      children.add(
+        TextSpan(text: region.substring(innerEnd, m.end), style: markerStyle(absStart, absEnd)),
+      );
       cursor = m.end;
     }
     if (region.length > cursor) {
@@ -102,6 +137,11 @@ class HighlightingController extends TextEditingController {
   }
 
   TextStyle _dim(TextStyle base) => base.copyWith(color: base.color?.withValues(alpha: 0.35));
+
+  /// Zero-width, invisible rendering for markers hidden from view. The
+  /// characters stay in the buffer — only their paint collapses.
+  TextStyle _hidden(TextStyle base) =>
+      base.copyWith(fontSize: 0, height: 1, letterSpacing: 0, color: const Color(0x00000000));
 
   TextStyle _innerStyle(TextStyle base, RegExpMatch m) {
     if (m[1] != null) return base.copyWith(fontWeight: FontWeight.w700);

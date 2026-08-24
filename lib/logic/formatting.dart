@@ -121,3 +121,34 @@ FormatEdit? _enclosingSpan(String text, int start, int stop, String open, String
       offset >= innerEnd ? offset - open.length - end.length : offset - open.length;
   return FormatEdit(unwrapped, map(start), map(stop));
 }
+
+/// VS Code-style select-word bounds around [offset] (spec story 11, F6).
+///
+/// A word glyph under (or just behind) the caret selects that word — so
+/// pressing Ctrl+D right after typing selects what you typed. Otherwise the
+/// maximal whitespace/punctuation run under the caret is selected.
+(int, int) wordBoundary(String text, int offset) {
+  if (text.isEmpty) return (0, 0);
+  var at = offset.clamp(0, text.length);
+
+  bool isWord(int i) => i >= 0 && i < text.length && RegExp(r'\w').hasMatch(text[i]);
+  int classOf(int i) {
+    if (isWord(i)) return 0;
+    return text[i].trim().isEmpty ? 1 : 2;
+  }
+
+  // Caret past the last glyph sits on it; caret on a non-word right after a
+  // word belongs to that word (freshly-typed-word case).
+  if (at == text.length || (!isWord(at) && isWord(at - 1))) at -= 1;
+
+  final klass = classOf(at);
+  var start = at;
+  var end = at + 1;
+  while (start > 0 && classOf(start - 1) == klass) {
+    start--;
+  }
+  while (end < text.length && classOf(end) == klass) {
+    end++;
+  }
+  return (start, end);
+}

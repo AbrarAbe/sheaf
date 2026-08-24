@@ -368,7 +368,7 @@ void main() {
       expect(box.localToGlobal(Offset.zero).dy, lessThan(120));
     });
 
-    testWidgets('F4a: Normal mode renders bold live with dimmed markers', (tester) async {
+    testWidgets('F4a: Normal mode renders bold live; markers hidden untouched', (tester) async {
       final note = await real(
         () => vaultController.createNote(title: 'HL', body: '**loud** word'),
         tester,
@@ -384,11 +384,78 @@ void main() {
         isTrue,
         reason: 'inner bold text should carry a bold style',
       );
+      final markers = spans.where((ts) => ts.text == '**').toList();
+      expect(markers, isNotEmpty);
       expect(
-        spans.any((ts) => ts.text == '**' && (ts.style?.color?.a ?? 1) < 1),
+        markers.every((ts) => ts.style?.fontSize == 0),
         isTrue,
-        reason: 'markers should be dimmed',
+        reason: 'untouched markers render zero-width (hidden)',
       );
+    });
+
+    testWidgets('F5: touching a span reveals its dimmed markers', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'HL', body: '**loud** word'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = const TextSelection.collapsed(offset: 5);
+      await tester.pump();
+
+      final markers = _bodySpans(tester).where((ts) => ts.text == '**').toList();
+      expect(markers, isNotEmpty);
+      expect(markers.every((ts) => (ts.style?.fontSize ?? 0) > 0), isTrue);
+      expect(markers.every((ts) => (ts.style?.color?.a ?? 1) < 1), isTrue);
+    });
+
+    testWidgets('F5b: heading hashes hide until the line is touched', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'H', body: '# Top\nnext'),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      List<TextSpan> hashSpans() => _bodySpans(tester).where((ts) => ts.text == '#').toList();
+      expect(hashSpans().every((ts) => ts.style?.fontSize == 0), isTrue);
+
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = const TextSelection.collapsed(offset: 3);
+      await tester.pump();
+      expect(hashSpans().every((ts) => (ts.style?.fontSize ?? 0) > 0), isTrue);
+    });
+
+    testWidgets('F6: Ctrl+D selects the word at the caret', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'W', body: ''), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // enterText focuses the field and leaves the caret at the end.
+      await tester.enterText(find.byKey(const Key('editor-body')), 'foo bar baz');
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      final sel = editorController.current != null ? _bodySelection(tester) : null;
+      expect(sel?.baseOffset, 8);
+      expect(sel?.extentOffset, 11);
+      await real(editorController.flush, tester);
     });
 
     testWidgets('F4b: Markdown mode shows unstyled source', (tester) async {
@@ -489,4 +556,12 @@ List<TextSpan> _bodySpans(WidgetTester tester) {
   final root = state.renderEditable.text;
   if (root != null) walk(root);
   return out;
+}
+
+/// Current selection of the body field.
+TextSelection? _bodySelection(WidgetTester tester) {
+  final state = tester.state<EditableTextState>(
+    find.descendant(of: find.byKey(const Key('editor-body')), matching: find.byType(EditableText)),
+  );
+  return state.widget.controller.selection;
 }

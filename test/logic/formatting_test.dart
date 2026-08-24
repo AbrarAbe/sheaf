@@ -106,4 +106,31 @@ void main() {
       expect(r.text, 'ab');
     });
   });
+
+  group('wordBoundary (feedback F6)', () {
+    test('selects the word under the caret', () {
+      expect(wordBoundary('foo bar baz', 5), (4, 7));
+      expect(wordBoundary('foo bar baz', 0), (0, 3));
+      expect(wordBoundary('foo bar baz', 2), (0, 3));
+    });
+
+    test('trailing edge of a word selects backwards onto it', () {
+      expect(wordBoundary('foo bar', 3), (0, 3));
+      expect(wordBoundary('foo bar', 7), (4, 7));
+    });
+
+    test('whitespace runs select themselves', () {
+      expect(wordBoundary('ab    cd', 4), (2, 6));
+    });
+
+    test('punctuation forms its own run when not after a word', () {
+      expect(wordBoundary('(x)', 0), (0, 1));
+      expect(wordBoundary(' . ', 1), (1, 2));
+    });
+
+    test('empty text and out-of-range carets are safe', () {
+      expect(wordBoundary('', 0), (0, 0));
+      expect(wordBoundary('abc', 99), (0, 3));
+    });
+  });
 }

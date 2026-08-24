@@ -193,6 +193,7 @@ class _EditorState extends State<_Editor> {
     const SingleActivator(LogicalKeyboardKey.enter): const ContinueListIntent(),
     const SingleActivator(LogicalKeyboardKey.numpadEnter): const ContinueListIntent(),
     const SingleActivator(LogicalKeyboardKey.keyF, control: true): const OpenFindIntent(),
+    const SingleActivator(LogicalKeyboardKey.keyD, control: true): const SelectWordIntent(),
     const SingleActivator(LogicalKeyboardKey.keyC, control: true, shift: true):
         CopySelectionTextIntent.copy,
     const SingleActivator(LogicalKeyboardKey.keyV, control: true, shift: true):
@@ -299,6 +300,19 @@ class _EditorState extends State<_Editor> {
   }
 
   String get _counterLabel => _matches.isEmpty ? '0/0' : '${_matchIndex + 1}/${_matches.length}';
+
+  /// Ctrl+D — select the word at the caret (story 11, F6).
+  void _selectWord() {
+    final selection = _body.selection;
+    var offset = selection.isValid ? selection.baseOffset : -1;
+    if (offset < 0 || offset > _body.text.length) offset = _body.text.length;
+
+    final (start, end) = wordBoundary(_body.text, offset);
+    _body.value = TextEditingValue(
+      text: _body.text,
+      selection: TextSelection(baseOffset: start, extentOffset: end),
+    );
+  }
 
   Future<void> _load() async {
     final note = widget.controller.current;
@@ -521,6 +535,9 @@ class _EditorState extends State<_Editor> {
                           OpenFindIntent: CallbackAction<OpenFindIntent>(
                             onInvoke: (intent) => _openFind(),
                           ),
+                          SelectWordIntent: CallbackAction<SelectWordIntent>(
+                            onInvoke: (intent) => _selectWord(),
+                          ),
                         },
                         child: DropTarget(
                           onDragDone: (details) => _insertDroppedImages(details.files),
@@ -661,6 +678,11 @@ class FormatIntent extends Intent {
 /// Enter pressed inside an editing surface; handled as list continuation.
 class ContinueListIntent extends Intent {
   const ContinueListIntent();
+}
+
+/// Ctrl+D — select the word at the caret.
+class SelectWordIntent extends Intent {
+  const SelectWordIntent();
 }
 
 /// Ctrl+F — open the find-in-note bar.
