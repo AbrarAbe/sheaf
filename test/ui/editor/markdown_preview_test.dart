@@ -84,4 +84,44 @@ code line
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.broken_image), findsOneWidget);
   });
+
+  testWidgets('renders <u> spans underlined', (tester) async {
+    await pumpPreview(tester, 'plain <u>under here</u> end');
+
+    final finder = find.byWidgetPredicate(
+      (w) => w is RichText && _hasUnderlinedText(w.text, 'under here'),
+    );
+    expect(finder, findsOneWidget);
+  });
+
+  testWidgets('other raw HTML stays literal text', (tester) async {
+    await pumpPreview(tester, '<script>alert(1)</script>');
+
+    expect(_visibleText(tester), contains('<script>'));
+  });
+}
+
+bool _hasUnderlinedText(InlineSpan span, String needle) {
+  if (span is TextSpan) {
+    if ((span.text ?? '').contains(needle) && span.style?.decoration == TextDecoration.underline) {
+      return true;
+    }
+    return span.children?.any((c) => _hasUnderlinedText(c, needle)) ?? false;
+  }
+  return false;
+}
+
+String _visibleText(WidgetTester tester) {
+  final buffer = StringBuffer();
+  void walk(InlineSpan span) {
+    if (span is TextSpan) {
+      if (span.text != null) buffer.write(span.text);
+      span.children?.forEach(walk);
+    }
+  }
+
+  for (final rt in tester.widgetList<RichText>(find.byType(RichText))) {
+    walk(rt.text);
+  }
+  return buffer.toString();
 }

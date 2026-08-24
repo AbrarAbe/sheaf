@@ -2,11 +2,36 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:path/path.dart' as p;
 
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
+
+/// Inline syntax for `<u>text</u>` — the one raw-HTML tag Sheaf renders
+/// (spec story 10's underline). Every other HTML tag stays literal text.
+class _UnderlineSyntax extends md.InlineSyntax {
+  _UnderlineSyntax() : super(r'<u>(.+?)</u>', caseSensitive: false);
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Element.text('u', match[1]!));
+    return true;
+  }
+}
+
+class _UnderlineNode extends SpanNode {
+  _UnderlineNode(this._element);
+
+  final md.Element _element;
+
+  @override
+  InlineSpan build() => TextSpan(
+    text: _element.textContent,
+    style: (parentStyle ?? const TextStyle()).copyWith(decoration: TextDecoration.underline),
+  );
+}
 
 /// Rendered markdown for the read mode of the editor.
 /// Paper prose: Hanken for reading, Bricolage for headings, mono for code.
@@ -21,7 +46,9 @@ class MarkdownPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final quire = theme.extension<QuireColors>() ?? (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
+    final quire =
+        theme.extension<QuireColors>() ??
+        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
     final onSurface = theme.colorScheme.onSurface;
     final inset = theme.colorScheme.surfaceContainerHighest;
 
@@ -71,11 +98,7 @@ class MarkdownPreview extends StatelessWidget {
           ),
         ),
         PreConfig(
-          textStyle: GoogleFonts.splineSansMono(
-            fontSize: 13,
-            height: 18 / 13,
-            color: onSurface,
-          ),
+          textStyle: GoogleFonts.splineSansMono(fontSize: 13, height: 18 / 13, color: onSurface),
           decoration: BoxDecoration(
             color: inset,
             borderRadius: BorderRadius.circular(QuireRadius.s),
@@ -84,12 +107,13 @@ class MarkdownPreview extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           language: '',
         ),
-        BlockquoteConfig(
-          sideColor: theme.colorScheme.primary,
-          textColor: onSurface,
-        ),
+        BlockquoteConfig(sideColor: theme.colorScheme.primary, textColor: onSurface),
         TableConfig(
-          headerStyle: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600, fontSize: 14, color: onSurface),
+          headerStyle: GoogleFonts.hankenGrotesk(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: onSurface,
+          ),
           bodyStyle: GoogleFonts.hankenGrotesk(fontSize: 14, height: 20 / 14, color: onSurface),
           wrapper: (child) => Container(
             decoration: BoxDecoration(
@@ -141,13 +165,19 @@ class MarkdownPreview extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(4, 8, 4, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: MarkdownGenerator(
-            linesMargin: const EdgeInsets.symmetric(vertical: 7),
-          ).buildWidgets(body, config: config),
+          children: _generator().buildWidgets(body, config: config),
         ),
       ),
     );
   }
+
+  MarkdownGenerator _generator() => MarkdownGenerator(
+    linesMargin: const EdgeInsets.symmetric(vertical: 7),
+    inlineSyntaxList: [_UnderlineSyntax()],
+    generators: [
+      SpanNodeGeneratorWithTag(tag: 'u', generator: (e, config, visitor) => _UnderlineNode(e)),
+    ],
+  );
 
   Widget _image(String url, Map<String, String> attributes) {
     final rawAlt = attributes['alt'] ?? '';
@@ -183,7 +213,10 @@ class MarkdownPreview extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 alt.isEmpty ? url : alt,
-                style: GoogleFonts.splineSansMono(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: GoogleFonts.splineSansMono(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
