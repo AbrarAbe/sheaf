@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../data/vault_repository.dart' show TrashEntry;
+import '../../logic/search_controller.dart' show ageLabel;
 import '../../logic/vault_controller.dart';
 
 /// Modal trash view: restore items or delete them forever.
@@ -68,7 +71,30 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
                       size: 20,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    title: Text(entry.trashedName, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry.trashedName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // When it landed in the trash (feedback F16).
+                        Tooltip(
+                          message: DateFormat('d MMM yyyy, HH:mm').format(entry.trashedAt),
+                          child: Text(
+                            ageLabel(entry.trashedAt),
+                            style: GoogleFonts.splineSansMono(
+                              fontSize: 11,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     subtitle: Text(
                       entry.originalPath,
                       maxLines: 1,

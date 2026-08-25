@@ -42,3 +42,15 @@ String dayLabel(DateTime day, {DateTime? now}) {
 
 /// Mono clock label for a row timestamp.
 String clockLabel(DateTime time) => DateFormat.Hm().format(time);
+
+/// Compact age label for trash entries (feedback F16): relative inside the
+/// first week, absolute date beyond it.
+String ageLabel(DateTime when, {DateTime? now}) {
+  final ref = now ?? DateTime.now();
+  final delta = ref.difference(when);
+  if (delta < const Duration(minutes: 1)) return 'just now';
+  if (delta < const Duration(hours: 1)) return '${delta.inMinutes}m ago';
+  if (delta < const Duration(days: 1)) return '${delta.inHours}h ago';
+  if (delta < const Duration(days: 7)) return '${delta.inDays}d ago';
+  return DateFormat.yMMMd().format(when);
+}

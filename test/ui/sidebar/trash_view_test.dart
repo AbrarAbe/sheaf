@@ -44,6 +44,13 @@ void main() {
     expect(find.text('keep/Goner.md'), findsOneWidget);
   });
 
+  testWidgets('entries carry their trashed-at stamp', (tester) async {
+    await pumpTrash(tester);
+
+    // Fixture date is months old → falls back to the absolute date label.
+    expect(find.text('Jan 1, 2026'), findsOneWidget);
+  });
+
   testWidgets('restore delegates to the controller and refreshes', (tester) async {
     final controller = await pumpTrash(tester);
 

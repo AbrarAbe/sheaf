@@ -11,6 +11,21 @@ Note note(String title, {String? body, DateTime? at}) => Note(
 );
 
 void main() {
+  group('ageLabel (feedback F16)', () {
+    final now = DateTime(2026, 8, 26, 12);
+    DateTime ago(Duration d) => now.subtract(d);
+
+    test('relative buckets inside the first week', () {
+      expect(ageLabel(ago(const Duration(seconds: 10)), now: now), 'just now');
+      expect(ageLabel(ago(const Duration(minutes: 5)), now: now), '5m ago');
+      expect(ageLabel(ago(const Duration(hours: 3)), now: now), '3h ago');
+      expect(ageLabel(ago(const Duration(days: 2)), now: now), '2d ago');
+    });
+
+    test('absolute date beyond a week', () {
+      expect(ageLabel(DateTime(2026, 1, 1), now: now), 'Jan 1, 2026');
+    });
+  });
   group('searchAndSort', () {
     final a = note('Alpha', at: DateTime(2026, 3, 2));
     final b = note('Beta', body: 'talks about alpha', at: DateTime(2026, 3, 3));

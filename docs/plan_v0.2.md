@@ -203,7 +203,7 @@ are green.
   close via an injectable `WindowControls` seam (production = window_manager);
   colors reuse QuireColors tokens (alert/pin/grow — zero new hex); Settings
   gains "show window controls" (default on).
-- [ ] **F16: trash timestamps** — surface the existing `trashedAt`:
+- [x] **F16: trash timestamps** — surface the existing `trashedAt`:
   relative label beside the title, full date in tooltip.
 - [ ] **F17: tabs vs All-notes** — design proposal only (open-notes tab
   strip vs creation-scope rules); user picks direction before any code.
