@@ -143,7 +143,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
     `context_menus.dart`, tests.
   - Scope: L (split if needed)
 
-- [ ] **Task 12: Focus mode + OS fullscreen**
+- [x] **Task 12: Focus mode + OS fullscreen**
   Focus-mode header button + `F10` hides sidebar+list (editor fills window);
   `F11` via `window_manager` toggles native fullscreen.
   - Acceptance: focus collapses/expands cleanly from any tier; F11 fullscreens
@@ -186,7 +186,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   layers with drifting offsets. Investigate `_enclosingSpan` containment vs
   overlap handling in `lib/logic/formatting.dart`; add failing-first tests
   for wrap→untoggle cycles started from marker-inclusive selections.
-### Checkpoint B (after Task 12): pane/focus/fullscreen verified on running app.
+### Checkpoint B (after Task 12): ✅ code complete 2026-08-25 — widget tests cover F10 + fullscreen seam; manual F11 native check pending on running app.
 
 ### Phase 4 — Appearance & audit polish
 
