@@ -9,11 +9,18 @@ import 'package:sheaf/models/settings.dart';
 /// Records mutations without touching disks — lets widget tests verify that
 /// UI wiring calls the right controller methods despite the FakeAsync zone.
 class SpyVaultController extends VaultController {
-  SpyVaultController(String settingsPath)
-    : super(
+  SpyVaultController(String settingsPath, {Directory? vaultDir})
+    : _vaultDir = vaultDir ?? File(settingsPath).parent,
+      super(
         settings: SettingsRepository(file: File(settingsPath)),
         vaultFactory: (path) => throw UnimplementedError(),
       );
+
+  /// Backs [repository] so widgets that build editors (Shell) can pump.
+  final Directory _vaultDir;
+
+  @override
+  VaultRepository get repository => VaultRepository(root: _vaultDir);
 
   final restored = <String>[];
   final emptied = <String>[];

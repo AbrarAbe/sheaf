@@ -190,7 +190,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 All items stay inside the v0.2 milestone; the release tag waits until these
 are green.
 
-- [ ] **F12: ⌘K quick-switcher** — restore the header search pill, now
+- [x] **F12: ⌘K quick-switcher** — restore the header search pill, now
   functional: overlay palette with autofocus field, ↑/↓ + Enter/Esc, mouse
   rows; empty query lists notes newest-first so row 1 = last edited;
   ranking reuses `searchAndSort`; `Ctrl+K` global binding.

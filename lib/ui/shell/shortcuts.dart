@@ -68,6 +68,11 @@ class ToggleFullscreenIntent extends Intent {
   const ToggleFullscreenIntent();
 }
 
+/// Intent for the quick-switcher overlay (`Ctrl+K`, feedback F12).
+class OpenPaletteIntent extends Intent {
+  const OpenPaletteIntent();
+}
+
 Map<Type, Action<Intent>> sheafActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
@@ -80,6 +85,7 @@ Map<Type, Action<Intent>> sheafActions({
   required ValueChanged<bool> onCycleNote,
   required VoidCallback onToggleFocusMode,
   required VoidCallback onToggleFullscreen,
+  required VoidCallback onOpenPalette,
 }) {
   return {
     CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
@@ -105,6 +111,7 @@ Map<Type, Action<Intent>> sheafActions({
     ToggleFullscreenIntent: CallbackAction<ToggleFullscreenIntent>(
       onInvoke: (intent) => onToggleFullscreen(),
     ),
+    OpenPaletteIntent: CallbackAction<OpenPaletteIntent>(onInvoke: (intent) => onOpenPalette()),
   };
 }
 
@@ -134,4 +141,6 @@ Map<ShortcutActivator, Intent> sheafShortcuts() => {
   ),
   const SingleActivator(LogicalKeyboardKey.f10): const ToggleFocusModeIntent(),
   const SingleActivator(LogicalKeyboardKey.f11): const ToggleFullscreenIntent(),
+  // Quick-switcher (feedback F12).
+  const SingleActivator(LogicalKeyboardKey.keyK, control: true): const OpenPaletteIntent(),
 };

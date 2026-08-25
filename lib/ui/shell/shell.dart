@@ -7,13 +7,14 @@ import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/note.dart';
 import '../../models/settings.dart';
+import '../../theme/quire_colors.dart';
 import '../common/corner_toast.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
 import '../sidebar/sidebar.dart';
 import '../sidebar/trash_view.dart';
-import '../../theme/quire_colors.dart';
+import 'command_palette.dart';
 import 'drag_divider.dart';
 import 'pane_widths.dart';
 import 'shortcuts.dart';
@@ -179,6 +180,7 @@ class _ShellState extends State<Shell> {
               onCycleNote: _cycleNote,
               onToggleFocusMode: _toggleFocusMode,
               onToggleFullscreen: () => _toggleOsFullscreen(),
+              onOpenPalette: () => showCommandPalette(context, controller),
             );
 
             Widget paneArea = _focusMode
@@ -217,6 +219,7 @@ class _ShellState extends State<Shell> {
                   onToggleFocusMode: _toggleFocusMode,
                   windowControls: widget._windowControls ?? const WindowManagerControls(),
                   showWindowControls: controller.settings.showWindowControls,
+                  onOpenPalette: () => showCommandPalette(context, controller),
                 ),
                 Expanded(child: paneArea),
               ],
@@ -355,6 +358,7 @@ class _HeaderBar extends StatelessWidget {
     required this.onToggleFocusMode,
     required this.windowControls,
     required this.showWindowControls,
+    required this.onOpenPalette,
   });
   final VaultController controller;
   final WindowTier tier;
@@ -364,6 +368,7 @@ class _HeaderBar extends StatelessWidget {
   final VoidCallback onToggleFocusMode;
   final WindowControls windowControls;
   final bool showWindowControls;
+  final VoidCallback onOpenPalette;
 
   @override
   Widget build(BuildContext context) {
@@ -458,9 +463,68 @@ class _HeaderBar extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 16),
-          // Audit (task 15): the decorative ⌘K pill is gone — vault search
-          // lives in the list filter, find-in-note in the editor.
-          const Spacer(),
+          // Quick-switcher pill (feedback F12): the vault-wide search entry.
+          // Hidden on stack tier where space is scarce — Ctrl+K still works.
+          if (tier != WindowTier.stack)
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Material(
+                    color: theme.colorScheme.surfaceContainerLowest,
+                    shape: StadiumBorder(
+                      side: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: .7),
+                      ),
+                    ),
+                    child: InkWell(
+                      key: const Key('palette-pill'),
+                      customBorder: const StadiumBorder(),
+                      onTap: onOpenPalette,
+                      hoverColor: theme.colorScheme.surfaceContainerHighest,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.search, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Search notes…',
+                              style: GoogleFonts.hankenGrotesk(
+                                fontSize: 12.5,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(
+                                  color: theme.colorScheme.outlineVariant.withValues(alpha: .6),
+                                ),
+                              ),
+                              child: Text(
+                                'Ctrl K',
+                                style: GoogleFonts.splineSansMono(
+                                  fontSize: 10,
+                                  letterSpacing: 0.4,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            const Spacer(),
           // Right controls. Focus mode lives here too (feedback F14):
           // window-level chrome clusters on the right, away from navigation.
           Row(
