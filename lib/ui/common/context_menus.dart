@@ -134,14 +134,16 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
       child: InkWell(
         onTap: enabled ? () => handleItemSelection(context, menuState) : null,
         child: SizedBox(
-          height: 30,
+          height: 35,
+          width: double.infinity,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.only(right: 10),
             child: Row(
+              spacing: 2,
               children: [
                 // Aligned leading slot keeps labels flush even icon-less.
                 SizedBox.square(
-                  dimension: 20,
+                  dimension: 35,
                   child: _icon == null
                       ? null
                       : IconTheme(
@@ -149,7 +151,6 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
                           child: Icon(_icon),
                         ),
                 ),
-                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     _label,
@@ -163,12 +164,15 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
                   ),
                 ),
                 if (_shortcut != null)
-                  Text(
-                    _shortcutLabel,
-                    style: GoogleFonts.splineSansMono(
-                      fontSize: 11,
-                      letterSpacing: 0.3,
-                      color: foreground.withValues(alpha: enabled ? .62 : .3),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 50.0),
+                    child: Text(
+                      _shortcutLabel,
+                      style: GoogleFonts.splineSansMono(
+                        fontSize: 11,
+                        letterSpacing: 0.3,
+                        color: foreground.withValues(alpha: enabled ? .62 : .3),
+                      ),
                     ),
                   ),
               ],
