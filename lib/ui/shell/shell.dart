@@ -13,9 +13,11 @@ import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
 import '../sidebar/sidebar.dart';
 import '../sidebar/trash_view.dart';
+import '../../theme/quire_colors.dart';
 import 'drag_divider.dart';
 import 'pane_widths.dart';
 import 'shortcuts.dart';
+import 'window_controls.dart';
 
 /// The desktop shell: sidebar | note list | editor, folding through the three
 /// window tiers of layout-and-space.md. Owns the editor controller and keeps
@@ -28,6 +30,7 @@ class Shell extends StatefulWidget {
     this.onCreateNote,
     Future<bool> Function()? isOsFullscreen,
     Future<void> Function(bool full)? setOsFullscreen,
+    this._windowControls,
   }) : paneWidths = paneWidths ?? _default,
        isOsFullscreen = isOsFullscreen ?? windowManager.isFullScreen,
        setOsFullscreen = setOsFullscreen ?? windowManager.setFullScreen;
@@ -43,6 +46,10 @@ class Shell extends StatefulWidget {
   /// window_manager; tests inject fakes to stay off the platform channel.
   final Future<bool> Function() isOsFullscreen;
   final Future<void> Function(bool full) setOsFullscreen;
+
+  /// Native-chrome seam for the traffic-light dots (feedback F15).
+  /// Defaults to the real window manager; tests inject a recorder.
+  final WindowControls? _windowControls;
 
   static final PaneWidths _default = PaneWidths();
 
@@ -208,6 +215,8 @@ class _ShellState extends State<Shell> {
                   focusMode: _focusMode,
                   onToggleSidebar: () => widths.toggleSidebarFor(tier),
                   onToggleFocusMode: _toggleFocusMode,
+                  windowControls: widget._windowControls ?? const WindowManagerControls(),
+                  showWindowControls: controller.settings.showWindowControls,
                 ),
                 Expanded(child: paneArea),
               ],
@@ -344,6 +353,8 @@ class _HeaderBar extends StatelessWidget {
     required this.focusMode,
     required this.onToggleSidebar,
     required this.onToggleFocusMode,
+    required this.windowControls,
+    required this.showWindowControls,
   });
   final VaultController controller;
   final WindowTier tier;
@@ -351,11 +362,15 @@ class _HeaderBar extends StatelessWidget {
   final bool focusMode;
   final VoidCallback onToggleSidebar;
   final VoidCallback onToggleFocusMode;
+  final WindowControls windowControls;
+  final bool showWindowControls;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLight = theme.brightness == Brightness.light;
+    // Highlighter tokens double as the window-dot palette (feedback F15).
+    final quire = theme.extension<QuireColors>() ?? (isLight ? quireColorsLight : quireColorsDark);
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -493,11 +508,103 @@ class _HeaderBar extends StatelessWidget {
                   ),
                 ),
               ),
-              // Audit (task 15): fake traffic-light dots removed — the
-              // compositor title bar already provides real window controls.
+              const SizedBox(width: 4),
+              // Functional traffic-light controls (feedback F15). Colors come
+              // from the QuireColors highlighter tokens — no new hex.
+              if (showWindowControls)
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _WinDot(
+                        key: const Key('win-minimize'),
+                        color: quire.hlPinBase,
+                        glyph: Icons.remove_rounded,
+                        tooltip: 'Minimize',
+                        onTap: () => windowControls.minimize(),
+                      ),
+                      _WinDot(
+                        key: const Key('win-maximize'),
+                        color: quire.hlGrowBase,
+                        glyph: Icons.crop_square_rounded,
+                        tooltip: 'Maximize',
+                        onTap: () => windowControls.toggleMaximize(),
+                      ),
+                      _WinDot(
+                        key: const Key('win-close'),
+                        color: quire.hlAlertBase,
+                        glyph: Icons.close_rounded,
+                        tooltip: 'Close',
+                        onTap: () => windowControls.close(),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One traffic-light control: a colored dot that grows slightly on hover and
+/// reveals its glyph (feedback F15). Tap area stays fixed so the gesture
+/// doesn't shift mid-press.
+class _WinDot extends StatefulWidget {
+  const _WinDot({
+    super.key,
+    required this.color,
+    required this.glyph,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final Color color;
+  final IconData glyph;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  State<_WinDot> createState() => _WinDotState();
+}
+
+class _WinDotState extends State<_WinDot> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: widget.onTap,
+          child: SizedBox(
+            width: 18,
+            height: 28,
+            child: Center(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                curve: Curves.easeOut,
+                width: _hover ? 13 : 11,
+                height: _hover ? 13 : 11,
+                decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+                child: AnimatedOpacity(
+                  opacity: _hover ? 1 : 0,
+                  duration: const Duration(milliseconds: 100),
+                  child: FittedBox(
+                    child: Icon(widget.glyph, size: 8, color: Colors.black.withValues(alpha: .55)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

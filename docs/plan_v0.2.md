@@ -197,9 +197,9 @@ are green.
 - [ ] **F13: retire the list-filter search** — vault-wide search moves to
   ⌘K; the filter field + list-level `Ctrl+F` go away; slot becomes a
   removable scope chip shown when a folder/tag filter is active.
-- [ ] **F14: focus-mode button joins the right cluster** — sits beside the
+- [x] **F14: focus-mode button joins the right cluster** — sits beside the
   dark/light toggle; left side keeps sidebar toggle + wordmark.
-- [ ] **F15: functional traffic-light dots** — minimize/maximize-or-restore/
+- [x] **F15: functional traffic-light dots** — minimize/maximize-or-restore/
   close via an injectable `WindowControls` seam (production = window_manager);
   colors reuse QuireColors tokens (alert/pin/grow — zero new hex); Settings
   gains "show window controls" (default on).

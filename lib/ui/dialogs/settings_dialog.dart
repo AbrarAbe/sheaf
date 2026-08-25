@@ -166,6 +166,17 @@ class _SettingsDialog extends StatelessWidget {
                       );
                     },
                   ),
+                  const SizedBox(height: QuireSpace.s),
+                  // Window chrome (feedback F15): hide the traffic-light
+                  // dots when a compositor title bar already provides them.
+                  SwitchListTile(
+                    key: const Key('window-controls-switch'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('Show window controls', style: theme.textTheme.bodySmall),
+                    value: controller.settings.showWindowControls,
+                    onChanged: (value) => controller.setShowWindowControls(value),
+                  ),
                   const Divider(height: QuireSpace.xl),
                   const _SectionLabel('Vault'),
                   const SizedBox(height: QuireSpace.xs),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/shell/drag_divider.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
+import 'package:sheaf/ui/shell/window_controls.dart';
 import 'package:sheaf/ui/sidebar/sidebar.dart';
 
 import '../helpers/test_vault.dart';
@@ -87,7 +89,17 @@ void main() {
       required double height,
       PaneWidths? paneWidths,
       VaultController? controller,
+      bool showWindowControls = true,
+      WindowControls? windowControls,
     }) async {
+      if (!showWindowControls) {
+        // Real disk IO must leave the FakeAsync zone (test-harness rule).
+        await tester.runAsync(
+          () =>
+              File('${tempDir.path}/settings.json')
+                  .writeAsString(jsonEncode({'showWindowControls': false})),
+        );
+      }
       final ctrl =
           controller ??
           VaultController(
@@ -106,7 +118,11 @@ void main() {
         MaterialApp(
           home: MediaQuery(
             data: MediaQueryData(size: Size(width, height)),
-            child: Shell(controller: ctrl, paneWidths: paneWidths ?? PaneWidths()),
+            child: Shell(
+              controller: ctrl,
+              paneWidths: paneWidths ?? PaneWidths(),
+              windowControls: windowControls,
+            ),
           ),
         ),
       );
@@ -248,5 +264,39 @@ void main() {
       expect(controller.selectedNotePath, 'Untitled.md');
       expect(find.widgetWithText(TextField, 'Untitled'), findsOneWidget);
     });
+
+    testWidgets('traffic-light dots drive the injected window seam (F15)', (tester) async {
+      final controls = RecordingControls();
+      await pumpShell(tester, width: 1280, height: 800, windowControls: controls);
+
+      await tester.tap(find.byKey(const Key('win-minimize')));
+      await tester.tap(find.byKey(const Key('win-maximize')));
+      await tester.tap(find.byKey(const Key('win-close')));
+      await tester.pump();
+
+      expect(controls.calls, ['minimize', 'maximize', 'close']);
+    });
+
+    testWidgets('window dots hide when the setting disables them (F15)', (tester) async {
+      await pumpShell(tester, width: 1280, height: 800, showWindowControls: false);
+
+      expect(find.byKey(const Key('win-minimize')), findsNothing);
+      expect(find.byKey(const Key('win-maximize')), findsNothing);
+      expect(find.byKey(const Key('win-close')), findsNothing);
+    });
   });
+}
+
+/// Records chrome calls instead of touching the real window manager.
+class RecordingControls implements WindowControls {
+  final calls = <String>[];
+
+  @override
+  Future<void> minimize() async => calls.add('minimize');
+
+  @override
+  Future<void> toggleMaximize() async => calls.add('maximize');
+
+  @override
+  Future<void> close() async => calls.add('close');
 }

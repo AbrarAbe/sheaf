@@ -102,6 +102,23 @@ void main() {
     });
   });
 
+  testWidgets('window controls switch records the hide choice', (tester) async {
+    // Tall viewport so the lower Appearance controls are hittable.
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = await pumpSettings(tester);
+    expect(controller.settings.showWindowControls, isTrue);
+
+    await tester.tap(find.byKey(const Key('window-controls-switch')));
+    await tester.pump();
+
+    expect(controller.windowControlToggles, [false]);
+    expect(controller.settings.showWindowControls, isFalse);
+  });
+
   testWidgets('Change vault delegates to the controller with picked path', (tester) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
