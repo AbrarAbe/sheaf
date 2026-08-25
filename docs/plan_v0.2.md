@@ -205,8 +205,9 @@ are green.
   gains "show window controls" (default on).
 - [x] **F16: trash timestamps** — surface the existing `trashedAt`:
   relative label beside the title, full date in tooltip.
-- [ ] **F17: tabs vs All-notes** — design proposal only (open-notes tab
+- [x] **F17: tabs vs All-notes** — design proposal only (open-notes tab
   strip vs creation-scope rules); user picks direction before any code.
+  → written up as `docs/adr/0007-open-notes-tabs.md` (status: Proposed).
 - [x] **F18: context-menu restyle** — package defaults reserve 32px gutters
   and wash labels to 70% alpha; ship a custom menu-item entry (30px rows,
   full-contrast Hanken labels, mono shortcuts, destructive tint, themed

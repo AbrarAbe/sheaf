@@ -93,17 +93,33 @@ changes how the app looks (worlds, zoom, type size, typeface).
       in `lib/theme`; nothing outside reads hex.
     - **Zoom**: default view zoom percent (persisted; story 11 keys adjust it).
     - **Type size**: editor base font size (12–24 px) applied to editor body
-      and preview.
-    - **Typeface**: font family picker listing fonts discovered in standard
-      Linux directories (`~/.fonts`, `~/.local/share/fonts`,
-      `/usr/share/fonts`); the chosen font loads at runtime (`dart:ui`
-      FontLoader) and applies to editor body + preview; falls back silently
-      to the bundled stack if the file is missing at launch.
+      and preview. (The v0.2 typeface picker was **removed** in feedback
+      round 5 — bundled Google Fonts only; old settings JSON with font keys
+      still loads.)
+    - **Window controls**: functional traffic-light dots (minimize /
+      maximize-or-restore / close via `window_manager`), hideable with a
+      settings switch for setups that keep the compositor title bar.
+17. **Quick-switcher (⌘K)** — a header pill (hidden on the stack tier) and a
+    global `Ctrl+K` open an overlay palette: one query field, ranked note
+    rows. Empty query lists every vault note newest-first, so row one is
+    always the last-edited note; typing narrows by title-then-body matches.
+    ↑/↓ move the highlight (scrolling it into view), Enter opens, Esc closes;
+    mouse hover follows and clicks open. The palette ignores sidebar folder/
+    tag scope so any note is reachable from any scoping state.
+18. **Scope chips in the list pane** — the list-level filter field is gone
+    (vault search lives in ⌘K). When a folder or tag filter is active the
+    toolbar shows a removable chip (`in proj`, `#urgent`); tapping clears
+    back to All notes. Unscoped, a dim caption reads "All notes".
+19. **Trash timestamps** — each trash entry shows a compact age stamp
+    (just now / 5m / 3h / 2d; absolute date beyond a week) with the full
+    timestamp on hover.
 
-Explicitly **deferred**: command palette (`Ctrl+K`), global hotkeys
-(`Ctrl+Alt+N`), reminders, sync/mobile polish, WYSIWYG editing, parsing local
-GTK themes' CSS into color worlds (see Open Questions), bundling additional
-Google Fonts as offline assets.
+Explicitly **deferred**: command palette (`Ctrl+K`) → **shipped in round 5**
+as story 17, global hotkeys (`Ctrl+Alt+N`), reminders, sync/mobile polish,
+WYSIWYG editing, parsing local GTK themes' CSS into color worlds (see Open
+Questions), bundling additional Google Fonts as offline assets, local font
+loading (removed), open-notes editor tabs (proposed — see
+`docs/adr/0007-open-notes-tabs.md`).
 
 ## Assumptions
 

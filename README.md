@@ -28,15 +28,18 @@ GTK, shipped as a self-contained tarball.
   quotes, fenced code, links, tables, `<u>` underline) rendered with your
   chosen theme world; System mode follows your desktop.
 - **Theme worlds & type controls** — Quire, Graphite, and Sepia color sets ×
-  System/Light/Dark; app-wide zoom (`Ctrl+=/-/0`); editor type size 12–24 px;
-  pick any font from your system directories.
+  System/Light/Dark; app-wide zoom (`Ctrl+=/-/0`); editor type size 12–24 px.
+- **Quick-switcher** — `Ctrl+K` (or the header search pill) jumps to any
+  note; an empty query lists notes newest-first, so the first row is always
+  what you touched last.
 - **Focus & fullscreen** — `F10` collapses to an editor-only surface;
-  `F11` true native fullscreen.
+  `F11` true native fullscreen; optional traffic-light window controls in
+  the header (hideable in settings).
 - **Images** — pick or drop images into `<vault>/attachments/` and reference
   them relatively, with Obsidian-compatible width syntax:
   `![alt|400](attachments/img.png)`.
 - **Trash** — deletions land in `.trash/`; restore returns notes to their
-  original folder, or delete forever.
+  original folder, or delete forever; each entry shows when it was trashed.
 - **Auto-refresh** — external changes to the vault appear live via a file
   watcher.
 
