@@ -190,7 +190,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 
 ### Phase 4 — Appearance & audit polish
 
-- [ ] **Task 13: Theme worlds**
+- [x] **Task 13: Theme worlds**
   `lib/theme/worlds.dart` registry; add Graphite + Sepia token sets; settings
   dialog: world picker + System/Light/Dark radio; migrate old setting.
   - Acceptance: ≥3 worlds render both modes; no hex outside lib/theme;
