@@ -207,7 +207,7 @@ are green.
   relative label beside the title, full date in tooltip.
 - [ ] **F17: tabs vs All-notes** — design proposal only (open-notes tab
   strip vs creation-scope rules); user picks direction before any code.
-- [ ] **F18: context-menu restyle** — package defaults reserve 32px gutters
+- [x] **F18: context-menu restyle** — package defaults reserve 32px gutters
   and wash labels to 70% alpha; ship a custom menu-item entry (30px rows,
   full-contrast Hanken labels, mono shortcuts, destructive tint, themed
   container radius/border/shadow) behind the existing `quireMenu` API.

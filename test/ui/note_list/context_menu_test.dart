@@ -30,13 +30,17 @@ void main() {
     await tester.tap(find.text('Alpha'), buttons: kSecondaryButton, warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    // The library renders entry text more than once (visual + semantics).
-    expect(find.text('Delete'), findsWidgets);
+    // QuireMenuItem renders its label exactly once.
+    expect(find.text('Delete'), findsOneWidget);
 
-    await tester.tap(find.text('Delete').last);
+    // Quire typography: full-contrast Hanken label, compact row.
+    final label = tester.widget<Text>(find.text('Delete'));
+    expect(label.style?.fontSize, 13);
+    expect(label.style?.fontWeight, FontWeight.w500);
+
+    await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
     expect(controller.deleted, ['Alpha.md']);
   });
 }
-
