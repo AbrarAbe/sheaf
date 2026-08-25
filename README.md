@@ -10,15 +10,28 @@ GTK, shipped as a self-contained tarball.
   open anywhere. Folder create/rename/delete included; dot-directories are
   left alone.
 - **Three-pane shell** — sidebar · note list · editor, adapting across wide
-  (≥1120 px), compact (720–1119 px), and stacked (<720 px) layouts, with a
-  collapsible rail and draggable dividers with sane clamps.
-- **Fast retrieval** — day-grouped, recent-first note list and instant
-  filtering across title + body with title-priority ranking.
-- **Focused editor** — monospace source editing with debounced autosave
-  (~1 s), rename-by-title, inline tag chips, and a `saved HH:MM` footer.
+  (≥1120 px), compact (720–1119 px), and stacked (<720 px) layouts. The
+  sidebar is user-owned in every tier (toggle button or `Ctrl+\`), persists
+  per tier, and becomes an overlay drawer when stacked. Draggable dividers
+  with sane clamps.
+- **Fast retrieval** — pinned notes float in a PINNED section; the rest is
+  day-grouped, recent-first, with instant filtering across title + body and
+  title-priority ranking.
+- **Three editor modes** — Normal renders formatting live with markers hidden
+  until touched; Markdown shows raw monospace source; Preview renders the GFM
+  subset read-only. Autosave (~1 s) behaves identically everywhere.
+- **Keyboard-complete editing** — `Ctrl+B/I/U` toggle bold/italic/underline
+  (word-aware at a bare caret), Enter continues lists, `Ctrl+F` finds inside
+  the note, `Ctrl+D` selects a word, `Ctrl+Shift+C/V` copy/paste,
+  `Ctrl+Tab` cycles notes.
 - **Live preview** — GFM subset (headings, emphasis, lists, task lists,
-  quotes, fenced code, links, tables) rendered with the Quire light/dark
-  themes; System mode follows your desktop.
+  quotes, fenced code, links, tables, `<u>` underline) rendered with your
+  chosen theme world; System mode follows your desktop.
+- **Theme worlds & type controls** — Quire, Graphite, and Sepia color sets ×
+  System/Light/Dark; app-wide zoom (`Ctrl+=/-/0`); editor type size 12–24 px;
+  pick any font from your system directories.
+- **Focus & fullscreen** — `F10` collapses to an editor-only surface;
+  `F11` true native fullscreen.
 - **Images** — pick or drop images into `<vault>/attachments/` and reference
   them relatively, with Obsidian-compatible width syntax:
   `![alt|400](attachments/img.png)`.
@@ -34,10 +47,19 @@ GTK, shipped as a self-contained tarball.
 | New note | `Ctrl+N` |
 | Move selection | `↑` / `↓` |
 | Open selected | `Enter` |
-| Delete selected | `Del` (undo toast) |
-| Find/filter | `Ctrl+F`, dismiss with `Esc` |
-| Toggle sidebar rail | `Ctrl+\` |
-| Cycle theme | `Ctrl+Shift+L` |
+| Delete selected | `Del` (corner toast with Undo) |
+| Find/filter list | `Ctrl+F`, dismiss with `Esc` |
+| Show/hide sidebar | `Ctrl+\` |
+| Cycle theme mode | `Ctrl+Shift+L` |
+| Next/previous note | `Ctrl+Tab` / `Ctrl+Shift+Tab` |
+| Bold / italic / underline | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` |
+| Select word | `Ctrl+D` |
+| Find in note | `Ctrl+F` inside the editor, `Esc` closes |
+| Copy/paste (terminal-style) | `Ctrl+Shift+C` / `Ctrl+Shift+V` |
+| Cycle editor mode | `Ctrl+Shift+M` |
+| Zoom | `Ctrl+=` / `Ctrl+-`, reset `Ctrl+0` |
+| Focus mode | `F10` |
+| Fullscreen | `F11` |
 
 ## Install (Linux x64)
 
