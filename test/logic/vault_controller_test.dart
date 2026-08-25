@@ -238,4 +238,60 @@ void main() {
       expect((await controller.trash()).single.isFolder, isTrue);
     });
   });
+
+  group('pinning (spec story 13)', () {
+    test('togglePin persists and reports state', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+      final note = await controller.createNote(title: 'Pinned One');
+
+      expect(controller.isPinned(note.path), isFalse);
+      await controller.togglePin(note.path);
+      expect(controller.isPinned(note.path), isTrue);
+
+      // Fresh controller over the same vault sees the pin.
+      final other = makeController();
+      addTearDown(other.dispose);
+      await other.initialize();
+      await other.openVault(vaultDir.path);
+      expect(other.isPinned(note.path), isTrue);
+    });
+
+    test('visibleNotes lists pinned notes first, recency within groups', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+
+      final a = await controller.createNote(title: 'A');
+      final b = await controller.createNote(title: 'B');
+      await controller.createNote(title: 'C');
+      // Newest-first baseline: C, B, A.
+
+      await controller.togglePin(a.path); // oldest note pinned → floats up
+      final order = controller.visibleNotes.map((n) => n.title).toList();
+      expect(order, ['A', 'C', 'B']);
+
+      await controller.togglePin(b.path); // second pin keeps recency order
+      expect(controller.visibleNotes.map((n) => n.title).toList(), ['B', 'A', 'C']);
+
+      await controller.togglePin(b.path);
+      // Unpin B: only A stays pinned; unpinned group returns to C, B, A.
+      expect(controller.visibleNotes.map((n) => n.title).toList(), ['A', 'C', 'B']);
+    });
+
+    test('deleting a pinned note clears its pin', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+      final note = await controller.createNote(title: 'Temp');
+      await controller.togglePin(note.path);
+
+      await controller.deleteNote(note.path);
+      expect(controller.isPinned(note.path), isFalse);
+    });
+  });
 }

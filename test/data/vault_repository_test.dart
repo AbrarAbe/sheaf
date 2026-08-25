@@ -178,4 +178,65 @@ void main() {
       expect(slugify(''), 'untitled');
     });
   });
+
+  group('pins (.sheaf/meta.json, spec story 13)', () {
+    test('pins and unpins a note, persisting across instances', () async {
+      final note = await vault.createNote(title: 'Keep', folder: 'work');
+
+      await vault.setPinned(note.path, true);
+      expect(await vault.pinnedPaths(), {note.path});
+
+      // A fresh repository over the same vault sees the pin.
+      final other = VaultRepository(root: vault.root);
+      expect(await other.pinnedPaths(), {note.path});
+
+      await vault.setPinned(note.path, false);
+      expect(await vault.pinnedPaths(), isEmpty);
+    });
+
+    test('pinning twice is idempotent', () async {
+      final note = await vault.createNote(title: 'Twice');
+      await vault.setPinned(note.path, true);
+      await vault.setPinned(note.path, true);
+      expect(await vault.pinnedPaths().then((s) => s.length), 1);
+    });
+
+    test('renaming a note moves its pin', () async {
+      final note = await vault.createNote(title: 'Old Name');
+      await vault.setPinned(note.path, true);
+
+      final newPath = await vault.renameNote(note.path, 'New Name');
+      expect(await vault.pinnedPaths(), {newPath});
+    });
+
+    test('deleting a note drops its pin record', () async {
+      final note = await vault.createNote(title: 'Doomed');
+      await vault.setPinned(note.path, true);
+
+      await vault.deleteNote(note.path);
+      expect(await vault.pinnedPaths(), isEmpty);
+    });
+
+    test('a corrupt meta file recovers to empty', () async {
+      final note = await vault.createNote(title: 'C');
+      final meta = File('${vault.root.path}/.sheaf/meta.json');
+      await meta.parent.create(recursive: true);
+      await meta.writeAsString('{not json');
+
+      expect(await vault.pinnedPaths(), isEmpty);
+
+      // And the vault still accepts new pins afterwards.
+      await vault.setPinned(note.path, true);
+      expect(await vault.pinnedPaths(), {note.path});
+    });
+
+    test('meta.json lives in .sheaf and never lists as a note', () async {
+      await vault.createNote(title: 'Visible');
+      final some = await vault.createNote(title: 'Some');
+      await vault.setPinned(some.path, true);
+
+      final names = (await vault.listNotes()).map((n) => n.fileName).toSet();
+      expect(names.any((f) => f.contains('meta')), isFalse);
+    });
+  });
 }

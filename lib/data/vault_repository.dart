@@ -52,13 +52,17 @@ class VaultRepository {
 
   static const trashDirName = '.trash';
   static const attachmentsDirName = 'attachments';
+  static const metaDirName = '.sheaf';
   static const _indexFileName = 'index.json';
+  static const _metaFileName = 'meta.json';
 
   /// The vault root as given (made absolute).
   final Directory root;
 
   Directory get _trash => Directory(p.join(root.path, trashDirName));
   File get _indexFile => File(p.join(_trash.path, _indexFileName));
+  Directory get _metaDir => Directory(p.join(root.path, metaDirName));
+  File get _metaFile => File(p.join(_metaDir.path, _metaFileName));
 
   // ---------- notes ----------
 
@@ -112,10 +116,22 @@ class VaultRepository {
       candidate = p.join(dir, '$base-${n++}.md');
     }
     await oldFile.rename(candidate);
-    return _relOf(candidate)!;
+    final newRel = _relOf(candidate)!;
+
+    // A pinned note keeps its pin under the new path.
+    final pins = await pinnedPaths();
+    if (pins.remove(_normalizeRel(relPath))) {
+      pins.add(newRel);
+      await _savePins(pins);
+    }
+    return newRel;
   }
 
-  Future<void> deleteNote(String relPath) => _trashItem(fileOf(relPath).path);
+  Future<void> deleteNote(String relPath) async {
+    await _trashItem(fileOf(relPath).path);
+    // A deleted note carries no pin into the trash (spec story 13).
+    await setPinned(relPath, false);
+  }
 
   /// Restores a trashed item to where it was before deletion.
   /// [trashedName] is a top-level item name inside `.trash/`.
@@ -347,6 +363,42 @@ class VaultRepository {
         ],
       }),
     );
+  }
+
+  // ---------- pins (spec story 13) ----------
+
+  /// Vault-relative paths of pinned notes, from `<vault>/.sheaf/meta.json`.
+  /// A missing or corrupt file recovers to an empty set — pins are a
+  /// convenience, never a reason to refuse the vault.
+  Future<Set<String>> pinnedPaths() async {
+    try {
+      final raw = await _metaFile.readAsString();
+      final json = jsonDecode(raw) as Map<String, Object?>;
+      return {
+        for (final item in json['pinned'] as List? ?? [])
+          if (item is String) _normalizeRel(item),
+      };
+    } on FileSystemException {
+      return {};
+    } on FormatException {
+      return {};
+    } on TypeError {
+      return {};
+    }
+  }
+
+  /// Adds or removes [relPath] from the pin set. No-op when already in state.
+  Future<void> setPinned(String relPath, bool pinned) async {
+    final rel = _normalizeRel(relPath);
+    final pins = await pinnedPaths();
+    final changed = pinned ? pins.add(rel) : pins.remove(rel);
+    if (!changed) return;
+    await _savePins(pins);
+  }
+
+  Future<void> _savePins(Set<String> pins) async {
+    await _metaDir.create(recursive: true);
+    await _metaFile.writeAsString(jsonEncode({'pinned': pins.toList()..sort()}));
   }
 
   static TrashEntry _trashEntryFromJson(Map<String, Object?> json) => TrashEntry(

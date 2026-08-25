@@ -207,9 +207,9 @@ class _ListPaneState extends State<ListPane> {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final notes = searchAndSort(controller.visibleNotes.toList(), _filter.text);
+        final sorted = searchAndSort(controller.visibleNotes.toList(), _filter.text);
 
-        if (notes.isEmpty) {
+        if (sorted.isEmpty) {
           final hasQuery = _filter.text.trim().isNotEmpty;
           if (hasQuery) {
             return _NoResults(query: _filter.text);
@@ -217,56 +217,67 @@ class _ListPaneState extends State<ListPane> {
           return _EmptyState(onCreate: widget.onCreateNote);
         }
 
+        // Pinned notes float above everything as their own section (story 13);
+        // the rest keeps its day-grouping, newest-first.
+        final pinned = sorted.where((n) => controller.isPinned(n.path)).toList();
+        final rest = sorted.where((n) => !controller.isPinned(n.path)).toList();
+
+        final blocks = <Widget>[];
+        if (pinned.isNotEmpty) {
+          blocks.add(_eyebrow(theme, 'PINNED'));
+          for (final note in pinned) {
+            blocks.add(_rowFor(controller, note));
+          }
+        }
+
         // Group into consecutive day buckets (list is already newest-first).
         final groups = <String, List<Note>>{};
         String? lastLabel;
-        for (final n in notes) {
+        for (final n in rest) {
           final label = dayLabel(n.updatedAt ?? DateTime.now());
           if (label != lastLabel) groups[label] = [];
           groups[label]!.add(n);
           lastLabel = label;
         }
+        for (final entry in groups.entries) {
+          blocks.add(_eyebrow(theme, entry.key.toUpperCase()));
+          for (final note in entry.value) {
+            blocks.add(_rowFor(controller, note));
+          }
+        }
 
-        return ListView.builder(
-          padding: const EdgeInsets.only(bottom: 24),
-          itemCount: groups.entries.length,
-          itemBuilder: (context, index) {
-            final entry = groups.entries.elementAt(index);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-                  child: Text(
-                    entry.key.toUpperCase(),
-                    style: GoogleFonts.splineSansMono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.9,
-                      height: 16 / 11,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-                for (final note in entry.value)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                    child: _NoteRow(
-                      key: _rowKeys.putIfAbsent(note.path, GlobalKey.new),
-                      note: note,
-                      selected: controller.selectedNotePath == note.path,
-                      onTap: () => controller.selectNote(note),
-                      onDelete: () => _deleteWithUndo(note),
-                    ),
-                  ),
-              ],
-            );
-          },
-        );
+        return ListView(children: blocks);
       },
     );
   }
+
+  Padding _eyebrow(ThemeData theme, String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+    child: Text(
+      text,
+      style: GoogleFonts.splineSansMono(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.9,
+        height: 16 / 11,
+        color: theme.colorScheme.onSurfaceVariant,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    ),
+  );
+
+  Padding _rowFor(VaultController controller, Note note) => Padding(
+    padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+    child: _NoteRow(
+      key: _rowKeys.putIfAbsent(note.path, GlobalKey.new),
+      note: note,
+      selected: controller.selectedNotePath == note.path,
+      pinned: controller.isPinned(note.path),
+      onTogglePin: () => controller.togglePin(note.path),
+      onTap: () => controller.selectNote(note),
+      onDelete: () => _deleteWithUndo(note),
+    ),
+  );
 }
 
 class _NoteRow extends StatefulWidget {
@@ -276,12 +287,16 @@ class _NoteRow extends StatefulWidget {
     required this.selected,
     required this.onTap,
     required this.onDelete,
+    required this.pinned,
+    required this.onTogglePin,
   });
 
   final Note note;
   final bool selected;
+  final bool pinned;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final VoidCallback onTogglePin;
 
   @override
   State<_NoteRow> createState() => _NoteRowState();
@@ -292,6 +307,11 @@ class _NoteRowState extends State<_NoteRow> {
 
   ContextMenu<Object?> get _menu => quireMenu([
     menuItem('Open', value: 'open', icon: Icons.description_outlined),
+    menuItem(
+      widget.pinned ? 'Unpin' : 'Pin',
+      value: 'pin',
+      icon: widget.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+    ),
     menuDivider,
     menuItem('Delete', value: 'delete', icon: Icons.delete_outline, shortcut: deleteActivator),
   ]);
@@ -304,6 +324,7 @@ class _NoteRowState extends State<_NoteRow> {
       menu: _menu,
       onItemSelected: (value) {
         if (value == 'open') widget.onTap();
+        if (value == 'pin') widget.onTogglePin();
         if (value == 'delete') widget.onDelete();
       },
       child: MouseRegion(
@@ -437,9 +458,11 @@ class _NoteRowState extends State<_NoteRow> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _HoverIcon(
-                                icon: Icons.push_pin_outlined,
-                                onTap: () {},
-                                tooltip: 'Pin',
+                                key: Key('row-pin-${Uri.encodeComponent(widget.note.path)}'),
+                                icon: widget.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+                                color: widget.pinned ? theme.colorScheme.primary : null,
+                                onTap: widget.onTogglePin,
+                                tooltip: widget.pinned ? 'Unpin' : 'Pin',
                               ),
                               const SizedBox(width: 4),
                               _HoverIcon(
@@ -464,10 +487,17 @@ class _NoteRowState extends State<_NoteRow> {
 }
 
 class _HoverIcon extends StatelessWidget {
-  const _HoverIcon({required this.icon, required this.onTap, required this.tooltip});
+  const _HoverIcon({
+    super.key,
+    required this.icon,
+    required this.onTap,
+    required this.tooltip,
+    this.color,
+  });
   final IconData icon;
   final VoidCallback onTap;
   final String tooltip;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -480,7 +510,7 @@ class _HoverIcon extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
+          child: Icon(icon, size: 14, color: color ?? theme.colorScheme.onSurfaceVariant),
         ),
       ),
     );

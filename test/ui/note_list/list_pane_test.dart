@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/data/vault_repository.dart';
@@ -122,5 +123,60 @@ void main() {
     await tester.tap(find.text('Write the first note'));
     await tester.pump();
     expect(invoked, 1);
+  });
+
+  group('pinning (spec story 13)', () {
+    testWidgets('pinned notes get a PINNED eyebrow and float to the top', (tester) async {
+      await pumpList(
+        tester,
+        seed: (vault) async {
+          final old = await vault.createNote(title: 'Old but gold', body: 'stale');
+          await vault.createNote(title: 'Fresh news', body: 'new');
+          await vault.setPinned(old.path, true);
+        },
+      );
+
+      // Pinned section leads regardless of recency.
+      expect(find.text('PINNED'), findsOneWidget);
+      final pinnedTitle = tester.getTopLeft(find.text('Old but gold'));
+      final freshTitle = tester.getTopLeft(find.text('Fresh news'));
+      expect(pinnedTitle.dy, lessThan(freshTitle.dy));
+
+      // Filled pin indicator on the pinned row only.
+      final icons = tester.widgetList<Icon>(find.byIcon(Icons.push_pin)).toList();
+      expect(icons.length, 1);
+      expect(icons.single.color, isNotNull);
+    });
+
+    testWidgets('tapping the hover pin toggles the controller state', (tester) async {
+      final controller = await pumpList(
+        tester,
+        seed: (vault) => vault.createNote(title: 'Toggle me'),
+      );
+      final path = controller.notes.single.path;
+      expect(controller.isPinned(path), isFalse);
+
+      // The pin button only paints/hits while the row is hovered.
+      final rowCenter = tester.getCenter(find.text('Toggle me'));
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: rowCenter);
+      addTearDown(gesture.removePointer);
+      await gesture.moveTo(rowCenter);
+      await tester.pump();
+
+      // togglePin writes meta.json on real disk — wait for the flip
+      // deterministically instead of guessing a delay.
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(Key('row-pin-${Uri.encodeComponent(path)}')));
+        for (var i = 0; i < 50 && !controller.isPinned(path); i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(controller.isPinned(path), isTrue);
+      expect(find.text('PINNED'), findsOneWidget);
+    });
   });
 }

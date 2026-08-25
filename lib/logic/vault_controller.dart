@@ -24,6 +24,7 @@ class VaultController extends ChangeNotifier {
   Timer? _refreshDebounce;
   bool _disposed = false;
   List<Note> _notes = [];
+  Set<String> _pinned = {};
   List<FolderNode> _folders = [];
 
   /// Currently scoped folder, or null for the all-notes view.
@@ -48,14 +49,28 @@ class VaultController extends ChangeNotifier {
     return vault;
   }
 
-  /// Notes passing the active folder + tag filters.
-  Iterable<Note> get visibleNotes => _notes.where((n) {
-    if (selectedFolder != null && !n.path.startsWith('$selectedFolder/')) {
-      return false;
-    }
-    if (selectedTag != null && !n.tags.contains(selectedTag)) return false;
-    return true;
-  });
+  /// Notes passing the active folder + tag filters, pinned notes floated to
+  /// the top (recency order preserved within each group — spec story 13).
+  Iterable<Note> get visibleNotes {
+    final filtered = _notes.where((n) {
+      if (selectedFolder != null && !n.path.startsWith('$selectedFolder/')) {
+        return false;
+      }
+      if (selectedTag != null && !n.tags.contains(selectedTag)) return false;
+      return true;
+    });
+    // _notes is newest-first; a stable partition keeps that order inside
+    // each group.
+    return [
+      ...filtered.where((n) => _pinned.contains(n.path)),
+      ...filtered.where((n) => !_pinned.contains(n.path)),
+    ];
+  }
+
+  /// Vault-relative paths of the currently pinned notes.
+  Set<String> get pinnedPaths => Set.unmodifiable(_pinned);
+
+  bool isPinned(String relPath) => _pinned.contains(relPath);
 
   /// Tag → note count across the whole vault (sidebar list).
   Map<String, int> get tagCounts {
@@ -218,6 +233,20 @@ class VaultController extends ChangeNotifier {
     if (_disposed) return;
     _notes = notes;
     _folders = folders;
+    _pinned = await vault.pinnedPaths();
+    if (_disposed) return;
+    notifyListeners();
+  }
+
+  /// Flips the pin state of [relPath] and persists it to `.sheaf/meta.json`.
+  Future<void> togglePin(String relPath) async {
+    final target = !_pinned.contains(relPath);
+    await _requireVault().setPinned(relPath, target);
+    if (target) {
+      _pinned.add(relPath);
+    } else {
+      _pinned.remove(relPath);
+    }
     notifyListeners();
   }
 
