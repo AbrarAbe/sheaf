@@ -194,7 +194,7 @@ are green.
   functional: overlay palette with autofocus field, ↑/↓ + Enter/Esc, mouse
   rows; empty query lists notes newest-first so row 1 = last edited;
   ranking reuses `searchAndSort`; `Ctrl+K` global binding.
-- [ ] **F13: retire the list-filter search** — vault-wide search moves to
+- [x] **F13: retire the list-filter search** — vault-wide search moves to
   ⌘K; the filter field + list-level `Ctrl+F` go away; slot becomes a
   removable scope chip shown when a folder/tag filter is active.
 - [x] **F14: focus-mode button joins the right cluster** — sits beside the

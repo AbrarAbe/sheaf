@@ -25,9 +25,6 @@ class ListPane extends StatefulWidget {
 }
 
 class _ListPaneState extends State<ListPane> {
-  final _filter = TextEditingController();
-  bool _filterOpen = false;
-  final _filterFocus = FocusNode();
   final _listFocus = FocusNode();
   final _rowKeys = <String, GlobalKey>{};
 
@@ -39,15 +36,12 @@ class _ListPaneState extends State<ListPane> {
 
   @override
   void dispose() {
-    _filter.dispose();
-    _filterFocus.dispose();
     _listFocus.dispose();
     super.dispose();
   }
 
-  /// Notes in current display order (post-filter, ranked).
-  List<Note> get _orderedNotes =>
-      searchAndSort(widget.controller.visibleNotes.toList(), _filter.text);
+  /// Notes in current display order (scope-filtered, newest-first).
+  List<Note> get _orderedNotes => widget.controller.visibleNotes.toList();
 
   /// Deletes [note] and offers an undo toast backed by the trash.
   Future<void> _deleteWithUndo(Note note) async {
@@ -80,16 +74,6 @@ class _ListPaneState extends State<ListPane> {
       return KeyEventResult.ignored;
     }
 
-    // While the filter is open only Esc applies here — arrows belong to the
-    // text field.
-    if (_filterOpen) {
-      if (event.logicalKey == LogicalKeyboardKey.escape) {
-        _closeFilter(clear: true);
-        return KeyEventResult.handled;
-      }
-      return KeyEventResult.ignored;
-    }
-
     final notes = _orderedNotes;
     if (notes.isEmpty) return KeyEventResult.ignored;
 
@@ -119,86 +103,97 @@ class _ListPaneState extends State<ListPane> {
     });
   }
 
-  void _closeFilter({required bool clear}) {
-    if (clear) _filter.clear();
-    setState(() => _filterOpen = false);
-    _listFocus.requestFocus();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Shortcuts(
-      shortcuts: const {
-        SingleActivator(LogicalKeyboardKey.keyF, control: true): FindFilterIntent(),
-      },
-      child: Actions(
-        actions: {
-          FindFilterIntent: CallbackAction<FindFilterIntent>(
-            onInvoke: (intent) {
-              setState(() => _filterOpen = true);
-              _filterFocus.requestFocus();
-              return null;
-            },
-          ),
+    return Focus(
+      focusNode: _listFocus,
+      autofocus: true,
+      onKeyEvent: _onKeyEvent,
+      child: QuireContextMenuRegion(
+        menu: _scaffoldMenu,
+        onItemSelected: (value) {
+          if (value == 'new-note') widget.onCreateNote?.call();
         },
-        child: Focus(
-          focusNode: _listFocus,
-          autofocus: true,
-          onKeyEvent: _onKeyEvent,
-          child: QuireContextMenuRegion(
-            menu: _scaffoldMenu,
-            onItemSelected: (value) {
-              if (value == 'new-note') widget.onCreateNote?.call();
-            },
-            child: Container(
-              color: theme.colorScheme.surface,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Toolbar: filter + New note
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _FilterField(
-                            controller: _filter,
-                            focusNode: _filterFocus,
-                            open: _filterOpen,
-                            onToggle: () => setState(() => _filterOpen = !_filterOpen),
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          onPressed: widget.onCreateNote == null
-                              ? null
-                              : () => widget.onCreateNote!(),
-                          icon: const Icon(Icons.edit_outlined, size: 16),
-                          label: const Text('New note'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            textStyle: GoogleFonts.hankenGrotesk(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
+        child: Container(
+          color: theme.colorScheme.surface,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Toolbar: scope chips + New note (feedback F13 — vault-wide
+              // search moved to the Ctrl+K palette).
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ListenableBuilder(
+                        listenable: widget.controller,
+                        builder: (context, _) => _scopeChips(theme),
+                      ),
                     ),
-                  ),
-                  Divider(
-                    height: 1,
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-                  ),
-                  Expanded(child: _buildList(theme)),
-                ],
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: widget.onCreateNote == null ? null : () => widget.onCreateNote!(),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: const Text('New note'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        textStyle: GoogleFonts.hankenGrotesk(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              Divider(height: 1, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+              Expanded(child: _buildList(theme)),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  /// Removable scope indicators; a dim caption when the vault is unscoped.
+  Widget _scopeChips(ThemeData theme) {
+    final controller = widget.controller;
+    final folder = controller.selectedFolder;
+    final tag = controller.selectedTag;
+    if (folder == null && tag == null) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          'All notes',
+          style: GoogleFonts.splineSansMono(
+            fontSize: 11,
+            letterSpacing: 0.5,
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: .7),
+          ),
+        ),
+      );
+    }
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (folder != null)
+          _ScopeChip(
+            key: const Key('scope-chip-folder'),
+            icon: Icons.folder_outlined,
+            label: 'in $folder',
+            onClear: () => controller.selectFolder(null),
+          ),
+        if (tag != null)
+          _ScopeChip(
+            key: const Key('scope-chip-tag'),
+            icon: Icons.sell_outlined,
+            label: '#$tag',
+            onClear: () => controller.selectTag(null),
+          ),
+      ],
     );
   }
 
@@ -207,13 +202,9 @@ class _ListPaneState extends State<ListPane> {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final sorted = searchAndSort(controller.visibleNotes.toList(), _filter.text);
+        final sorted = controller.visibleNotes.toList();
 
         if (sorted.isEmpty) {
-          final hasQuery = _filter.text.trim().isNotEmpty;
-          if (hasQuery) {
-            return _NoResults(query: _filter.text);
-          }
           return _EmptyState(onCreate: widget.onCreateNote);
         }
 
@@ -517,75 +508,6 @@ class _HoverIcon extends StatelessWidget {
   }
 }
 
-class _FilterField extends StatelessWidget {
-  const _FilterField({
-    required this.controller,
-    required this.focusNode,
-    required this.open,
-    required this.onToggle,
-    required this.onChanged,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final bool open;
-  final VoidCallback onToggle;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (!open) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: IconButton(
-          tooltip: 'Search notes',
-          onPressed: () {
-            onToggle();
-            focusNode.requestFocus();
-          },
-          icon: const Icon(Icons.search),
-        ),
-      );
-    }
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      autofocus: true,
-      onChanged: onChanged,
-      style: GoogleFonts.hankenGrotesk(fontSize: 14, color: theme.colorScheme.onSurface),
-      decoration: InputDecoration(
-        hintText: 'Filter…',
-        hintStyle: GoogleFonts.hankenGrotesk(
-          fontSize: 14,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-        prefixIcon: Icon(Icons.search, size: 18, color: theme.colorScheme.onSurfaceVariant),
-        suffixIcon: IconButton(
-          tooltip: 'Close search',
-          icon: Icon(Icons.close, size: 16, color: theme.colorScheme.onSurfaceVariant),
-          onPressed: () {
-            controller.clear();
-            onChanged('');
-            onToggle();
-          },
-        ),
-        filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(QuireRadius.m),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(QuireRadius.m),
-          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.2),
-        ),
-      ),
-    );
-  }
-}
-
 class _EmptyState extends StatelessWidget {
   const _EmptyState({this.onCreate});
 
@@ -651,50 +573,46 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _NoResults extends StatelessWidget {
-  const _NoResults({required this.query});
-  final String query;
+/// A removable scope indicator (feedback F13): folder/tag filter as a pill
+/// with a clear affordance.
+class _ScopeChip extends StatelessWidget {
+  const _ScopeChip({super.key, required this.icon, required this.label, required this.onClear});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onClear,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 4, 6, 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: .6)),
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 32,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 12),
+            Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 5),
             Text(
-              "No notes match '$query'.",
+              label,
               style: GoogleFonts.hankenGrotesk(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
                 color: theme.colorScheme.onSurface,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Try fewer words, or check the spelling.',
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 13,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            const SizedBox(width: 3),
+            Icon(Icons.close_rounded, size: 12, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),
     );
   }
-}
-
-/// Ctrl+F — expand and focus the filter field.
-class FindFilterIntent extends Intent {
-  const FindFilterIntent();
 }

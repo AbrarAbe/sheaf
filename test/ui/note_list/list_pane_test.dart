@@ -54,23 +54,47 @@ void main() {
     expect(find.text('TODAY'), findsOneWidget);
   });
 
-  testWidgets('filter narrows the visible rows', (tester) async {
-    await pumpList(
+  testWidgets('folder scope shows a removable chip; clearing restores all notes', (tester) async {
+    final controller = await pumpList(
       tester,
       seed: (vault) async {
-        await vault.createNote(title: 'Meeting notes');
+        await vault.createFolder('proj');
+        await vault.createNote(title: 'Meeting notes', folder: 'proj');
         await vault.createNote(title: 'Groceries');
       },
     );
-
-    // Filter starts collapsed; expand it before typing.
-    await tester.tap(find.byTooltip('Search notes'));
-    await tester.pump();
-    await tester.enterText(find.byType(TextField), 'meet');
+    controller.selectFolder('proj');
     await tester.pump();
 
-    expect(find.text('Meeting notes'), findsOneWidget);
+    expect(find.text('in proj'), findsOneWidget);
     expect(find.text('Groceries'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('scope-chip-folder')));
+    await tester.pump();
+
+    expect(controller.selectedFolder, isNull);
+    expect(find.text('Groceries'), findsOneWidget);
+  });
+
+  testWidgets('tag scope shows a #chip that clears on tap', (tester) async {
+    final controller = await pumpList(
+      tester,
+      seed: (vault) async {
+        await vault.createNote(title: 'Tagged', body: 'has #urgent inside');
+        await vault.createNote(title: 'Plain');
+      },
+    );
+    controller.selectTag('urgent');
+    await tester.pump();
+
+    expect(find.byKey(const Key('scope-chip-tag')), findsOneWidget);
+    expect(find.text('Plain'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('scope-chip-tag')));
+    await tester.pump();
+
+    expect(controller.selectedTag, isNull);
+    expect(find.text('Plain'), findsOneWidget);
   });
 
   testWidgets('tapping a row selects the note', (tester) async {

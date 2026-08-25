@@ -67,17 +67,9 @@ void main() {
     expect(controller.selectedNotePath, 'A.md');
   });
 
-  testWidgets('Escape collapses an open filter and clears it', (tester) async {
+  testWidgets('unscoped toolbar shows the dim All-notes caption', (tester) async {
     await pumpList(tester);
 
-    await tester.tap(find.byTooltip('Search notes'));
-    await tester.pump();
-    await tester.enterText(find.byType(TextField), 'alp');
-    await tester.pump();
-
-    await press(tester, LogicalKeyboardKey.escape);
-
-    expect(find.byType(TextField), findsNothing);
-    expect(find.text('Beta'), findsOneWidget); // cleared => unfiltered
+    expect(find.text('All notes'), findsOneWidget);
   });
 }

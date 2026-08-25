@@ -38,26 +38,5 @@ void main() {
 
     expect(controller.deleted, ['Alpha.md']);
   });
-
-  testWidgets('filter starts collapsed as an icon and expands on tap', (tester) async {
-    await pumpList(tester);
-
-    expect(find.byType(TextField), findsNothing);
-    expect(byTooltip('Search notes'), findsOneWidget);
-
-    await tester.tap(byTooltip('Search notes'));
-    await tester.pump();
-    expect(find.byType(TextField), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), 'alp');
-    await tester.pump();
-    expect(find.text('Beta'), findsNothing);
-
-    await tester.tap(byTooltip('Close search'));
-    await tester.pump();
-    expect(find.byType(TextField), findsNothing);
-    expect(find.text('Beta'), findsOneWidget);
-  });
 }
 
-Finder byTooltip(String message) => find.byTooltip(message);
