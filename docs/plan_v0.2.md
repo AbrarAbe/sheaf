@@ -173,10 +173,19 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 - [ ] **F6: Ctrl+D selects the word at the caret** (editing modes).
 - [ ] **F7: Del rescoped** — global note-delete binding removed; Del edits
   text when an editor holds focus, deletes the note only from the list pane.
-- [ ] **F8: undo toast → bottom-right corner toast** — option (a) CHOSEN:
-  hand-rolled Quire-styled overlay toast (slide+fade animation, stacking,
-  Undo action, auto-dismiss). Replaces both SnackBar call-sites (shell undo,
-  list-pane row delete).
+- [ ] **F8: undo toast → bottom-right corner toast** ✅ done (option a).
+
+### Feedback round 4 (2026-08-25, deferred by user)
+
+- [ ] **F11: untoggle shrinks selection from the right** — bold −2 chars,
+  italic −1, underline −4 (= the close-marker length each time).
+  Hypothesis: after the first wrap the selection covers the inner word; a
+  second press whose range includes even one marker char fails the enclosing-
+  span containment check (`start >= innerStart && stop <= innerEnd`) and
+  falls through to "wrap again", nesting markers; subsequent untoggles peel
+  layers with drifting offsets. Investigate `_enclosingSpan` containment vs
+  overlap handling in `lib/logic/formatting.dart`; add failing-first tests
+  for wrap→untoggle cycles started from marker-inclusive selections.
 ### Checkpoint B (after Task 12): pane/focus/fullscreen verified on running app.
 
 ### Phase 4 — Appearance & audit polish

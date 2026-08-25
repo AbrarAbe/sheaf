@@ -83,6 +83,38 @@ void main() {
     });
   });
 
+  group('sidebar visibility per tier (task 10)', () {
+    test('defaults: expanded shown, full and stack hidden', () {
+      const s = AppSettings();
+      expect(s.sidebarExpanded, isTrue);
+      expect(s.sidebarFull, isFalse);
+      expect(s.sidebarStack, isFalse);
+    });
+
+    test('copyWith replaces each flag', () {
+      const base = AppSettings();
+      final s = base.copyWith(sidebarFull: true, sidebarStack: true, sidebarExpanded: false);
+      expect(s.sidebarExpanded, isFalse);
+      expect(s.sidebarFull, isTrue);
+      expect(s.sidebarStack, isTrue);
+    });
+
+    test('equality covers the flags', () {
+      const a = AppSettings();
+      expect(a, isNot(a.copyWith(sidebarFull: true)));
+    });
+
+    test('round-trips through json with tolerant defaults', () {
+      const s = AppSettings(sidebarFull: true);
+      final restored = AppSettings.fromJson(s.toJson());
+      expect(restored, s);
+
+      final legacy = AppSettings.fromJson({'vaultPath': '/v'});
+      expect(legacy.sidebarExpanded, isTrue);
+      expect(legacy.sidebarFull, isFalse);
+    });
+  });
+
   group('v0.1 backward compatibility', () {
     test('payload written by v0.1 loads with v2 defaults intact', () {
       final s = AppSettings.fromJson({'vaultPath': '/old/vault', 'theme': 'light'});

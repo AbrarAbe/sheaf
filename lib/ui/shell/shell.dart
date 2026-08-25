@@ -5,8 +5,9 @@ import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/note.dart';
-import '../common/corner_toast.dart';
+import '../../models/settings.dart';
 import '../../theme/quire_theme.dart';
+import '../common/corner_toast.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
@@ -44,7 +45,20 @@ class _ShellState extends State<Shell> {
   void initState() {
     super.initState();
     widget.controller.addListener(_syncSelection);
+    _bindWidths(widget.paneWidths);
     _ensureEditor();
+  }
+
+  void _bindWidths(PaneWidths widths) {
+    widths.onVisibilityChanged = (tier, visible) {
+      widget.controller.setSidebarVisibility(tier, visible);
+    };
+    final settings = widget.controller.settings;
+    widths.restoreVisibility(
+      expanded: settings.sidebarExpanded,
+      full: settings.sidebarFull,
+      stack: settings.sidebarStack,
+    );
   }
 
   void _ensureEditor() {
@@ -68,6 +82,7 @@ class _ShellState extends State<Shell> {
       _syncedPath = null;
       _ensureEditor();
       _syncSelection();
+      _bindWidths(widget.paneWidths);
     }
   }
 
@@ -102,81 +117,114 @@ class _ShellState extends State<Shell> {
     final widths = widget.paneWidths;
 
     return Scaffold(
-      body: Actions(
-        actions: sheafActions(
-          onCreateNote: _createNote,
-          onToggleSidebar: widths.toggleSidebar,
-          onCycleTheme: () => controller.cycleTheme(),
-          onDeleteSelectedNote: () {
-            // Del keeps its text-editing meaning while an editor holds focus
-            // (feedback F7): re-dispatch the native character-delete so the
-            // shell binding doesn't swallow it.
-            if (_focusInsideEditable()) {
-              final editCtx = FocusManager.instance.primaryFocus?.context;
-              if (editCtx != null && editCtx.mounted) {
-                Actions.invoke(editCtx, const DeleteCharacterIntent(forward: true));
-              }
-              return;
-            }
-            _deleteSelectedWithUndo(context);
-          },
-          onZoomIn: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
-          onZoomOut: () => controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
-          onZoomReset: () => controller.setZoom(1.0),
-          onCycleEditorMode: () => _editor?.cycleMode(),
-          onCycleNote: _cycleNote,
-        ),
-        child: Shortcuts(
-          shortcuts: sheafShortcuts(),
-          child: Focus(
-            autofocus: true,
-            child: ListenableBuilder(
-              listenable: widths,
-              builder: (context, _) => LayoutBuilder(
-                builder: (context, constraints) {
-                  final tier = tierForWidth(constraints.maxWidth);
-                  return Column(
-                    children: [
-                      _HeaderBar(controller: controller, tier: tier),
-                      Expanded(
-                        child: switch (tier) {
-                          WindowTier.expanded => Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (!widths.sidebarCollapsed)
-                                Sidebar(
-                                  controller: controller,
-                                  width: widths.sidebar,
-                                  onTrashTapped: () => showTrashDialog(context, controller),
-                                  onSettingsTapped: () => showSettingsDialog(context, controller),
-                                )
-                              else
-                                Rail(onExpand: widths.toggleSidebar),
-                              if (!widths.sidebarCollapsed)
-                                DragDivider(onDrag: (dx) => widths.sidebar += dx),
-                              Expanded(child: _listAndEditor(controller, widths)),
-                            ],
-                          ),
-                          WindowTier.full => Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Rail(onExpand: widths.toggleSidebar),
-                              Expanded(child: _listAndEditor(controller, widths)),
-                            ],
-                          ),
-                          WindowTier.stack => _StackShell(
-                            controller: controller,
-                            editor: _editor,
-                            onCreateNote: _createNote,
-                          ),
-                        },
-                      ),
-                    ],
-                  );
-                },
+      body: ListenableBuilder(
+        listenable: widths,
+        builder: (context, _) => LayoutBuilder(
+          builder: (context, constraints) {
+            final tier = tierForWidth(constraints.maxWidth);
+            final sidebarVisible = widths.isSidebarVisible(tier);
+            // Built per layout pass so Ctrl+\ toggles the CURRENT tier's
+            // visibility without a separate intent parameter.
+            final actions = sheafActions(
+              onCreateNote: _createNote,
+              onToggleSidebar: () => widths.toggleSidebarFor(tier),
+              onCycleTheme: () => controller.cycleTheme(),
+              onDeleteSelectedNote: () {
+                // Del keeps its text-editing meaning while an editor holds
+                // focus (feedback F7): re-dispatch the native character-delete
+                // so the shell binding doesn't swallow it.
+                if (_focusInsideEditable()) {
+                  final editCtx = FocusManager.instance.primaryFocus?.context;
+                  if (editCtx != null && editCtx.mounted) {
+                    Actions.invoke(editCtx, const DeleteCharacterIntent(forward: true));
+                  }
+                  return;
+                }
+                _deleteSelectedWithUndo(context);
+              },
+              onZoomIn: () =>
+                  controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
+              onZoomOut: () =>
+                  controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
+              onZoomReset: () => controller.setZoom(1.0),
+              onCycleEditorMode: () => _editor?.cycleMode(),
+              onCycleNote: _cycleNote,
+            );
+
+            Widget paneArea = switch (tier) {
+              WindowTier.expanded || WindowTier.full => Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (sidebarVisible) ...[
+                    Sidebar(
+                      controller: controller,
+                      width: widths.sidebar,
+                      onTrashTapped: () => showTrashDialog(context, controller),
+                      onSettingsTapped: () => showSettingsDialog(context, controller),
+                    ),
+                    DragDivider(onDrag: (dx) => widths.sidebar += dx),
+                  ],
+                  Expanded(child: _listAndEditor(controller, widths)),
+                ],
               ),
-            ),
-          ),
+              WindowTier.stack => _StackShell(
+                controller: controller,
+                editor: _editor,
+                onCreateNote: _createNote,
+              ),
+            };
+
+            Widget content = Column(
+              children: [
+                _HeaderBar(
+                  controller: controller,
+                  tier: tier,
+                  sidebarVisible: sidebarVisible,
+                  onToggleSidebar: () => widths.toggleSidebarFor(tier),
+                ),
+                Expanded(child: paneArea),
+              ],
+            );
+
+            if (tier == WindowTier.stack && sidebarVisible) {
+              content = Stack(
+                children: [
+                  content,
+                  Positioned.fill(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => widths.setSidebarVisible(WindowTier.stack, false),
+                            child: ColoredBox(color: Colors.black.withValues(alpha: 0.38)),
+                          ),
+                        ),
+                        Sidebar(
+                          controller: controller,
+                          width: (constraints.maxWidth * 0.82).clamp(
+                            PaneWidths.sidebarMin,
+                            PaneWidths.sidebarMax,
+                          ),
+                          onTrashTapped: () => showTrashDialog(context, controller),
+                          onSettingsTapped: () => showSettingsDialog(context, controller),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Actions(
+              actions: actions,
+              child: Shortcuts(
+                shortcuts: sheafShortcuts(),
+                child: Focus(autofocus: true, child: content),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -259,9 +307,16 @@ class _ShellState extends State<Shell> {
 }
 
 class _HeaderBar extends StatelessWidget {
-  const _HeaderBar({required this.controller, required this.tier});
+  const _HeaderBar({
+    required this.controller,
+    required this.tier,
+    required this.sidebarVisible,
+    required this.onToggleSidebar,
+  });
   final VaultController controller;
   final WindowTier tier;
+  final bool sidebarVisible;
+  final VoidCallback onToggleSidebar;
 
   @override
   Widget build(BuildContext context) {
@@ -276,6 +331,28 @@ class _HeaderBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
+          // Sidebar visibility toggle — user-owned in every tier (task 10).
+          Tooltip(
+            message: sidebarVisible ? 'Hide sidebar  (Ctrl+\\)' : 'Show sidebar  (Ctrl+\\)',
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                key: const Key('sidebar-toggle'),
+                borderRadius: BorderRadius.circular(8),
+                onTap: onToggleSidebar,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    sidebarVisible ? Icons.menu_open_rounded : Icons.menu_rounded,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
           // Wordmark
           Row(
             mainAxisSize: MainAxisSize.min,

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Which window tier the shell renders, per layout-and-space.md.
-enum WindowTier { expanded, full, stack }
+import '../../models/settings.dart';
 
 WindowTier tierForWidth(double width) {
   if (width >= 1120) return WindowTier.expanded;
@@ -9,18 +8,23 @@ WindowTier tierForWidth(double width) {
   return WindowTier.stack;
 }
 
-/// Sidebar and note-list widths with their documented clamps, plus the
-/// collapsed flag. The shell listens to this to re-layout.
+/// Sidebar/list widths with their clamps, plus per-tier sidebar visibility
+/// (task 10). The shell listens to this to re-layout; visibility changes are
+/// echoed through [onVisibilityChanged] so the controller can persist them.
 class PaneWidths extends ChangeNotifier {
   double _sidebar = 240; // spec default
   double _list = 340; // spec default
-  bool _sidebarCollapsed = false;
+
+  bool _expandedSidebar = true;
+  bool _fullSidebar = false;
+  bool _stackSidebar = false;
+
+  void Function(WindowTier tier, bool visible)? onVisibilityChanged;
 
   static const sidebarMin = 200.0;
   static const sidebarMax = 320.0;
   static const listMin = 300.0;
   static const listMax = 420.0;
-  static const railWidth = 64.0;
 
   double get sidebar => _sidebar;
   set sidebar(double value) {
@@ -38,18 +42,40 @@ class PaneWidths extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get sidebarCollapsed => _sidebarCollapsed;
+  bool isSidebarVisible(WindowTier tier) => switch (tier) {
+    WindowTier.expanded => _expandedSidebar,
+    WindowTier.full => _fullSidebar,
+    WindowTier.stack => _stackSidebar,
+  };
 
-  void toggleSidebar() {
-    _sidebarCollapsed = !_sidebarCollapsed;
+  void setSidebarVisible(WindowTier tier, bool visible) {
+    if (isSidebarVisible(tier) == visible) return;
+    switch (tier) {
+      case WindowTier.expanded:
+        _expandedSidebar = visible;
+      case WindowTier.full:
+        _fullSidebar = visible;
+      case WindowTier.stack:
+        _stackSidebar = visible;
+    }
+    onVisibilityChanged?.call(tier, visible);
     notifyListeners();
   }
 
-  /// Restores a previously persisted state.
-  void restore({double? sidebar, double? list, bool? sidebarCollapsed}) {
+  void toggleSidebarFor(WindowTier tier) => setSidebarVisible(tier, !isSidebarVisible(tier));
+
+  /// Seeds state from persisted settings without firing change callbacks.
+  void restoreVisibility({bool? expanded, bool? full, bool? stack}) {
+    if (expanded != null) _expandedSidebar = expanded;
+    if (full != null) _fullSidebar = full;
+    if (stack != null) _stackSidebar = stack;
+    notifyListeners();
+  }
+
+  /// Restores previously persisted pane widths.
+  void restore({double? sidebar, double? list}) {
     if (sidebar != null) _sidebar = sidebar.clamp(sidebarMin, sidebarMax);
     if (list != null) _list = list.clamp(listMin, listMax);
-    if (sidebarCollapsed != null) _sidebarCollapsed = sidebarCollapsed;
     notifyListeners();
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/shell/drag_divider.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
@@ -28,7 +29,34 @@ void main() {
       final w = PaneWidths();
       expect(w.sidebar, 240);
       expect(w.list, 340);
-      expect(w.sidebarCollapsed, isFalse);
+      expect(w.isSidebarVisible(WindowTier.expanded), isTrue);
+      expect(w.isSidebarVisible(WindowTier.full), isFalse);
+      expect(w.isSidebarVisible(WindowTier.stack), isFalse);
+    });
+
+    test('per-tier visibility toggles independently and fires callback', () {
+      final w = PaneWidths();
+      final seen = <(WindowTier, bool)>[];
+      w.onVisibilityChanged = (tier, visible) => seen.add((tier, visible));
+
+      w.toggleSidebarFor(WindowTier.full);
+      expect(w.isSidebarVisible(WindowTier.full), isTrue);
+      expect(seen.single, (WindowTier.full, true));
+
+      w.toggleSidebarFor(WindowTier.expanded); // hide expanded; full untouched
+      expect(w.isSidebarVisible(WindowTier.expanded), isFalse);
+      expect(w.isSidebarVisible(WindowTier.full), isTrue);
+      expect(seen.length, 2);
+    });
+
+    test('restoreVisibility seeds without firing callbacks', () {
+      final w = PaneWidths();
+      var fired = false;
+      w.onVisibilityChanged = (_, _) => fired = true;
+      w.restoreVisibility(expanded: false, full: true, stack: true);
+      expect(fired, isFalse);
+      expect(w.isSidebarVisible(WindowTier.expanded), isFalse);
+      expect(w.isSidebarVisible(WindowTier.full), isTrue);
     });
 
     test('clamps drags to documented ranges', () {
@@ -58,13 +86,16 @@ void main() {
       required double width,
       required double height,
       PaneWidths? paneWidths,
+      VaultController? controller,
     }) async {
-      final controller = VaultController(
-        settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),
-        vaultFactory: (path) => VaultRepository(root: Directory(path)),
-      );
-      await tester.runAsync(controller.initialize);
-      addTearDown(controller.dispose);
+      final ctrl =
+          controller ??
+          VaultController(
+            settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),
+            vaultFactory: (path) => VaultRepository(root: Directory(path)),
+          );
+      await tester.runAsync(ctrl.initialize);
+      addTearDown(ctrl.dispose);
 
       tester.view.physicalSize = Size(width, height);
       tester.view.devicePixelRatio = 1.0;
@@ -75,7 +106,7 @@ void main() {
         MaterialApp(
           home: MediaQuery(
             data: MediaQueryData(size: Size(width, height)),
-            child: Shell(controller: controller, paneWidths: paneWidths ?? PaneWidths()),
+            child: Shell(controller: ctrl, paneWidths: paneWidths ?? PaneWidths()),
           ),
         ),
       );
@@ -89,32 +120,57 @@ void main() {
       expect(find.byKey(const Key('pane-editor')), findsOneWidget);
     });
 
-    testWidgets('full tier swaps sidebar for a 64dp rail', (tester) async {
-      await pumpShell(tester, width: 900, height: 700);
+    testWidgets('full tier hides the sidebar by default; toggle reveals it', (tester) async {
+      final controller = VaultController(
+        settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),
+        vaultFactory: (path) => VaultRepository(root: Directory(path)),
+      );
+      await tester.runAsync(controller.initialize);
+      await pumpShell(tester, width: 900, height: 700, controller: controller);
 
       expect(find.byType(Sidebar), findsNothing);
-      expect(find.byKey(const Key('rail')), findsOneWidget);
+      expect(find.byKey(const Key('sidebar-toggle')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('sidebar-toggle')));
+      await tester.pump();
+      expect(find.byType(Sidebar), findsOneWidget);
+      expect(controller.settings.sidebarFull, isTrue, reason: 'visibility persists');
     });
 
-    testWidgets('stack tier hides the rail entirely', (tester) async {
-      await pumpShell(tester, width: 600, height: 700);
+    testWidgets('stack tier opens the sidebar as an overlay drawer', (tester) async {
+      final controller = VaultController(
+        settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),
+        vaultFactory: (path) => VaultRepository(root: Directory(path)),
+      );
+      await tester.runAsync(controller.initialize);
+      await pumpShell(tester, width: 600, height: 700, controller: controller);
 
       expect(find.byType(Sidebar), findsNothing);
-      expect(find.byKey(const Key('rail')), findsNothing);
       expect(find.byKey(const Key('pane-list')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('sidebar-toggle')));
+      await tester.pump();
+      expect(find.byType(Sidebar), findsOneWidget);
+      expect(controller.settings.sidebarStack, isTrue);
+
+      // Tapping the scrim (left of the 320dp drawer) closes it.
+      await tester.tapAt(const Offset(140, 350));
+      await tester.pump();
+      expect(find.byType(Sidebar), findsNothing);
     });
 
-    testWidgets('collapse toggle swaps between sidebar and rail', (tester) async {
+    testWidgets('collapse toggle fully hides and restores the sidebar', (tester) async {
       final widths = PaneWidths();
       await pumpShell(tester, width: 1280, height: 800, paneWidths: widths);
 
       expect(find.byType(Sidebar), findsOneWidget);
 
-      widths.toggleSidebar();
+      widths.toggleSidebarFor(WindowTier.expanded);
       await tester.pump();
-      expect(find.byKey(const Key('rail')), findsOneWidget);
+      expect(find.byType(Sidebar), findsNothing);
+      expect(find.byKey(const Key('rail')), findsNothing, reason: 'rail is retired');
 
-      widths.toggleSidebar();
+      widths.toggleSidebarFor(WindowTier.expanded);
       await tester.pump();
       expect(find.byType(Sidebar), findsOneWidget);
     });

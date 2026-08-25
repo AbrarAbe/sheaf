@@ -12,6 +12,9 @@ class AppSettings {
     this.themeWorld = 'quire',
     this.fontFamily,
     this.fontPath,
+    this.sidebarExpanded = true,
+    this.sidebarFull = false,
+    this.sidebarStack = false,
   });
 
   /// Absolute path of the chosen vault folder, or null until one is picked.
@@ -39,6 +42,12 @@ class AppSettings {
   /// Absolute path backing [fontFamily], loaded via FontLoader at startup.
   final String? fontPath;
 
+  /// Per-tier sidebar visibility (spec story 15). Defaults mirror the
+  /// historical layout: expanded shows the pane, narrower tiers start hidden.
+  final bool sidebarExpanded;
+  final bool sidebarFull;
+  final bool sidebarStack;
+
   /// Note: `??` semantics mean nulls cannot be written through [copyWith];
   /// clearing the font choice constructs a new instance directly.
   AppSettings copyWith({
@@ -50,6 +59,9 @@ class AppSettings {
     String? themeWorld,
     String? fontFamily,
     String? fontPath,
+    bool? sidebarExpanded,
+    bool? sidebarFull,
+    bool? sidebarStack,
   }) => AppSettings(
     vaultPath: vaultPath ?? this.vaultPath,
     theme: theme ?? this.theme,
@@ -59,6 +71,9 @@ class AppSettings {
     themeWorld: themeWorld ?? this.themeWorld,
     fontFamily: fontFamily ?? this.fontFamily,
     fontPath: fontPath ?? this.fontPath,
+    sidebarExpanded: sidebarExpanded ?? this.sidebarExpanded,
+    sidebarFull: sidebarFull ?? this.sidebarFull,
+    sidebarStack: sidebarStack ?? this.sidebarStack,
   );
 
   Map<String, Object?> toJson() => {
@@ -70,6 +85,9 @@ class AppSettings {
     'themeWorld': themeWorld,
     'fontFamily': fontFamily,
     'fontPath': fontPath,
+    'sidebarExpanded': sidebarExpanded,
+    'sidebarFull': sidebarFull,
+    'sidebarStack': sidebarStack,
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
@@ -81,6 +99,9 @@ class AppSettings {
     themeWorld: json['themeWorld'] as String? ?? 'quire',
     fontFamily: json['fontFamily'] as String?,
     fontPath: json['fontPath'] as String?,
+    sidebarExpanded: json['sidebarExpanded'] as bool? ?? true,
+    sidebarFull: json['sidebarFull'] as bool? ?? false,
+    sidebarStack: json['sidebarStack'] as bool? ?? false,
   );
 
   @override
@@ -93,7 +114,10 @@ class AppSettings {
       other.editorFontSize == editorFontSize &&
       other.themeWorld == themeWorld &&
       other.fontFamily == fontFamily &&
-      other.fontPath == fontPath;
+      other.fontPath == fontPath &&
+      other.sidebarExpanded == sidebarExpanded &&
+      other.sidebarFull == sidebarFull &&
+      other.sidebarStack == sidebarStack;
 
   @override
   int get hashCode => Object.hash(
@@ -105,6 +129,9 @@ class AppSettings {
     themeWorld,
     fontFamily,
     fontPath,
+    sidebarExpanded,
+    sidebarFull,
+    sidebarStack,
   );
 }
 
@@ -132,3 +159,7 @@ enum EditorMode {
   factory EditorMode.fromJson(String? value) =>
       values.firstWhere((v) => v.name == value, orElse: () => EditorMode.normal);
 }
+
+/// Window layout tier (spec story 15). Lives beside settings so per-tier
+/// visibility flags can be keyed by tier without a ui→models dependency.
+enum WindowTier { expanded, full, stack }

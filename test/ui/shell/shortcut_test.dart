@@ -13,6 +13,7 @@ import 'package:sheaf/ui/common/corner_toast.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
 import 'package:sheaf/ui/shell/shortcuts.dart';
+import 'package:sheaf/ui/sidebar/sidebar.dart';
 
 void main() {
   // The shell paints Google Fonts; offline/flaky DNS turns their async fetch
@@ -79,17 +80,19 @@ void _registerTests() {
     // settings_repository/vault_controller unit tests.
   });
 
-  testWidgets('Ctrl+backslash toggles the sidebar rail', (tester) async {
-    final (_, widths) = await pumpShell(tester);
-    expect(widths.sidebarCollapsed, isFalse);
+  testWidgets('Ctrl+backslash toggles the current tier sidebar visibility', (tester) async {
+    final (controller, widths) = await pumpShell(tester);
+    expect(widths.isSidebarVisible(WindowTier.expanded), isTrue);
+    expect(find.byType(Sidebar), findsOneWidget);
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyEvent(LogicalKeyboardKey.backslash);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await tester.pump();
 
-    expect(widths.sidebarCollapsed, isTrue);
-    expect(find.byKey(const Key('rail')), findsOneWidget);
+    expect(widths.isSidebarVisible(WindowTier.expanded), isFalse);
+    expect(find.byType(Sidebar), findsNothing);
+    expect(controller.settings.sidebarExpanded, isFalse, reason: 'persists per tier');
   });
 
   testWidgets('zoom intents step and reset the persisted factor', (tester) async {

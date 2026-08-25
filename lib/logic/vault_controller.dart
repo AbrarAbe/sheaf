@@ -134,6 +134,19 @@ class VaultController extends ChangeNotifier {
     await _settingsRepo.save(_settings);
   }
 
+  /// Persists per-tier sidebar visibility (spec story 15 / task 10).
+  Future<void> setSidebarVisibility(WindowTier tier, bool visible) async {
+    final next = switch (tier) {
+      WindowTier.expanded => _settings.copyWith(sidebarExpanded: visible),
+      WindowTier.full => _settings.copyWith(sidebarFull: visible),
+      WindowTier.stack => _settings.copyWith(sidebarStack: visible),
+    };
+    if (next == _settings) return;
+    _settings = next;
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
   Future<Note> createNote({required String title, String? body, String? folder}) async {
     final note = await _requireVault().createNote(
       title: title,

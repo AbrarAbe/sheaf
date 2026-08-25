@@ -74,14 +74,13 @@ changes how the app looks (worlds, zoom, type size, typeface).
     increments to `2. `; leading indentation is preserved. `Enter` on a line
     holding only a marker clears it (smart exit), matching Obsidian. Active
     in Normal and Markdown editing.
-15. **Pane control** — Sidebar visibility is user-owned, not tier-forced:
-    - Expanded (≥1120): `Ctrl+\` and a header toggle collapse to the rail or
-      restore (unchanged).
-    - Full (720–1119): a header toggle button shows/hides the sidebar
-      completely; no forced rail.
-    - Stack (<720): the same button opens/closes the sidebar as an overlay
-      drawer.
-    - Choice persists per tier across sessions (per layout-and-space.md).
+15. **Pane control** — Sidebar visibility is user-owned in every tier; the
+    icon rail is retired (feedback round: one mental model everywhere):
+    - All tiers: a header toggle button and `Ctrl+\` show/hide the sidebar.
+      Expanded ≥1120 shows it as the resizable first pane; Full 720–1119
+      likewise; Stack <720 presents it as an overlay drawer over the content.
+    - Choice persists per tier across sessions (per layout-and-space.md);
+      defaults: visible on Expanded, hidden on Full and Stack.
     - **Focus mode**: a header button (and `F10`) hides sidebar and note list
       so the editor fills the window; any pane toggle or `F10` again exits.
     - **OS fullscreen**: `F11` toggles true window fullscreen via a window

@@ -5,7 +5,6 @@ import '../../data/vault_repository.dart' show FolderNode;
 import '../../logic/vault_controller.dart';
 import '../../theme/quire_theme.dart';
 import '../common/context_menus.dart';
-import '../shell/pane_widths.dart';
 
 /// Quick filters, folder tree, tags, and trash — the leftmost pane.
 /// The desk drawer: quiet until touched, tint and weight do the talking.
@@ -176,62 +175,6 @@ class Sidebar extends StatelessWidget {
   }
 }
 
-/// The collapsed sidebar: a 64 dp icon rail (Full tier).
-class Rail extends StatelessWidget {
-  const Rail({super.key, this.onExpand});
-
-  final VoidCallback? onExpand;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hairline = theme.colorScheme.outlineVariant;
-    return Container(
-      key: const Key('rail'),
-      width: PaneWidths.railWidth,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(right: BorderSide(color: hairline)),
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 12),
-          IconButton(
-            tooltip: 'Expand sidebar  (Ctrl+\\ )',
-            onPressed: onExpand,
-            icon: const Icon(Icons.menu_open),
-          ),
-          const SizedBox(height: 12),
-          Divider(height: 1, color: hairline),
-          const SizedBox(height: 12),
-          IconButton(
-            tooltip: 'All notes',
-            onPressed: () {},
-            icon: Icon(Icons.view_quilt_outlined, color: theme.colorScheme.primary),
-          ),
-          IconButton(
-            tooltip: 'Folders',
-            onPressed: () {},
-            icon: Icon(Icons.folder_outlined, color: theme.colorScheme.onSurfaceVariant),
-          ),
-          const Spacer(),
-          Divider(height: 1, color: hairline),
-          IconButton(
-            tooltip: 'Trash',
-            onPressed: () {},
-            icon: Icon(Icons.delete_outline, color: theme.colorScheme.onSurfaceVariant),
-          ),
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: () {},
-            icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 12),
-        ],
-      ),
-    );
-  }
-}
 
 Future<String?> _textPrompt(BuildContext context, {required String title, String? initial}) {
   final field = TextEditingController(text: initial);
