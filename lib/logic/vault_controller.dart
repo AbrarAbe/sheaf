@@ -167,12 +167,11 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Selects the user font (registered under [family] at startup) or clears
-  /// it with two nulls. Family and path are always set together.
-  Future<void> setUserFont({String? family, String? path}) async {
-    assert((family == null) == (path == null), 'font family and path move together');
-    if (family == _settings.fontFamily && path == _settings.fontPath) return;
-    _settings = _settings.copyWith(fontFamily: family, fontPath: path);
+  /// Persists whether the header shows the traffic-light window controls
+  /// (v0.3 feedback round 5).
+  Future<void> setShowWindowControls(bool value) async {
+    if (value == _settings.showWindowControls) return;
+    _settings = _settings.copyWith(showWindowControls: value);
     await _settingsRepo.save(_settings);
     notifyListeners();
   }

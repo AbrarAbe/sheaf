@@ -23,8 +23,8 @@ class SpyVaultController extends VaultController {
   String themeWorld = 'quire';
   double editorFontSize = 16.0;
   double zoom = 1.0;
-  final fontSelections = <({String? family, String? path})>[];
-  String? fontFamily;
+  bool showWindowControls = true;
+  final windowControlToggles = <bool>[];
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
   List<Note> fakeNotes = const [];
@@ -78,8 +78,7 @@ class SpyVaultController extends VaultController {
     themeWorld: themeWorld,
     editorFontSize: editorFontSize,
     zoomFactor: zoom,
-    fontFamily: fontFamily,
-    fontPath: fontFamily != null ? 'fake://font' : null,
+    showWindowControls: showWindowControls,
   );
 
   @override
@@ -105,9 +104,9 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  Future<void> setUserFont({String? family, String? path}) async {
-    fontFamily = family;
-    fontSelections.add((family: family, path: path));
+  Future<void> setShowWindowControls(bool value) async {
+    windowControlToggles.add(value);
+    showWindowControls = value;
   }
 
   @override

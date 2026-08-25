@@ -9,8 +9,8 @@ void main() {
       expect(s.zoomFactor, 1.0);
       expect(s.editorFontSize, 16.0);
       expect(s.themeWorld, 'quire');
-      expect(s.fontFamily, isNull);
-      expect(s.fontPath, isNull);
+      // v2.1: window controls visible until the user hides them.
+      expect(s.showWindowControls, isTrue);
     });
   });
 
@@ -35,15 +35,13 @@ void main() {
         zoomFactor: 1.3,
         editorFontSize: 19.0,
         themeWorld: 'sepia',
-        fontFamily: 'Iosevka',
-        fontPath: '/usr/share/fonts/iosevka.ttf',
+        showWindowControls: false,
       );
       expect(s.editorMode, EditorMode.preview);
       expect(s.zoomFactor, 1.3);
       expect(s.editorFontSize, 19.0);
       expect(s.themeWorld, 'sepia');
-      expect(s.fontFamily, 'Iosevka');
-      expect(s.fontPath, '/usr/share/fonts/iosevka.ttf');
+      expect(s.showWindowControls, isFalse);
     });
 
     test('null keeps existing value', () {
@@ -60,8 +58,7 @@ void main() {
       expect(a, isNot(a.copyWith(zoomFactor: 1.1)));
       expect(a, isNot(a.copyWith(editorFontSize: 17)));
       expect(a, isNot(a.copyWith(themeWorld: 'graphite')));
-      expect(a, isNot(a.copyWith(fontFamily: 'X')));
-      expect(a, isNot(a.copyWith(fontPath: '/x.ttf')));
+      expect(a, isNot(a.copyWith(showWindowControls: false)));
     });
   });
 
@@ -123,7 +120,15 @@ void main() {
       expect(s.editorMode, EditorMode.normal);
       expect(s.zoomFactor, 1.0);
       expect(s.themeWorld, 'quire');
-      expect(s.fontFamily, isNull);
+    });
+
+    test('payload carrying removed font keys still loads (v2.1)', () {
+      final s = AppSettings.fromJson({
+        'vaultPath': '/v',
+        'fontFamily': 'Iosevka',
+        'fontPath': '/usr/share/fonts/iosevka.ttf',
+      });
+      expect(s.vaultPath, '/v');
     });
 
     test('default toJson carries every persisted key', () {

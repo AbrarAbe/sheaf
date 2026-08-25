@@ -29,7 +29,6 @@ class EditorPane extends StatelessWidget {
     this.pickImage,
     this.importImage,
     this.baseFontSize,
-    this.userFontFamily,
   });
 
   /// Null while no vault is open; renders the placeholder.
@@ -44,9 +43,6 @@ class EditorPane extends StatelessWidget {
 
   /// Editor body base size from settings (story 16); null = 16.
   final double? baseFontSize;
-
-  /// Family of a user-loaded font; null keeps the bundled Hanken stack.
-  final String? userFontFamily;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +61,6 @@ class EditorPane extends StatelessWidget {
           pickImage: pickImage,
           importImage: importImage,
           baseFontSize: baseFontSize,
-          userFontFamily: userFontFamily,
         );
       },
     );
@@ -153,19 +148,12 @@ class _Placeholder extends StatelessWidget {
 }
 
 class _Editor extends StatefulWidget {
-  const _Editor({
-    required this.controller,
-    this.pickImage,
-    this.importImage,
-    this.baseFontSize,
-    this.userFontFamily,
-  });
+  const _Editor({required this.controller, this.pickImage, this.importImage, this.baseFontSize});
 
   final EditorController controller;
   final Future<File?> Function()? pickImage;
   final Future<String> Function(File file)? importImage;
   final double? baseFontSize;
-  final String? userFontFamily;
 
   @override
   State<_Editor> createState() => _EditorState();
@@ -238,31 +226,14 @@ class _EditorState extends State<_Editor> {
     },
   };
 
-  /// Body text style for the current mode, honoring the settings' base size
-  /// and user typeface (story 16).
+  /// Body text style for the current mode, honoring the settings' base size.
   TextStyle _bodyStyle(ThemeData theme) {
     final base = widget.baseFontSize ?? 16.0;
     if (widget.controller.mode == EditorMode.markdown) {
-      if (widget.userFontFamily != null) {
-        return TextStyle(
-          fontFamily: widget.userFontFamily,
-          fontSize: base - 1.5,
-          height: 24 / (base - 1.5),
-          color: theme.colorScheme.onSurface,
-        );
-      }
       return GoogleFonts.splineSansMono(
         fontSize: base - 1.5,
         height: 24 / (base - 1.5),
         fontWeight: FontWeight.w400,
-        color: theme.colorScheme.onSurface,
-      );
-    }
-    if (widget.userFontFamily != null) {
-      return TextStyle(
-        fontFamily: widget.userFontFamily,
-        fontSize: base,
-        height: 26 / base,
         color: theme.colorScheme.onSurface,
       );
     }
@@ -599,7 +570,6 @@ class _EditorState extends State<_Editor> {
                       body: _body.text,
                       vaultRoot: controller.vaultRoot,
                       baseFontSize: widget.baseFontSize ?? 16,
-                      userFontFamily: widget.userFontFamily,
                     ),
                     _ => Shortcuts(
                       shortcuts: _editShortcuts(),

@@ -43,7 +43,6 @@ class MarkdownPreview extends StatelessWidget {
     required this.body,
     required this.vaultRoot,
     this.baseFontSize = 16,
-    this.userFontFamily,
   });
 
   final String body;
@@ -52,14 +51,7 @@ class MarkdownPreview extends StatelessWidget {
   /// Base size from settings (story 16); all preview sizes scale by it/16.
   final double baseFontSize;
 
-  /// User typeface for prose; null keeps Hanken.
-  final String? userFontFamily;
-
   double get _scale => baseFontSize / 16;
-
-  /// Swaps the prose family when a user font is loaded (story 16).
-  TextStyle _prose(TextStyle fallback) =>
-      userFontFamily == null ? fallback : fallback.copyWith(fontFamily: userFontFamily);
 
   @override
   Widget build(BuildContext context) {
@@ -74,13 +66,11 @@ class MarkdownPreview extends StatelessWidget {
       configs: [
         ImgConfig(builder: _image),
         PConfig(
-          textStyle: _prose(
-            GoogleFonts.hankenGrotesk(
-              fontSize: 16 * _scale,
-              height: 26 / 16,
-              fontWeight: FontWeight.w400,
-              color: onSurface,
-            ),
+          textStyle: GoogleFonts.hankenGrotesk(
+            fontSize: 16 * _scale,
+            height: 26 / 16,
+            fontWeight: FontWeight.w400,
+            color: onSurface,
           ),
         ),
         H1Config(

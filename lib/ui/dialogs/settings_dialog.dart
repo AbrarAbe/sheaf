@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../data/font_scanner.dart';
 import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/settings.dart';
@@ -10,36 +9,26 @@ import 'welcome_screen.dart';
 
 /// App settings: theme selection and vault location.
 ///
-/// [pickFolder] and [scanFonts] are injectable for tests; production opens
-/// the native chooser and scans standard Linux font directories.
+/// [pickFolder] is injectable for tests; production opens the native chooser.
 Future<void> showSettingsDialog(
   BuildContext context,
   VaultController controller, {
   Future<String?> Function()? pickFolder,
-  Future<List<DiscoveredFont>> Function()? scanFonts,
 }) {
   return showDialog(
     context: context,
     builder: (_) => _SettingsDialog(
       controller: controller,
       pickFolder: pickFolder ?? WelcomeScreen.defaultPickFolder,
-      scanFonts: scanFonts ?? scanFontsDefault,
     ),
   );
 }
 
-Future<List<DiscoveredFont>> scanFontsDefault() => scanFonts();
-
 class _SettingsDialog extends StatelessWidget {
-  const _SettingsDialog({
-    required this.controller,
-    required this.pickFolder,
-    required this.scanFonts,
-  });
+  const _SettingsDialog({required this.controller, required this.pickFolder});
 
   final VaultController controller;
   final Future<String?> Function() pickFolder;
-  final Future<List<DiscoveredFont>> Function() scanFonts;
 
   @override
   Widget build(BuildContext context) {
@@ -174,36 +163,6 @@ class _SettingsDialog extends StatelessWidget {
                             child: const Text('Reset'),
                           ),
                         ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: QuireSpace.s),
-                  // Typeface picker (story 16): fonts found on this machine.
-                  FutureBuilder<List<DiscoveredFont>>(
-                    future: scanFonts(),
-                    builder: (context, snapshot) {
-                      final fonts = snapshot.data ?? const <DiscoveredFont>[];
-                      final selected = controller.settings.fontPath;
-                      return DropdownButtonFormField<String>(
-                        key: const Key('font-dropdown'),
-                        initialValue: selected,
-                        decoration: const InputDecoration(labelText: 'Editor typeface'),
-                        items: [
-                          const DropdownMenuItem(
-                            value: '__sheaf_default__',
-                            child: Text('Sheaf default'),
-                          ),
-                          for (final font in fonts)
-                            DropdownMenuItem(value: font.path, child: Text(font.name)),
-                        ],
-                        onChanged: (path) {
-                          if (path == null || path == '__sheaf_default__') {
-                            controller.setUserFont();
-                          } else {
-                            final match = fonts.firstWhere((f) => f.path == path);
-                            controller.setUserFont(family: match.name, path: match.path);
-                          }
-                        },
                       );
                     },
                   ),

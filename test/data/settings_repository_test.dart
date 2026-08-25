@@ -39,8 +39,7 @@ void main() {
         zoomFactor: 1.25,
         editorFontSize: 18.5,
         themeWorld: 'sepia',
-        fontFamily: 'Iosevka',
-        fontPath: '/usr/share/fonts/iosevka.ttf',
+        showWindowControls: false,
       );
       await repo.save(s);
       expect(await repo.load(), s);

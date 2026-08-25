@@ -167,25 +167,59 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 
 ### Feedback round 2 (2026-08-24)
 
-- [ ] **F5: hide markers until touched** — in Normal view `#`/`*`/`` ` ``/`<u>`
+- [x] **F5: hide markers until touched** — in Normal view `#`/`*`/`` ` ``/`<u>`
   markers render zero-width while the caret is elsewhere; touching the span
   reveals them dimmed (upgrades F4 to true live-preview).
-- [ ] **F6: Ctrl+D selects the word at the caret** (editing modes).
-- [ ] **F7: Del rescoped** — global note-delete binding removed; Del edits
+- [x] **F6: Ctrl+D selects the word at the caret** (editing modes).
+- [x] **F7: Del rescoped** — global note-delete binding removed; Del edits
   text when an editor holds focus, deletes the note only from the list pane.
-- [ ] **F8: undo toast → bottom-right corner toast** ✅ done (option a).
+- [x] **F8: undo toast → bottom-right corner toast** ✅ done (option a).
+- [x] **F9: bare caret on a word wraps the word** — Ctrl+B/I/U with a
+  collapsed caret over word text wraps that word (no more `****` splices;
+  also fixes the invisible dead-toggle on Ctrl+U).
+- [x] **F10: corner toast ships hand-rolled** (`lib/ui/common/corner_toast.dart`)
+  after delightful_toast proved unable to anchor bottom-right.
 
-### Feedback round 4 (2026-08-25, deferred by user)
+### Feedback round 4 (2026-08-25)
 
-- [ ] **F11: untoggle shrinks selection from the right** — bold −2 chars,
-  italic −1, underline −4 (= the close-marker length each time).
-  Hypothesis: after the first wrap the selection covers the inner word; a
-  second press whose range includes even one marker char fails the enclosing-
-  span containment check (`start >= innerStart && stop <= innerEnd`) and
-  falls through to "wrap again", nesting markers; subsequent untoggles peel
-  layers with drifting offsets. Investigate `_enclosingSpan` containment vs
-  overlap handling in `lib/logic/formatting.dart`; add failing-first tests
-  for wrap→untoggle cycles started from marker-inclusive selections.
+- [x] **F11: untoggle shrinks selection from the right** — closed below as
+  round-5 item F20 (same root cause, fixed together with the sweep).
+
+### Feedback round 5 (2026-08-25) — header, search, menus, correctness
+
+All items stay inside the v0.2 milestone; the release tag waits until these
+are green.
+
+- [ ] **F12: ⌘K quick-switcher** — restore the header search pill, now
+  functional: overlay palette with autofocus field, ↑/↓ + Enter/Esc, mouse
+  rows; empty query lists notes newest-first so row 1 = last edited;
+  ranking reuses `searchAndSort`; `Ctrl+K` global binding.
+- [ ] **F13: retire the list-filter search** — vault-wide search moves to
+  ⌘K; the filter field + list-level `Ctrl+F` go away; slot becomes a
+  removable scope chip shown when a folder/tag filter is active.
+- [ ] **F14: focus-mode button joins the right cluster** — sits beside the
+  dark/light toggle; left side keeps sidebar toggle + wordmark.
+- [ ] **F15: functional traffic-light dots** — minimize/maximize-or-restore/
+  close via an injectable `WindowControls` seam (production = window_manager);
+  colors reuse QuireColors tokens (alert/pin/grow — zero new hex); Settings
+  gains "show window controls" (default on).
+- [ ] **F16: trash timestamps** — surface the existing `trashedAt`:
+  relative label beside the title, full date in tooltip.
+- [ ] **F17: tabs vs All-notes** — design proposal only (open-notes tab
+  strip vs creation-scope rules); user picks direction before any code.
+- [ ] **F18: context-menu restyle** — package defaults reserve 32px gutters
+  and wash labels to 70% alpha; ship a custom menu-item entry (30px rows,
+  full-contrast Hanken labels, mono shortcuts, destructive tint, themed
+  container radius/border/shadow) behind the existing `quireMenu` API.
+- [ ] **F19: remove the local-font feature** — drop `fontFamily`/`fontPath`
+  settings, typeface picker, FontLoader startup step, scanner; old settings
+  JSON with those keys must keep loading.
+- [ ] **F20: fix formatting toggles (closes F11)** — `_enclosingSpan`
+  containment misses selections touching marker chars → silent re-wrap →
+  nested markers → right-shrink drift. Unwrap on overlap/touch/envelope,
+  skip degenerate empty-inner matches, piecewise offset remap; failing-first
+  cycle tests for B/I/U.
+
 ### Checkpoint B (after Task 12): ✅ code complete 2026-08-25 — widget tests cover F10 + fullscreen seam; manual F11 native check pending on running app.
 
 ### Phase 4 — Appearance & audit polish

@@ -318,12 +318,7 @@ class _ShellState extends State<Shell> {
   /// Settings-derived type controls handed down to the editor (story 16).
   Widget _editorPane({Key? key}) {
     final s = widget.controller.settings;
-    return EditorPane(
-      key: key,
-      controller: _editor,
-      baseFontSize: s.editorFontSize,
-      userFontFamily: s.fontPath != null ? s.fontFamily : null,
-    );
+    return EditorPane(key: key, controller: _editor, baseFontSize: s.editorFontSize);
   }
 
   Widget _listAndEditor(VaultController controller, PaneWidths widths) {
@@ -506,7 +501,6 @@ class _HeaderBar extends StatelessWidget {
     );
   }
 }
-
 
 class _StackShell extends StatelessWidget {
   const _StackShell({required this.controller, required this.onCreateNote, required this.editor});

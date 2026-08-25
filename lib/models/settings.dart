@@ -10,11 +10,10 @@ class AppSettings {
     this.zoomFactor = 1.0,
     this.editorFontSize = 16.0,
     this.themeWorld = 'quire',
-    this.fontFamily,
-    this.fontPath,
     this.sidebarExpanded = true,
     this.sidebarFull = false,
     this.sidebarStack = false,
+    this.showWindowControls = true,
   });
 
   /// Absolute path of the chosen vault folder, or null until one is picked.
@@ -35,21 +34,17 @@ class AppSettings {
   /// Id into the theme-world registry (`lib/theme`); 'quire' until more land.
   final String themeWorld;
 
-  /// Display name of a user-selected local font. Set together with [fontPath];
-  /// both null means "use the bundled stack".
-  final String? fontFamily;
-
-  /// Absolute path backing [fontFamily], loaded via FontLoader at startup.
-  final String? fontPath;
-
   /// Per-tier sidebar visibility (spec story 15). Defaults mirror the
   /// historical layout: expanded shows the pane, narrower tiers start hidden.
   final bool sidebarExpanded;
   final bool sidebarFull;
   final bool sidebarStack;
 
-  /// Note: `??` semantics mean nulls cannot be written through [copyWith];
-  /// clearing the font choice constructs a new instance directly.
+  /// Whether the header shows the functional traffic-light window controls
+  /// (v0.3). Some setups keep the compositor title bar and want them gone.
+  final bool showWindowControls;
+
+  /// Note: `??` semantics mean nulls cannot be written through [copyWith].
   AppSettings copyWith({
     String? vaultPath,
     ThemeSetting? theme,
@@ -57,11 +52,10 @@ class AppSettings {
     double? zoomFactor,
     double? editorFontSize,
     String? themeWorld,
-    String? fontFamily,
-    String? fontPath,
     bool? sidebarExpanded,
     bool? sidebarFull,
     bool? sidebarStack,
+    bool? showWindowControls,
   }) => AppSettings(
     vaultPath: vaultPath ?? this.vaultPath,
     theme: theme ?? this.theme,
@@ -69,11 +63,10 @@ class AppSettings {
     zoomFactor: zoomFactor ?? this.zoomFactor,
     editorFontSize: editorFontSize ?? this.editorFontSize,
     themeWorld: themeWorld ?? this.themeWorld,
-    fontFamily: fontFamily ?? this.fontFamily,
-    fontPath: fontPath ?? this.fontPath,
     sidebarExpanded: sidebarExpanded ?? this.sidebarExpanded,
     sidebarFull: sidebarFull ?? this.sidebarFull,
     sidebarStack: sidebarStack ?? this.sidebarStack,
+    showWindowControls: showWindowControls ?? this.showWindowControls,
   );
 
   Map<String, Object?> toJson() => {
@@ -83,11 +76,10 @@ class AppSettings {
     'zoomFactor': zoomFactor,
     'editorFontSize': editorFontSize,
     'themeWorld': themeWorld,
-    'fontFamily': fontFamily,
-    'fontPath': fontPath,
     'sidebarExpanded': sidebarExpanded,
     'sidebarFull': sidebarFull,
     'sidebarStack': sidebarStack,
+    'showWindowControls': showWindowControls,
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
@@ -97,11 +89,10 @@ class AppSettings {
     zoomFactor: (json['zoomFactor'] as num?)?.toDouble() ?? 1.0,
     editorFontSize: (json['editorFontSize'] as num?)?.toDouble() ?? 16.0,
     themeWorld: json['themeWorld'] as String? ?? 'quire',
-    fontFamily: json['fontFamily'] as String?,
-    fontPath: json['fontPath'] as String?,
     sidebarExpanded: json['sidebarExpanded'] as bool? ?? true,
     sidebarFull: json['sidebarFull'] as bool? ?? false,
     sidebarStack: json['sidebarStack'] as bool? ?? false,
+    showWindowControls: json['showWindowControls'] as bool? ?? true,
   );
 
   @override
@@ -113,11 +104,10 @@ class AppSettings {
       other.zoomFactor == zoomFactor &&
       other.editorFontSize == editorFontSize &&
       other.themeWorld == themeWorld &&
-      other.fontFamily == fontFamily &&
-      other.fontPath == fontPath &&
       other.sidebarExpanded == sidebarExpanded &&
       other.sidebarFull == sidebarFull &&
-      other.sidebarStack == sidebarStack;
+      other.sidebarStack == sidebarStack &&
+      other.showWindowControls == showWindowControls;
 
   @override
   int get hashCode => Object.hash(
@@ -127,11 +117,10 @@ class AppSettings {
     zoomFactor,
     editorFontSize,
     themeWorld,
-    fontFamily,
-    fontPath,
     sidebarExpanded,
     sidebarFull,
     sidebarStack,
+    showWindowControls,
   );
 }
 

@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sheaf/data/font_scanner.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/dialogs/settings_dialog.dart';
 
@@ -20,7 +19,6 @@ void main() {
   Future<SpyVaultController> pumpSettings(
     WidgetTester tester, {
     Future<String?> Function()? pickFolder,
-    Future<List<DiscoveredFont>> Function()? scanFonts,
   }) async {
     final controller = SpyVaultController('${tempDir.path}/settings.json');
     addTearDown(controller.dispose);
@@ -31,12 +29,7 @@ void main() {
           builder: (context) => Scaffold(
             body: Center(
               child: FilledButton(
-                onPressed: () => showSettingsDialog(
-                  context,
-                  controller,
-                  pickFolder: pickFolder,
-                  scanFonts: scanFonts,
-                ),
+                onPressed: () => showSettingsDialog(context, controller, pickFolder: pickFolder),
                 child: const Text('open'),
               ),
             ),
@@ -106,30 +99,6 @@ void main() {
       await tester.tap(find.text('Reset'));
       await tester.pump();
       expect(controller.settings.zoomFactor, 1.0);
-    });
-
-    testWidgets('font dropdown lists discovered fonts and selects one', (tester) async {
-      // Tall viewport so the scrolled-to-bottom controls are hittable.
-      tester.view.physicalSize = const Size(800, 1400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final controller = await pumpSettings(
-        tester,
-        scanFonts: () async => const [
-          DiscoveredFont(name: 'Iosevka', path: '/fonts/iosevka.ttf'),
-          DiscoveredFont(name: 'Fira', path: '/fonts/fira.otf'),
-        ],
-      );
-
-      await tester.tap(find.byKey(const Key('font-dropdown')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Iosevka').last);
-      await tester.pumpAndSettle();
-
-      expect(controller.fontFamily, 'Iosevka');
-      expect(controller.fontSelections.single.path, '/fonts/iosevka.ttf');
     });
   });
 
