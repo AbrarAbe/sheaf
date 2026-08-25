@@ -57,6 +57,17 @@ class CycleNoteIntent extends Intent {
   final bool forward;
 }
 
+/// Intent for focus mode — hide sidebar + list so the editor fills the
+/// window (`F10`, spec story 15).
+class ToggleFocusModeIntent extends Intent {
+  const ToggleFocusModeIntent();
+}
+
+/// Intent for OS fullscreen (`F11`, spec story 15).
+class ToggleFullscreenIntent extends Intent {
+  const ToggleFullscreenIntent();
+}
+
 Map<Type, Action<Intent>> sheafActions({
   required Future<Note?> Function() onCreateNote,
   required VoidCallback onToggleSidebar,
@@ -67,6 +78,8 @@ Map<Type, Action<Intent>> sheafActions({
   required VoidCallback onZoomReset,
   required VoidCallback onCycleEditorMode,
   required ValueChanged<bool> onCycleNote,
+  required VoidCallback onToggleFocusMode,
+  required VoidCallback onToggleFullscreen,
 }) {
   return {
     CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
@@ -86,6 +99,12 @@ Map<Type, Action<Intent>> sheafActions({
     CycleNoteIntent: CallbackAction<CycleNoteIntent>(
       onInvoke: (intent) => onCycleNote(intent.forward),
     ),
+    ToggleFocusModeIntent: CallbackAction<ToggleFocusModeIntent>(
+      onInvoke: (intent) => onToggleFocusMode(),
+    ),
+    ToggleFullscreenIntent: CallbackAction<ToggleFullscreenIntent>(
+      onInvoke: (intent) => onToggleFullscreen(),
+    ),
   };
 }
 
@@ -94,6 +113,9 @@ Map<ShortcutActivator, Intent> sheafShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.backslash, control: true): const ToggleSidebarIntent(),
   const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true):
       const CycleThemeIntent(),
+  // Del deletes the SELECTED NOTE — but never while an editor holds focus;
+  // the action guards on focus context so Del keeps its text-editing meaning
+  // inside fields (feedback F7).
   const SingleActivator(LogicalKeyboardKey.delete): const DeleteNoteIntent(),
   // Ctrl+= and Ctrl++ (shifted plus) and numpad add all zoom in.
   const SingleActivator(LogicalKeyboardKey.equal, control: true): const ZoomInIntent(),
@@ -110,4 +132,6 @@ Map<ShortcutActivator, Intent> sheafShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.tab, control: true, shift: true): const CycleNoteIntent(
     forward: false,
   ),
+  const SingleActivator(LogicalKeyboardKey.f10): const ToggleFocusModeIntent(),
+  const SingleActivator(LogicalKeyboardKey.f11): const ToggleFullscreenIntent(),
 };

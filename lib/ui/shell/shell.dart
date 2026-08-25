@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../logic/editor_controller.dart';
 import '../../logic/vault_controller.dart';
@@ -21,8 +22,16 @@ import 'shortcuts.dart';
 /// window tiers of layout-and-space.md. Owns the editor controller and keeps
 /// it in sync with the selected note.
 class Shell extends StatefulWidget {
-  Shell({super.key, required this.controller, PaneWidths? paneWidths, this.onCreateNote})
-    : paneWidths = paneWidths ?? _default;
+  Shell({
+    super.key,
+    required this.controller,
+    PaneWidths? paneWidths,
+    this.onCreateNote,
+    Future<bool> Function()? isOsFullscreen,
+    Future<void> Function(bool full)? setOsFullscreen,
+  }) : paneWidths = paneWidths ?? _default,
+       isOsFullscreen = isOsFullscreen ?? windowManager.isFullScreen,
+       setOsFullscreen = setOsFullscreen ?? windowManager.setFullScreen;
 
   final VaultController controller;
   final PaneWidths paneWidths;
@@ -30,6 +39,11 @@ class Shell extends StatefulWidget {
   /// Injectable note factory for tests; defaults to creating 'Untitled'
   /// in the selected folder.
   final Future<Note?> Function()? onCreateNote;
+
+  /// OS-fullscreen seam (task 12). Defaults drive the real window via
+  /// window_manager; tests inject fakes to stay off the platform channel.
+  final Future<bool> Function() isOsFullscreen;
+  final Future<void> Function(bool full) setOsFullscreen;
 
   static final PaneWidths _default = PaneWidths();
 
@@ -40,6 +54,14 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   EditorController? _editor;
   String? _syncedPath;
+  bool _focusMode = false;
+
+  void _toggleFocusMode() => setState(() => _focusMode = !_focusMode);
+
+  Future<void> _toggleOsFullscreen() async {
+    final current = await widget.isOsFullscreen();
+    await widget.setOsFullscreen(!current);
+  }
 
   @override
   void initState() {
@@ -149,44 +171,50 @@ class _ShellState extends State<Shell> {
               onZoomReset: () => controller.setZoom(1.0),
               onCycleEditorMode: () => _editor?.cycleMode(),
               onCycleNote: _cycleNote,
+              onToggleFocusMode: _toggleFocusMode,
+              onToggleFullscreen: () => _toggleOsFullscreen(),
             );
 
-            Widget paneArea = switch (tier) {
-              WindowTier.expanded || WindowTier.full => Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (sidebarVisible) ...[
-                    Sidebar(
-                      controller: controller,
-                      width: widths.sidebar,
-                      onTrashTapped: () => showTrashDialog(context, controller),
-                      onSettingsTapped: () => showSettingsDialog(context, controller),
+            Widget paneArea = _focusMode
+                ? EditorPane(key: const Key('pane-editor'), controller: _editor)
+                : switch (tier) {
+                    WindowTier.expanded || WindowTier.full => Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (sidebarVisible) ...[
+                          Sidebar(
+                            controller: controller,
+                            width: widths.sidebar,
+                            onTrashTapped: () => showTrashDialog(context, controller),
+                            onSettingsTapped: () => showSettingsDialog(context, controller),
+                          ),
+                          DragDivider(onDrag: (dx) => widths.sidebar += dx),
+                        ],
+                        Expanded(child: _listAndEditor(controller, widths)),
+                      ],
                     ),
-                    DragDivider(onDrag: (dx) => widths.sidebar += dx),
-                  ],
-                  Expanded(child: _listAndEditor(controller, widths)),
-                ],
-              ),
-              WindowTier.stack => _StackShell(
-                controller: controller,
-                editor: _editor,
-                onCreateNote: _createNote,
-              ),
-            };
+                    WindowTier.stack => _StackShell(
+                      controller: controller,
+                      editor: _editor,
+                      onCreateNote: _createNote,
+                    ),
+                  };
 
             Widget content = Column(
               children: [
                 _HeaderBar(
                   controller: controller,
                   tier: tier,
-                  sidebarVisible: sidebarVisible,
+                  sidebarVisible: sidebarVisible && !_focusMode,
+                  focusMode: _focusMode,
                   onToggleSidebar: () => widths.toggleSidebarFor(tier),
+                  onToggleFocusMode: _toggleFocusMode,
                 ),
                 Expanded(child: paneArea),
               ],
             );
 
-            if (tier == WindowTier.stack && sidebarVisible) {
+            if (tier == WindowTier.stack && sidebarVisible && !_focusMode) {
               content = Stack(
                 children: [
                   content,
@@ -311,12 +339,16 @@ class _HeaderBar extends StatelessWidget {
     required this.controller,
     required this.tier,
     required this.sidebarVisible,
+    required this.focusMode,
     required this.onToggleSidebar,
+    required this.onToggleFocusMode,
   });
   final VaultController controller;
   final WindowTier tier;
   final bool sidebarVisible;
+  final bool focusMode;
   final VoidCallback onToggleSidebar;
+  final VoidCallback onToggleFocusMode;
 
   @override
   Widget build(BuildContext context) {
@@ -347,6 +379,29 @@ class _HeaderBar extends StatelessWidget {
                     sidebarVisible ? Icons.menu_open_rounded : Icons.menu_rounded,
                     size: 18,
                     color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Focus mode (task 12): editor-only surface.
+          Tooltip(
+            message: focusMode ? 'Exit focus mode  (F10)' : 'Focus mode  (F10)',
+            child: Material(
+              color: focusMode ? theme.colorScheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                key: const Key('focus-toggle'),
+                borderRadius: BorderRadius.circular(8),
+                onTap: onToggleFocusMode,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    focusMode ? Icons.center_focus_weak : Icons.center_focus_strong,
+                    size: 18,
+                    color: focusMode
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),

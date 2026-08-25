@@ -21,6 +21,7 @@ dependencies:
   intl: ^0.20.3
   watcher: ^1.2.1
   flutter_context_menu: ^0.4.2
+  window_manager: ^0.5.2
 
 dev_dependencies:
   flutter_test:

@@ -10,6 +10,7 @@ import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/logic/zoom.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/common/corner_toast.dart';
+import 'package:sheaf/ui/editor/editor_pane.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
 import 'package:sheaf/ui/shell/shortcuts.dart';
@@ -40,7 +41,11 @@ void _registerTests() {
     await tempDir.delete(recursive: true);
   });
 
-  Future<(VaultController, PaneWidths)> pumpShell(WidgetTester tester) async {
+  Future<(VaultController, PaneWidths)> pumpShell(
+    WidgetTester tester, {
+    Future<bool> Function()? isOsFullscreen,
+    Future<void> Function(bool)? setOsFullscreen,
+  }) async {
     final controller = VaultController(
       settings: SettingsRepository(file: File('${tempDir.path}/settings.json')),
       vaultFactory: (path) => VaultRepository(root: Directory(path)),
@@ -57,7 +62,12 @@ void _registerTests() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Shell(controller: controller, paneWidths: widths),
+        home: Shell(
+          controller: controller,
+          paneWidths: widths,
+          isOsFullscreen: isOsFullscreen,
+          setOsFullscreen: setOsFullscreen,
+        ),
       ),
     );
     await tester.pump();
@@ -204,5 +214,63 @@ void _registerTests() {
 
     expect(controller.selectedNote, isNull);
     expect(controller.notes, isEmpty);
+  });
+
+  group('task 12 — focus mode & fullscreen', () {
+    testWidgets('F10 collapses to an editor-only surface and restores', (tester) async {
+      final (controller, _) = await pumpShell(tester);
+      final note = await tester.runAsync(() => controller.createNote(title: 'Deep work'));
+      controller.selectNote(note!);
+      await tester.pump();
+      expect(find.byKey(const Key('pane-list')), findsOneWidget);
+
+      final ctx = tester.element(find.byKey(const Key('pane-editor')));
+      Actions.invoke(ctx, const ToggleFocusModeIntent());
+      await tester.pump();
+
+      expect(find.byKey(const Key('pane-list')), findsNothing);
+      expect(find.byType(Sidebar), findsNothing);
+      expect(find.byType(EditorPane), findsOneWidget);
+      expect(find.text('Deep work'), findsOneWidget);
+
+      // The rebuild replaces elements — resolve a fresh context to restore.
+      final restoredCtx = tester.element(find.byKey(const Key('pane-editor')));
+      Actions.invoke(restoredCtx, const ToggleFocusModeIntent());
+      await tester.pump();
+      expect(find.byKey(const Key('pane-list')), findsOneWidget);
+    });
+
+    testWidgets('focus toggle button mirrors and drives the mode', (tester) async {
+      await pumpShell(tester);
+
+      await tester.tap(find.byKey(const Key('focus-toggle')));
+      await tester.pump();
+      expect(find.byKey(const Key('pane-list')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('focus-toggle')));
+      await tester.pump();
+      expect(find.byKey(const Key('pane-list')), findsOneWidget);
+    });
+
+    testWidgets('F11 drives the injected fullscreen seam both ways', (tester) async {
+      var full = false;
+      final calls = <bool>[];
+      final (_, _) = await pumpShell(
+        tester,
+        isOsFullscreen: () async => full,
+        setOsFullscreen: (v) async {
+          calls.add(v);
+          full = v;
+        },
+      );
+
+      final ctx = tester.element(find.byKey(const Key('pane-editor')));
+      Actions.invoke(ctx, const ToggleFullscreenIntent());
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      Actions.invoke(ctx, const ToggleFullscreenIntent());
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+
+      expect(calls, [true, false]);
+    });
   });
 }
