@@ -211,10 +211,10 @@ are green.
   and wash labels to 70% alpha; ship a custom menu-item entry (30px rows,
   full-contrast Hanken labels, mono shortcuts, destructive tint, themed
   container radius/border/shadow) behind the existing `quireMenu` API.
-- [ ] **F19: remove the local-font feature** — drop `fontFamily`/`fontPath`
+- [x] **F19: remove the local-font feature** — drop `fontFamily`/`fontPath`
   settings, typeface picker, FontLoader startup step, scanner; old settings
   JSON with those keys must keep loading.
-- [ ] **F20: fix formatting toggles (closes F11)** — `_enclosingSpan`
+- [x] **F20: fix formatting toggles (closes F11)** — `_enclosingSpan`
   containment misses selections touching marker chars → silent re-wrap →
   nested markers → right-shrink drift. Unwrap on overlap/touch/envelope,
   skip degenerate empty-inner matches, piecewise offset remap; failing-first

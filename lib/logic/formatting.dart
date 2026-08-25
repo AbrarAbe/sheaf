@@ -96,30 +96,53 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
   return FormatEdit(inserted, caret + open.length, caret + open.length);
 }
 
-/// Unwraps the smallest `<open>…<end>` span whose inner content contains the
-/// given range, remapping the selection into unwrapped coordinates. Null when
-/// no single span encloses the range.
+/// Unwraps the `<open>…<end>` span best matching the given range, remapping
+/// the selection into unwrapped coordinates. Null when no span qualifies.
+///
+/// A span qualifies when the range overlaps or even just touches its inner
+/// region (`start <= innerEnd && stop >= innerStart`) — which subsumes
+/// selections covering the whole span, so marker-inclusive toggles unwrap
+/// instead of silently nesting a second layer (feedback F11/F20). The
+/// smallest qualifying inner wins; zero-length inners are skipped so
+/// adjacent bold markers never masquerade as an empty italic pair.
 FormatEdit? _enclosingSpan(String text, int start, int stop, String open, String end) {
   final pattern = RegExp('${RegExp.escape(open)}(.*?)${RegExp.escape(end)}');
   Match? best;
   for (final m in pattern.allMatches(text)) {
+    final inner = m.group(1)!;
+    if (inner.isEmpty) continue;
     final innerStart = m.start + open.length;
-    final innerEnd = innerStart + m.group(1)!.length;
-    if (start >= innerStart && stop <= innerEnd) {
-      if (best == null || m.group(1)!.length < best.group(1)!.length) best = m;
+    final innerEnd = innerStart + inner.length;
+    final qualifies = start <= innerEnd && stop >= innerStart;
+    if (qualifies && (best == null || inner.length < best.group(1)!.length)) {
+      best = m;
     }
   }
   if (best == null) return null;
 
-  final innerStart = best.start + open.length;
+  final spanStart = best.start;
+  final innerStart = spanStart + open.length;
   final innerEnd = innerStart + best.group(1)!.length;
-  final unwrapped = text
-      .replaceRange(best.end - end.length, best.end, '')
-      .replaceRange(best.start, innerStart, '');
+  final spanEnd = best.end;
 
-  int map(int offset) =>
-      offset >= innerEnd ? offset - open.length - end.length : offset - open.length;
-  return FormatEdit(unwrapped, map(start), map(stop));
+  final unwrapped = text
+      .replaceRange(spanEnd - end.length, spanEnd, '')
+      .replaceRange(spanStart, innerStart, '');
+
+  // Piecewise remap across the two marker removals.
+  int map(int o) {
+    if (o <= spanStart) return o;
+    if (o < innerStart) return spanStart; // inside the open marker
+    if (o <= innerEnd) return o - open.length; // inner text
+    if (o < spanEnd) return innerEnd - open.length; // inside the close marker
+    return o - open.length - end.length; // past the span
+  }
+
+  return FormatEdit(
+    unwrapped,
+    map(start).clamp(0, unwrapped.length),
+    map(stop).clamp(0, unwrapped.length),
+  );
 }
 
 /// VS Code-style select-word bounds around [offset] (spec story 11, F6).

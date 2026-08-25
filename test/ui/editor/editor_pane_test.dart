@@ -281,6 +281,16 @@ void main() {
       );
     }
 
+    TextSelection currentSelection(WidgetTester tester) {
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      return state.widget.controller.selection;
+    }
+
     testWidgets('Ctrl+B wraps selection in bold markers', (tester) async {
       await openNormal(tester);
       selectAll(tester);
@@ -304,6 +314,36 @@ void main() {
       await tester.pump();
 
       expect(editorController.body, 'bold');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('F20: select-all toggle rounds trip without right-shrink drift', (tester) async {
+      await openNormal(tester, body: 'steady');
+
+      for (var i = 0; i < 2; i++) {
+        selectAll(tester);
+        await tester.pump();
+        Actions.invoke(
+          tester.element(find.byKey(const Key('editor-body'))),
+          const FormatIntent(FormatKind.bold),
+        );
+        await tester.pump();
+        expect(editorController.body, '**steady**', reason: 'wrap $i');
+
+        selectAll(tester);
+        await tester.pump();
+        Actions.invoke(
+          tester.element(find.byKey(const Key('editor-body'))),
+          const FormatIntent(FormatKind.bold),
+        );
+        await tester.pump();
+        expect(editorController.body, 'steady', reason: 'unwrap $i');
+        expect(
+          currentSelection(tester),
+          const TextSelection(baseOffset: 0, extentOffset: 6),
+          reason: 'selection restored after cycle $i',
+        );
+      }
       await real(editorController.flush, tester);
     });
 
