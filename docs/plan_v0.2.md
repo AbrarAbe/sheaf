@@ -219,7 +219,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `shell.dart`, `header` widgets, tests.
   - Scope: M
 
-- [ ] **Task 16: Docs & release prep**
+- [x] **Task 16: Docs & release prep**
   ADRs (meta.json sidecar, zoom model, theme worlds), README feature list,
   archive plan, final gates + coverage report.
   - Acceptance: docs merged; all gates green.
