@@ -386,29 +386,6 @@ class _HeaderBar extends StatelessWidget {
               ),
             ),
           ),
-          // Focus mode (task 12): editor-only surface.
-          Tooltip(
-            message: focusMode ? 'Exit focus mode  (F10)' : 'Focus mode  (F10)',
-            child: Material(
-              color: focusMode ? theme.colorScheme.primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                key: const Key('focus-toggle'),
-                borderRadius: BorderRadius.circular(8),
-                onTap: onToggleFocusMode,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    focusMode ? Icons.center_focus_weak : Icons.center_focus_strong,
-                    size: 18,
-                    color: focusMode
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-          ),
           const SizedBox(width: 6),
           // Wordmark
           Row(
@@ -469,10 +446,34 @@ class _HeaderBar extends StatelessWidget {
           // Audit (task 15): the decorative ⌘K pill is gone — vault search
           // lives in the list filter, find-in-note in the editor.
           const Spacer(),
-          // Right controls
+          // Right controls. Focus mode lives here too (feedback F14):
+          // window-level chrome clusters on the right, away from navigation.
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Focus mode (task 12): editor-only surface.
+              Tooltip(
+                message: focusMode ? 'Exit focus mode  (F10)' : 'Focus mode  (F10)',
+                child: Material(
+                  color: focusMode ? theme.colorScheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    key: const Key('focus-toggle'),
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: onToggleFocusMode,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        focusMode ? Icons.center_focus_weak : Icons.center_focus_strong,
+                        size: 18,
+                        color: focusMode
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               Tooltip(
                 message: 'Cycle theme  (Ctrl+Shift+L)',
                 child: Material(
