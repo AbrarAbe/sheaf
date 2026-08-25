@@ -23,7 +23,14 @@ import 'markdown_preview.dart';
 /// debounced autosave, and the mono status footer.
 /// Paper on the desk: ink is constant, title is display, body is reading.
 class EditorPane extends StatelessWidget {
-  const EditorPane({super.key, required this.controller, this.pickImage, this.importImage});
+  const EditorPane({
+    super.key,
+    required this.controller,
+    this.pickImage,
+    this.importImage,
+    this.baseFontSize,
+    this.userFontFamily,
+  });
 
   /// Null while no vault is open; renders the placeholder.
   final EditorController? controller;
@@ -34,6 +41,12 @@ class EditorPane extends StatelessWidget {
   /// Injectable copier into `<vault>/attachments/`; defaults to the
   /// controller's repository call. Tests inject a fake to stay zone-safe.
   final Future<String> Function(File file)? importImage;
+
+  /// Editor body base size from settings (story 16); null = 16.
+  final double? baseFontSize;
+
+  /// Family of a user-loaded font; null keeps the bundled Hanken stack.
+  final String? userFontFamily;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +60,13 @@ class EditorPane extends StatelessWidget {
         if (editor.current == null) {
           return const _Placeholder();
         }
-        return _Editor(controller: editor, pickImage: pickImage, importImage: importImage);
+        return _Editor(
+          controller: editor,
+          pickImage: pickImage,
+          importImage: importImage,
+          baseFontSize: baseFontSize,
+          userFontFamily: userFontFamily,
+        );
       },
     );
   }
@@ -134,11 +153,19 @@ class _Placeholder extends StatelessWidget {
 }
 
 class _Editor extends StatefulWidget {
-  const _Editor({required this.controller, this.pickImage, this.importImage});
+  const _Editor({
+    required this.controller,
+    this.pickImage,
+    this.importImage,
+    this.baseFontSize,
+    this.userFontFamily,
+  });
 
   final EditorController controller;
   final Future<File?> Function()? pickImage;
   final Future<String> Function(File file)? importImage;
+  final double? baseFontSize;
+  final String? userFontFamily;
 
   @override
   State<_Editor> createState() => _EditorState();
@@ -210,6 +237,42 @@ class _EditorState extends State<_Editor> {
       ),
     },
   };
+
+  /// Body text style for the current mode, honoring the settings' base size
+  /// and user typeface (story 16).
+  TextStyle _bodyStyle(ThemeData theme) {
+    final base = widget.baseFontSize ?? 16.0;
+    if (widget.controller.mode == EditorMode.markdown) {
+      if (widget.userFontFamily != null) {
+        return TextStyle(
+          fontFamily: widget.userFontFamily,
+          fontSize: base - 1.5,
+          height: 24 / (base - 1.5),
+          color: theme.colorScheme.onSurface,
+        );
+      }
+      return GoogleFonts.splineSansMono(
+        fontSize: base - 1.5,
+        height: 24 / (base - 1.5),
+        fontWeight: FontWeight.w400,
+        color: theme.colorScheme.onSurface,
+      );
+    }
+    if (widget.userFontFamily != null) {
+      return TextStyle(
+        fontFamily: widget.userFontFamily,
+        fontSize: base,
+        height: 26 / base,
+        color: theme.colorScheme.onSurface,
+      );
+    }
+    return GoogleFonts.hankenGrotesk(
+      fontSize: base,
+      height: 26 / base,
+      fontWeight: FontWeight.w400,
+      color: theme.colorScheme.onSurface,
+    );
+  }
 
   void _applyFormat(FormatIntent intent) {
     final selection = _body.selection;
@@ -535,6 +598,8 @@ class _EditorState extends State<_Editor> {
                     EditorMode.preview => MarkdownPreview(
                       body: _body.text,
                       vaultRoot: controller.vaultRoot,
+                      baseFontSize: widget.baseFontSize ?? 16,
+                      userFontFamily: widget.userFontFamily,
                     ),
                     _ => Shortcuts(
                       shortcuts: _editShortcuts(),
@@ -578,19 +643,7 @@ class _EditorState extends State<_Editor> {
                               expands: true,
                               textAlignVertical: TextAlignVertical.top,
                               keyboardType: TextInputType.multiline,
-                              style: controller.mode == EditorMode.markdown
-                                  ? GoogleFonts.splineSansMono(
-                                      fontSize: 14.5,
-                                      height: 24 / 14.5,
-                                      fontWeight: FontWeight.w400,
-                                      color: theme.colorScheme.onSurface,
-                                    )
-                                  : GoogleFonts.hankenGrotesk(
-                                      fontSize: 16,
-                                      height: 26 / 16,
-                                      fontWeight: FontWeight.w400,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
+                              style: _bodyStyle(theme),
                               decoration: InputDecoration(
                                 hintText:
                                     'Take a note…  Type #tags, drag images, write in Markdown.',

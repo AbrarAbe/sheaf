@@ -158,6 +158,25 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persists the editor body base size, clamped to 12–24 (story 16).
+  Future<void> setEditorFontSize(double size) async {
+    final clamped = size.clamp(12.0, 24.0).toDouble();
+    if (clamped == _settings.editorFontSize) return;
+    _settings = _settings.copyWith(editorFontSize: clamped);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
+  /// Selects the user font (registered under [family] at startup) or clears
+  /// it with two nulls. Family and path are always set together.
+  Future<void> setUserFont({String? family, String? path}) async {
+    assert((family == null) == (path == null), 'font family and path move together');
+    if (family == _settings.fontFamily && path == _settings.fontPath) return;
+    _settings = _settings.copyWith(fontFamily: family, fontPath: path);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
   /// Persists per-tier sidebar visibility (spec story 15 / task 10).
   Future<void> setSidebarVisibility(WindowTier tier, bool visible) async {
     final next = switch (tier) {

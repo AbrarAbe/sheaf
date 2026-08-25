@@ -21,6 +21,10 @@ class SpyVaultController extends VaultController {
   final themes = <ThemeSetting>[];
   final worlds = <String>[];
   String themeWorld = 'quire';
+  double editorFontSize = 16.0;
+  double zoom = 1.0;
+  final fontSelections = <({String? family, String? path})>[];
+  String? fontFamily;
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
   List<Note> fakeNotes = const [];
@@ -68,8 +72,15 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  AppSettings get settings =>
-      AppSettings(vaultPath: vaultPath, theme: theme, themeWorld: themeWorld);
+  AppSettings get settings => AppSettings(
+    vaultPath: vaultPath,
+    theme: theme,
+    themeWorld: themeWorld,
+    editorFontSize: editorFontSize,
+    zoomFactor: zoom,
+    fontFamily: fontFamily,
+    fontPath: fontFamily != null ? 'fake://font' : null,
+  );
 
   @override
   Future<void> setTheme(ThemeSetting value) async {
@@ -81,6 +92,22 @@ class SpyVaultController extends VaultController {
   Future<void> setThemeWorld(String id) async {
     worlds.add(id);
     themeWorld = id;
+  }
+
+  @override
+  Future<void> setEditorFontSize(double size) async {
+    editorFontSize = size;
+  }
+
+  @override
+  Future<void> setZoom(double factor) async {
+    zoom = factor;
+  }
+
+  @override
+  Future<void> setUserFont({String? family, String? path}) async {
+    fontFamily = family;
+    fontSelections.add((family: family, path: path));
   }
 
   @override

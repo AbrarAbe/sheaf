@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../data/font_scanner.dart';
 import '../../logic/vault_controller.dart';
+import '../../logic/zoom.dart';
 import '../../models/settings.dart';
 import '../../theme/quire_theme.dart';
 import '../../theme/worlds.dart';
@@ -8,26 +10,36 @@ import 'welcome_screen.dart';
 
 /// App settings: theme selection and vault location.
 ///
-/// [pickFolder] is injectable for tests; production opens the native chooser.
+/// [pickFolder] and [scanFonts] are injectable for tests; production opens
+/// the native chooser and scans standard Linux font directories.
 Future<void> showSettingsDialog(
   BuildContext context,
   VaultController controller, {
   Future<String?> Function()? pickFolder,
+  Future<List<DiscoveredFont>> Function()? scanFonts,
 }) {
   return showDialog(
     context: context,
     builder: (_) => _SettingsDialog(
       controller: controller,
       pickFolder: pickFolder ?? WelcomeScreen.defaultPickFolder,
+      scanFonts: scanFonts ?? scanFontsDefault,
     ),
   );
 }
 
+Future<List<DiscoveredFont>> scanFontsDefault() => scanFonts();
+
 class _SettingsDialog extends StatelessWidget {
-  const _SettingsDialog({required this.controller, required this.pickFolder});
+  const _SettingsDialog({
+    required this.controller,
+    required this.pickFolder,
+    required this.scanFonts,
+  });
 
   final VaultController controller;
   final Future<String?> Function() pickFolder;
+  final Future<List<DiscoveredFont>> Function() scanFonts;
 
   @override
   Widget build(BuildContext context) {
@@ -35,81 +47,192 @@ class _SettingsDialog extends StatelessWidget {
       title: const Text('Settings'),
       content: SizedBox(
         width: 380,
-        child: ListenableBuilder(
-          listenable: controller,
-          builder: (context, _) {
-            final theme = Theme.of(context);
-            final pathStyle = TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 12,
-              color: theme.colorScheme.onSurfaceVariant,
-            );
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _SectionLabel('Appearance'),
-                const SizedBox(height: QuireSpace.xs),
-                // Theme world (spec story 16): curated color sets.
-                Wrap(
-                  spacing: QuireSpace.s,
-                  runSpacing: QuireSpace.xs,
-                  children: [
-                    for (final world in themeWorlds)
-                      ChoiceChip(
-                        key: Key('world-${world.id}'),
-                        label: Text(world.label),
-                        selected: controller.settings.themeWorld == world.id,
-                        onSelected: (_) => controller.setThemeWorld(world.id),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: QuireSpace.s),
-                RadioGroup<ThemeSetting>(
-                  groupValue: controller.settings.theme,
-                  onChanged: (value) {
-                    if (value != null) controller.setTheme(value);
-                  },
-                  child: Column(
+        // New appearance controls outgrew a fixed-height dialog.
+        child: SingleChildScrollView(
+          child: ListenableBuilder(
+            listenable: controller,
+            builder: (context, _) {
+              final theme = Theme.of(context);
+              final pathStyle = TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant,
+              );
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SectionLabel('Appearance'),
+                  const SizedBox(height: QuireSpace.xs),
+                  // Theme world (spec story 16): curated color sets.
+                  Wrap(
+                    spacing: QuireSpace.s,
+                    runSpacing: QuireSpace.xs,
                     children: [
-                      for (final setting in ThemeSetting.values)
-                        RadioListTile<ThemeSetting>(
-                          dense: true,
-                          title: Text(switch (setting) {
-                            ThemeSetting.system => 'System',
-                            ThemeSetting.light => 'Light',
-                            ThemeSetting.dark => 'Dark',
-                          }),
-                          value: setting,
+                      for (final world in themeWorlds)
+                        ChoiceChip(
+                          key: Key('world-${world.id}'),
+                          label: Text(world.label),
+                          selected: controller.settings.themeWorld == world.id,
+                          onSelected: (_) => controller.setThemeWorld(world.id),
                         ),
                     ],
                   ),
-                ),
-                const Divider(height: QuireSpace.xl),
-                const _SectionLabel('Vault'),
-                const SizedBox(height: QuireSpace.xs),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        controller.vaultPath,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: pathStyle,
+                  const SizedBox(height: QuireSpace.s),
+                  RadioGroup<ThemeSetting>(
+                    groupValue: controller.settings.theme,
+                    onChanged: (value) {
+                      if (value != null) controller.setTheme(value);
+                    },
+                    child: Column(
+                      children: [
+                        for (final setting in ThemeSetting.values)
+                          RadioListTile<ThemeSetting>(
+                            dense: true,
+                            title: Text(switch (setting) {
+                              ThemeSetting.system => 'System',
+                              ThemeSetting.light => 'Light',
+                              ThemeSetting.dark => 'Dark',
+                            }),
+                            value: setting,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: QuireSpace.s),
+                  // Type size (story 16): editor body base in px.
+                  ListenableBuilder(
+                    listenable: controller,
+                    builder: (context, _) {
+                      final size = controller.settings.editorFontSize;
+                      return Row(
+                        children: [
+                          SizedBox(
+                            width: 72,
+                            child: Text('Type size', style: theme.textTheme.bodySmall),
+                          ),
+                          Expanded(
+                            child: Slider(
+                              key: const Key('type-size-slider'),
+                              value: size,
+                              min: 12,
+                              max: 24,
+                              divisions: 12,
+                              label: '${size.round()} px',
+                              onChanged: controller.setEditorFontSize,
+                            ),
+                          ),
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              '${size.round()} px',
+                              textAlign: TextAlign.end,
+                              style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  // Zoom stepper (story 11/16): mirrors Ctrl+= / Ctrl+-.
+                  ListenableBuilder(
+                    listenable: controller,
+                    builder: (context, _) {
+                      final percent = (controller.settings.zoomFactor * 100).round();
+                      return Row(
+                        children: [
+                          SizedBox(
+                            width: 72,
+                            child: Text('Zoom', style: theme.textTheme.bodySmall),
+                          ),
+                          IconButton(
+                            key: const Key('zoom-out'),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => controller.setZoom(
+                              stepZoom(controller.settings.zoomFactor, up: false),
+                            ),
+                            icon: const Icon(Icons.remove_circle_outline, size: 18),
+                          ),
+                          SizedBox(
+                            width: 52,
+                            child: Text(
+                              '$percent%',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                            ),
+                          ),
+                          IconButton(
+                            key: const Key('zoom-in'),
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => controller.setZoom(
+                              stepZoom(controller.settings.zoomFactor, up: true),
+                            ),
+                            icon: const Icon(Icons.add_circle_outline, size: 18),
+                          ),
+                          TextButton(
+                            onPressed: () => controller.setZoom(1.0),
+                            child: const Text('Reset'),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: QuireSpace.s),
+                  // Typeface picker (story 16): fonts found on this machine.
+                  FutureBuilder<List<DiscoveredFont>>(
+                    future: scanFonts(),
+                    builder: (context, snapshot) {
+                      final fonts = snapshot.data ?? const <DiscoveredFont>[];
+                      final selected = controller.settings.fontPath;
+                      return DropdownButtonFormField<String>(
+                        key: const Key('font-dropdown'),
+                        initialValue: selected,
+                        decoration: const InputDecoration(labelText: 'Editor typeface'),
+                        items: [
+                          const DropdownMenuItem(
+                            value: '__sheaf_default__',
+                            child: Text('Sheaf default'),
+                          ),
+                          for (final font in fonts)
+                            DropdownMenuItem(value: font.path, child: Text(font.name)),
+                        ],
+                        onChanged: (path) {
+                          if (path == null || path == '__sheaf_default__') {
+                            controller.setUserFont();
+                          } else {
+                            final match = fonts.firstWhere((f) => f.path == path);
+                            controller.setUserFont(family: match.name, path: match.path);
+                          }
+                        },
+                      );
+                    },
+                  ),
+                  const Divider(height: QuireSpace.xl),
+                  const _SectionLabel('Vault'),
+                  const SizedBox(height: QuireSpace.xs),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          controller.vaultPath,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: pathStyle,
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        final picked = await pickFolder();
-                        if (picked != null) await controller.openVault(picked);
-                      },
-                      child: const Text('Change vault…'),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await pickFolder();
+                          if (picked != null) await controller.openVault(picked);
+                        },
+                        child: const Text('Change vault…'),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
       actions: [

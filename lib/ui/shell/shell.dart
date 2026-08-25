@@ -176,7 +176,7 @@ class _ShellState extends State<Shell> {
             );
 
             Widget paneArea = _focusMode
-                ? EditorPane(key: const Key('pane-editor'), controller: _editor)
+                ? _editorPane(key: const Key('pane-editor'))
                 : switch (tier) {
                     WindowTier.expanded || WindowTier.full => Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -316,6 +316,17 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  /// Settings-derived type controls handed down to the editor (story 16).
+  Widget _editorPane({Key? key}) {
+    final s = widget.controller.settings;
+    return EditorPane(
+      key: key,
+      controller: _editor,
+      baseFontSize: s.editorFontSize,
+      userFontFamily: s.fontPath != null ? s.fontFamily : null,
+    );
+  }
+
   Widget _listAndEditor(VaultController controller, PaneWidths widths) {
     return Row(
       children: [
@@ -325,10 +336,7 @@ class _ShellState extends State<Shell> {
           child: ListPane(controller: controller, onCreateNote: _createNote),
         ),
         DragDivider(onDrag: (dx) => widths.list += dx),
-        Expanded(
-          key: const Key('pane-editor'),
-          child: EditorPane(controller: _editor),
-        ),
+        Expanded(key: const Key('pane-editor'), child: _editorPane()),
       ],
     );
   }
