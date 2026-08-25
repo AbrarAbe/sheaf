@@ -133,7 +133,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `pane_widths.dart`, `shell.dart`, tests.
   - Scope: M
 
-- [ ] **Task 11: Pinning**
+- [x] **Task 11: Pinning**
   VaultRepository meta.json API (load/save/corrupt-recover, drop-on-delete);
   VaultController pin toggles; ListPane Pinned section + filled-pin indicator +
   working hover button + context-menu entry.
