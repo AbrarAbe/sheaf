@@ -124,7 +124,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
 
 ### Phase 3 — Panes, pinning, fullscreen
 
-- [ ] **Task 10: User-owned sidebar visibility**
+- [x] **Task 10: User-owned sidebar visibility**
   `PaneWidths` gains per-tier visibility model; Full tier drops forced rail
   (toggle hides completely); Stack tier drawer toggle; header menu button
   always present; persist per tier.
