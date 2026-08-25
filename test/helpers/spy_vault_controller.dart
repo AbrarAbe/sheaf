@@ -19,6 +19,8 @@ class SpyVaultController extends VaultController {
   final emptied = <String>[];
   final deleted = <String>[];
   final themes = <ThemeSetting>[];
+  final worlds = <String>[];
+  String themeWorld = 'quire';
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
   List<Note> fakeNotes = const [];
@@ -66,12 +68,19 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  AppSettings get settings => AppSettings(vaultPath: vaultPath, theme: theme);
+  AppSettings get settings =>
+      AppSettings(vaultPath: vaultPath, theme: theme, themeWorld: themeWorld);
 
   @override
   Future<void> setTheme(ThemeSetting value) async {
     themes.add(value);
     theme = value;
+  }
+
+  @override
+  Future<void> setThemeWorld(String id) async {
+    worlds.add(id);
+    themeWorld = id;
   }
 
   @override

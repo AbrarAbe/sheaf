@@ -35,7 +35,7 @@ ThemeData buildQuireLight() {
   const hairline = Color(0xFFD8DDE6);
   const ink = Color(0xFF2F4BD7);
 
-  return _build(
+  return buildTokens(
     brightness: Brightness.light,
     surface: canvas,
     card: card,
@@ -65,7 +65,7 @@ ThemeData buildQuireDark() {
   const hairline = Color(0xFF33302A);
   const ink = Color(0xFF93A8F0);
 
-  return _build(
+  return buildTokens(
     brightness: Brightness.dark,
     surface: canvas,
     card: card,
@@ -123,97 +123,116 @@ TextTheme _quireTextTheme(Color onSurface, Color onSurfaceVariant) {
   // Spline Sans Mono — machine-recorded facts
   return TextTheme(
     // display.lg — Bricolage 600 34/40 -0.5% · Empty-state headlines
-    displayLarge: _safeBricolage(TextStyle(
-      fontWeight: FontWeight.w600,
-      fontSize: 34,
-      height: 40 / 34,
-      letterSpacing: -0.17,
-      color: onSurface,
-    )),
+    displayLarge: _safeBricolage(
+      TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 34,
+        height: 40 / 34,
+        letterSpacing: -0.17,
+        color: onSurface,
+      ),
+    ),
     // display.sm — Bricolage 600 24/30 -0.25% · Title / screen heads
-    displaySmall: _safeBricolage(TextStyle(
-      fontWeight: FontWeight.w600,
-      fontSize: 24,
-      height: 30 / 24,
-      letterSpacing: -0.06,
-      color: onSurface,
-    )),
-    headlineSmall: _safeBricolage(TextStyle(
-      fontWeight: FontWeight.w600,
-      fontSize: 24,
-      height: 30 / 24,
-      letterSpacing: -0.06,
-      color: onSurface,
-    )),
+    displaySmall: _safeBricolage(
+      TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 24,
+        height: 30 / 24,
+        letterSpacing: -0.06,
+        color: onSurface,
+      ),
+    ),
+    headlineSmall: _safeBricolage(
+      TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 24,
+        height: 30 / 24,
+        letterSpacing: -0.06,
+        color: onSurface,
+      ),
+    ),
     // heading — Hanken 700 20/28 · Card titles
-    titleLarge: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w700,
-      fontSize: 20,
-      height: 28 / 20,
-      letterSpacing: 0,
-      color: onSurface,
-    )),
-    titleMedium: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w600,
-      fontSize: 17,
-      height: 24 / 17,
-      color: onSurface,
-    )),
+    titleLarge: _safeHanken(
+      TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 20,
+        height: 28 / 20,
+        letterSpacing: 0,
+        color: onSurface,
+      ),
+    ),
+    titleMedium: _safeHanken(
+      TextStyle(fontWeight: FontWeight.w600, fontSize: 17, height: 24 / 17, color: onSurface),
+    ),
     // body — Hanken 400 16/26 · Note bodies, editor
-    bodyLarge: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w400,
-      fontSize: 16,
-      height: 26 / 16,
-      letterSpacing: 0,
-      color: onSurface,
-    )),
-    bodyMedium: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w400,
-      fontSize: 14,
-      height: 20 / 14,
-      letterSpacing: 0.14,
-      color: onSurface,
-    )),
+    bodyLarge: _safeHanken(
+      TextStyle(
+        fontWeight: FontWeight.w400,
+        fontSize: 16,
+        height: 26 / 16,
+        letterSpacing: 0,
+        color: onSurface,
+      ),
+    ),
+    bodyMedium: _safeHanken(
+      TextStyle(
+        fontWeight: FontWeight.w400,
+        fontSize: 14,
+        height: 20 / 14,
+        letterSpacing: 0.14,
+        color: onSurface,
+      ),
+    ),
     // label — Hanken 500 14/20 +1% · Buttons, metadata
-    labelLarge: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w500,
-      fontSize: 14,
-      height: 20 / 14,
-      letterSpacing: 0.14,
-      color: onSurface,
-    )),
+    labelLarge: _safeHanken(
+      TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 14,
+        height: 20 / 14,
+        letterSpacing: 0.14,
+        color: onSurface,
+      ),
+    ),
     // caption — Hanken 400 13/18 +1%
-    bodySmall: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w400,
-      fontSize: 13,
-      height: 18 / 13,
-      letterSpacing: 0.13,
-      color: onSurfaceVariant,
-    )),
+    bodySmall: _safeHanken(
+      TextStyle(
+        fontWeight: FontWeight.w400,
+        fontSize: 13,
+        height: 18 / 13,
+        letterSpacing: 0.13,
+        color: onSurfaceVariant,
+      ),
+    ),
     // mono — Spline Sans Mono 400 13/18 +2% · Timestamps, counts, footer
-    labelSmall: _safeMono(TextStyle(
-      fontWeight: FontWeight.w400,
-      fontSize: 13,
-      height: 18 / 13,
-      letterSpacing: 0.26,
-      color: onSurfaceVariant,
-      fontFeatures: const [FontFeature.tabularFigures()],
-    )),
+    labelSmall: _safeMono(
+      TextStyle(
+        fontWeight: FontWeight.w400,
+        fontSize: 13,
+        height: 18 / 13,
+        letterSpacing: 0.26,
+        color: onSurfaceVariant,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    ),
     // labelMedium used for some chips
-    labelMedium: _safeHanken(TextStyle(
-      fontWeight: FontWeight.w500,
-      fontSize: 13,
-      height: 18 / 13,
-      letterSpacing: 0.13,
-      color: onSurface,
-    )),
-    headlineMedium: _safeBricolage(TextStyle(
-      fontWeight: FontWeight.w700,
-      fontSize: 28,
-      height: 34 / 28,
-      letterSpacing: -0.14,
-      color: onSurface,
-    )),
+    labelMedium: _safeHanken(
+      TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 13,
+        height: 18 / 13,
+        letterSpacing: 0.13,
+        color: onSurface,
+      ),
+    ),
+    headlineMedium: _safeBricolage(
+      TextStyle(
+        fontWeight: FontWeight.w700,
+        fontSize: 28,
+        height: 34 / 28,
+        letterSpacing: -0.14,
+        color: onSurface,
+      ),
+    ),
   );
 }
 
@@ -245,7 +264,7 @@ TextStyle quireMono(BuildContext context, {Color? color}) {
   return _safeMono(base);
 }
 
-ThemeData _build({
+ThemeData buildTokens({
   required Brightness brightness,
   required Color surface,
   required Color card,
@@ -323,10 +342,9 @@ ThemeData _build({
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: isLight ? const Color(0xFF191C24) : const Color(0xFFECE7DC),
-      contentTextStyle: _safeHanken(TextStyle(
-        fontSize: 14,
-        color: isLight ? Colors.white : const Color(0xFF131110),
-      )),
+      contentTextStyle: _safeHanken(
+        TextStyle(fontSize: 14, color: isLight ? Colors.white : const Color(0xFF131110)),
+      ),
       actionTextColor: isLight ? const Color(0xFF93A8F0) : const Color(0xFF2F4BD7),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.m)),
       behavior: SnackBarBehavior.floating,
@@ -337,23 +355,27 @@ ThemeData _build({
       scrolledUnderElevation: 0,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: _safeBricolage(TextStyle(
-        fontWeight: FontWeight.w600,
-        fontSize: 16,
-        letterSpacing: -0.12,
-        color: onSurface,
-      )),
+      titleTextStyle: _safeBricolage(
+        TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 16,
+          letterSpacing: -0.12,
+          color: onSurface,
+        ),
+      ),
       iconTheme: IconThemeData(color: onSurfaceVariant, size: 20),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: inset ?? raised,
-      hintStyle: _safeHanken(TextStyle(
-        fontWeight: FontWeight.w400,
-        fontSize: 14,
-        color: onSurfaceVariant,
-        letterSpacing: 0.14,
-      )),
+      hintStyle: _safeHanken(
+        TextStyle(
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+          color: onSurfaceVariant,
+          letterSpacing: 0.14,
+        ),
+      ),
       prefixIconColor: onSurfaceVariant,
       suffixIconColor: onSurfaceVariant,
       border: OutlineInputBorder(
@@ -377,18 +399,18 @@ ThemeData _build({
       shape: const StadiumBorder(),
       side: BorderSide.none,
       backgroundColor: secondaryContainer,
-      labelStyle: _safeHanken(TextStyle(
-        fontWeight: FontWeight.w500,
-        fontSize: 13,
-        color: onSurface,
-      )),
+      labelStyle: _safeHanken(
+        TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: onSurface),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: primary,
         foregroundColor: onPrimary,
-        textStyle: _safeHanken(TextStyle(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.14)),
+        textStyle: _safeHanken(
+          TextStyle(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.14),
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.pill)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         elevation: 0,
@@ -397,7 +419,9 @@ ThemeData _build({
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: primary,
-        textStyle: _safeHanken(TextStyle(fontWeight: FontWeight.w500, fontSize: 14, letterSpacing: 0.14)),
+        textStyle: _safeHanken(
+          TextStyle(fontWeight: FontWeight.w500, fontSize: 14, letterSpacing: 0.14),
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.s)),
       ),
     ),
@@ -424,11 +448,13 @@ ThemeData _build({
         color: isLight ? const Color(0xFF26231D) : card,
         borderRadius: BorderRadius.circular(QuireRadius.s),
       ),
-      textStyle: _safeHanken(TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: isLight ? const Color(0xFFECE7DC) : onSurface,
-      )),
+      textStyle: _safeHanken(
+        TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: isLight ? const Color(0xFFECE7DC) : onSurface,
+        ),
+      ),
     ),
     scrollbarTheme: ScrollbarThemeData(
       thumbColor: WidgetStatePropertyAll(onSurfaceVariant.withValues(alpha: 0.28)),

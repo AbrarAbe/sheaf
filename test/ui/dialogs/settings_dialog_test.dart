@@ -61,6 +61,20 @@ void main() {
     expect(controller.themes.last, ThemeSetting.light);
   });
 
+  testWidgets('world picker lists the launch set and persists selection', (tester) async {
+    final controller = await pumpSettings(tester);
+
+    expect(find.text('Quire'), findsOneWidget);
+    expect(find.text('Graphite'), findsOneWidget);
+    expect(find.text('Sepia'), findsOneWidget);
+
+    await tester.tap(find.text('Graphite'));
+    await tester.pump();
+
+    expect(controller.settings.themeWorld, 'graphite');
+    expect(controller.worlds, ['graphite']);
+  });
+
   testWidgets('Change vault delegates to the controller with picked path', (tester) async {
     final controller = await pumpSettings(tester, pickFolder: () async => '/new/vault');
 

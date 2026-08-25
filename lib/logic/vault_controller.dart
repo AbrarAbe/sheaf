@@ -149,6 +149,15 @@ class VaultController extends ChangeNotifier {
     await _settingsRepo.save(_settings);
   }
 
+  /// Persists the selected theme world id (spec story 16). Unknown ids are
+  /// tolerated at read time — resolution falls back to Quire.
+  Future<void> setThemeWorld(String id) async {
+    if (id == _settings.themeWorld) return;
+    _settings = _settings.copyWith(themeWorld: id);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
   /// Persists per-tier sidebar visibility (spec story 15 / task 10).
   Future<void> setSidebarVisibility(WindowTier tier, bool visible) async {
     final next = switch (tier) {

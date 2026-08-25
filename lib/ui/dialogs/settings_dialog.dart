@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../logic/vault_controller.dart';
 import '../../models/settings.dart';
 import '../../theme/quire_theme.dart';
+import '../../theme/worlds.dart';
 import 'welcome_screen.dart';
 
 /// App settings: theme selection and vault location.
@@ -48,6 +49,22 @@ class _SettingsDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const _SectionLabel('Appearance'),
+                const SizedBox(height: QuireSpace.xs),
+                // Theme world (spec story 16): curated color sets.
+                Wrap(
+                  spacing: QuireSpace.s,
+                  runSpacing: QuireSpace.xs,
+                  children: [
+                    for (final world in themeWorlds)
+                      ChoiceChip(
+                        key: Key('world-${world.id}'),
+                        label: Text(world.label),
+                        selected: controller.settings.themeWorld == world.id,
+                        onSelected: (_) => controller.setThemeWorld(world.id),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: QuireSpace.s),
                 RadioGroup<ThemeSetting>(
                   groupValue: controller.settings.theme,
                   onChanged: (value) {
