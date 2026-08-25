@@ -209,7 +209,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
     `settings_dialog.dart`, editor styles, tests.
   - Scope: L
 
-- [ ] **Task 15: Component audit fixes**
+- [x] **Task 15: Component audit fixes**
   Sweep findings from spec review: remove decorative fake window dots (SSD
   titlebar already exists), wire or remove dead "⌘K" search pill, verify
   divider hitpoints, QUIRE badge decision, empty-state copy consistency.
