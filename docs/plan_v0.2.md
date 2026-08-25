@@ -199,7 +199,7 @@ tasks (settings schema, pure-logic engines) come first so UI slices stay thin.
   - Files: `lib/theme/*`, `settings_dialog.dart`, models/tests.
   - Scope: M
 
-- [ ] **Task 14: Typography & zoom settings UI**
+- [x] **Task 14: Typography & zoom settings UI**
   Settings Appearance section: default zoom %, editor size slider (12–24),
   font dropdown from `FontScanner`; startup loads chosen font via FontLoader
   with silent fallback.
