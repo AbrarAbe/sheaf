@@ -7,7 +7,6 @@ import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/note.dart';
 import '../../models/settings.dart';
-import '../../theme/quire_theme.dart';
 import '../common/corner_toast.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
@@ -472,57 +471,9 @@ class _HeaderBar extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 16),
-          // Global search (center) — only on expanded/full
-          if (tier != WindowTier.stack)
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Container(
-                    height: 32,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerLowest,
-                      borderRadius: BorderRadius.circular(QuireRadius.pill),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Search notes…  ⌘K',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 13,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '⌘K',
-                            style: GoogleFonts.splineSansMono(
-                              fontSize: 10,
-                              letterSpacing: 0.4,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          if (tier == WindowTier.stack) const Spacer(),
+          // Audit (task 15): the decorative ⌘K pill is gone — vault search
+          // lives in the list filter, find-in-note in the editor.
+          const Spacer(),
           // Right controls
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -546,20 +497,8 @@ class _HeaderBar extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
-              Tooltip(
-                message: 'Window controls',
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _WinDot(color: const Color(0xFFEB6A5E)),
-                    const SizedBox(width: 6),
-                    _WinDot(color: const Color(0xFFF2C94C)),
-                    const SizedBox(width: 6),
-                    _WinDot(color: const Color(0xFF3FB97F)),
-                  ],
-                ),
-              ),
+              // Audit (task 15): fake traffic-light dots removed — the
+              // compositor title bar already provides real window controls.
             ],
           ),
         ],
@@ -568,22 +507,6 @@ class _HeaderBar extends StatelessWidget {
   }
 }
 
-class _WinDot extends StatelessWidget {
-  const _WinDot({required this.color});
-  final Color color;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-      ),
-    );
-  }
-}
 
 class _StackShell extends StatelessWidget {
   const _StackShell({required this.controller, required this.onCreateNote, required this.editor});

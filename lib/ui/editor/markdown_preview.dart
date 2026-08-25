@@ -168,7 +168,7 @@ class MarkdownPreview extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            'Nothing written yet.\nSwitch back to Edit to start.',
+            'Nothing written yet.\nSwitch to Normal or Markdown to start.',
             textAlign: TextAlign.center,
             style: GoogleFonts.hankenGrotesk(
               fontSize: 14,
