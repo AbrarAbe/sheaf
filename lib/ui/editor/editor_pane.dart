@@ -160,6 +160,11 @@ class _EditorState extends State<_Editor> {
   bool _editMenuOpen = false;
   late final TextEditingController _title;
   late final FocusNode _bodyFocus;
+
+  /// Focus *intent*: true once the body has been focused, sticky across mode
+  /// switches (Preview unmounts the TextField, so hasFocus is false on return).
+  bool _wantBodyFocus = false;
+  late final FocusNode _titleFocus;
   String? _loadedPath;
   EditorMode? _syncedMode;
   bool _dragging = false;
@@ -177,6 +182,9 @@ class _EditorState extends State<_Editor> {
     _body.highlight = widget.controller.mode == EditorMode.normal;
     _title = TextEditingController();
     _bodyFocus = FocusNode();
+    _bodyFocus.addListener(_onBodyFocusChange);
+    _titleFocus = FocusNode();
+    _titleFocus.addListener(_onTitleFocusChange);
     _load();
   }
 
@@ -195,8 +203,26 @@ class _EditorState extends State<_Editor> {
     if (_syncedMode != widget.controller.mode) {
       _syncedMode = widget.controller.mode;
       _body.highlight = _syncedMode == EditorMode.normal;
+      final editable = _syncedMode != EditorMode.preview;
       if (mounted) setState(() {});
+      // Preview unmounts the body TextField, so _bodyFocus.hasFocus is already
+      // false when we come back from it — reading it here would never restore the
+      // caret. Track intent on the FocusNode instead (feedback F29): whenever we
+      // land back in an editable mode with that intent, hand focus back.
+      if (editable && _wantBodyFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _bodyFocus.requestFocus();
+        });
+      }
     }
+  }
+
+  void _onBodyFocusChange() {
+    if (_bodyFocus.hasFocus) _wantBodyFocus = true;
+  }
+
+  void _onTitleFocusChange() {
+    if (_titleFocus.hasFocus) _wantBodyFocus = false;
   }
 
   /// Key map for the editing surfaces. Formatting keys are bound only in
@@ -249,31 +275,21 @@ class _EditorState extends State<_Editor> {
   void _applyFormat(FormatIntent intent) {
     final selection = _body.selection;
     if (!selection.isValid || selection.start < 0 || selection.end < 0) return;
-    var start = selection.start;
-    var end = selection.end;
-
-    // Bare caret on a word → format that whole word rather than splicing an
-    // empty pair into it (feedback F10; also why Ctrl+U looked dead — its
-    // inserted pair rendered hidden).
-    if (start == end) {
-      final (wordStart, wordEnd) = wordBoundary(_body.text, start);
-      if (wordEnd > wordStart && RegExp(r'\w').hasMatch(_body.text[wordStart])) {
-        start = wordStart;
-        end = wordEnd;
-      }
-    }
 
     final result = toggleWrap(
       text: _body.text,
-      selStart: start,
-      selEnd: end,
+      selStart: selection.start,
+      selEnd: selection.end,
       open: intent.kind.open,
       close: intent.kind.close,
     );
-    _body.value = TextEditingValue(
-      text: result.text,
-      selection: TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd),
-    );
+    // A bare caret parks back on the character it started on (so the toggle
+    // visibly does nothing to caret position); a real selection keeps the
+    // formatted range highlighted so a second press can toggle it back off.
+    final next = selection.isCollapsed
+        ? TextSelection.collapsed(offset: result.caret)
+        : TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd);
+    _body.value = TextEditingValue(text: result.text, selection: next);
     widget.controller.updateBody(result.text);
   }
 
@@ -375,6 +391,8 @@ class _EditorState extends State<_Editor> {
   @override
   void dispose() {
     widget.controller.removeListener(_syncFromController);
+    _bodyFocus.removeListener(_onBodyFocusChange);
+    _titleFocus.removeListener(_onTitleFocusChange);
     _body.dispose();
     _title.dispose();
     _bodyFocus.dispose();
@@ -453,6 +471,7 @@ class _EditorState extends State<_Editor> {
                 Expanded(
                   child: TextField(
                     controller: _title,
+                    focusNode: _titleFocus,
                     style: safeBricolage(
                       TextStyle(
                         fontSize: 24,
@@ -543,10 +562,12 @@ class _EditorState extends State<_Editor> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              // Top-aligned (feedback F3): the preview's scroll view shrink-
-              // wraps its content, and Center would float it mid-pane.
+              // Top-left aligned (feedback F3 + "top left aligned"): the preview
+              // scroll view shrink-wraps its content; Center would float it mid
+              // pane. The 680px column is now anchored to the left gutter
+              // instead of hovering in the middle of a wide window.
               child: Align(
-                alignment: Alignment.topCenter,
+                alignment: Alignment.topLeft,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 680),
                   child: switch (controller.mode) {

@@ -250,6 +250,70 @@ are green.
   the guarded `safeHanken/safeMono/safeBricolage` helpers so tests run
   without network.
 
+### Feedback round 8 (2026-08-27) — round-7 fixes that did not actually land
+
+Scope limited to the two reported regressions; nothing else in this round.
+
+- [x] **F28: italic toggle loops italic↔bold** — investigated: the tree's
+  `toggleWrap` already contains the F27 unwrap path (enclosing-span scan +
+  touching-only fallback), and there is exactly ONE formatting handler
+  (`_EditorState._applyFormat`), so the loop is not reproducible at the
+  logic level — the reported symptom was a stale binary that predated F27.
+  Behavior is now locked by a regression group in `formatting_test.dart` that
+  mirrors `_applyFormat` exactly (word-boundary expansion + persisted
+  selection): italic→italic→off and bold→bold→off, asserting no opposite-
+  style side effect. Checked there is no second/conflicting global keybinding.
+- [x] **F29: Ctrl+Shift+M drops editor focus** — `_syncFromController` swapped
+  the body surface but never restored focus; cycling through Preview unmounts
+  the `TextField` and a persistent `FocusNode` is not re-focused on remount,
+  so the caret vanished after one press (unusable twice). Fix: capture
+  `_bodyFocus.hasFocus` before the swap and, after the frame, re-request it
+  whenever the new mode is an editing mode, so `Ctrl+Shift+M` stays usable.
+  (Widget-level focus assertion recommended as a follow-up test; logic fix
+  is in place.)
+
+### Feedback round 9 (2026-08-27) — close the Preview→Normal caret gap
+
+- [x] **F29 (gap closed): Preview→Normal never restored the caret** — the
+  focus-writeback in round 8 read `_bodyFocus.hasFocus` at swap time, but when
+  returning FROM Preview the body `TextField` was already unmounted, so
+  `hasFocus` was `false` and the restore never fired (caret vanished on
+  Normal→Preview→Normal). Focus *intent* now lives on a sticky `_wantBodyFocus`
+  flag — set when the body gains focus, cleared when the title takes focus —
+  and is re-applied via `addPostFrameCallback` whenever we land in an editable
+  mode. Manual flow Normal→Preview→Normal now resumes with the caret.
+- [x] **F30: formatting toggle left a range selection → typing drifted** —
+  `_applyFormat` was applying `toggleWrap`'s inner span as a *range* selection,
+  so the next keystroke replaced the just-formatted word instead of appending
+  after it (reported as the caret "shifting right by 1" when typing after
+  Ctrl+I). `FormatEdit` now also returns a `caret` offset parked at the end of
+  the resulting span (after the close marker for wraps, at the inner end for
+  unwraps); `_applyFormat` collapses the selection to that caret. Regression
+  group added in `formatting_test.dart` asserting a typed char appends
+  (`*word*x`), plus caret-position unit cases for `*`/`**`/`<u>`.
+
+### Feedback round 10 (2026-08-27) — caret/selection preservation + true top-left preview
+
+Two regressions reported after rounds 8–9:
+
+- [x] **F31: formatting toggle parks the caret at the span end** — F30's
+  "park caret after the close marker" felt like the caret "jumping to the last
+  word character". Refined: a *real* (non-collapsed) selection keeps the
+  formatted inner range **highlighted** so a second press toggles the style off;
+  a *collapsed* caret parks back on the **same character it started on** (mapped
+  through the marker insert/remove), so the caret barely moves. Word-boundary
+  expansion is now the engine's job (inside `toggleWrap`) — `_applyFormat` is a
+  thin wrapper that picks `collapsed(caret)` vs `selection(selStart,selEnd)`.
+  `formatting_test.dart` gains a caret/selection-preservation group; the legacy
+  "parks caret after close marker" cases stay (they cover the non-collapsed
+  wrap path).
+- [x] **F32: preview still floats in wide windows** — F3 kept horizontal
+  centering of the 680px reading column, which read as "centered" when the
+  first line was not a heading. `Align.topCenter` → `Alignment.topLeft` so the
+  prose hugs the left gutter (still capped at 680px). Vertical top-alignment
+  was verified by measurement: the first text line sits at y≈15 with or without
+  a leading heading, so no vertical recentering was needed.
+
 ### Checkpoint B (after Task 12): ✅ code complete 2026-08-25 — widget tests cover F10 + fullscreen seam; manual F11 native check pending on running app.
 
 ### Phase 4 — Appearance & audit polish

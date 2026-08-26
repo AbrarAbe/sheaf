@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sheaf/logic/formatting.dart';
 
@@ -17,11 +18,14 @@ void main() {
       expect(r.selEnd, 12);
     });
 
-    test('inserts an empty pair at a collapsed caret', () {
+    test('collapsed caret on a word wraps the word (feedback F10)', () {
+      // A bare caret resting on a word formats the whole word rather than
+      // splicing an empty pair into it (also why Ctrl+U looked dead).
       final r = toggleWrap(text: 'ab', selStart: 1, selEnd: 1, open: '**');
-      expect(r.text, 'a****b');
-      expect(r.selStart, 3);
-      expect(r.selEnd, 3);
+      expect(r.text, '**ab**');
+      // Collapsed: caret parks back on its original character (1 -> 3).
+      expect(r.caret, 3);
+      expect(r.selStart, 2);
     });
 
     test('uses asymmetric markers for underline', () {
@@ -66,7 +70,8 @@ void main() {
     test('bare caret inside a span unwraps it', () {
       final r = toggleWrap(text: '**bold**', selStart: 4, selEnd: 4, open: '**');
       expect(r.text, 'bold');
-      expect(r.selStart, 2);
+      // Collapsed: caret parks back on its original character (4 -> 2).
+      expect(r.caret, 2);
     });
 
     test('caret at the inner start edge unwraps', () {
@@ -87,7 +92,7 @@ void main() {
       // Caret sits after the 'g'; unwrap keeps it after that same glyph.
       final r = toggleWrap(text: '<u>go</u>', selStart: 4, selEnd: 4, open: '<u>', close: '</u>');
       expect(r.text, 'go');
-      expect(r.selStart, 1);
+      expect(r.caret, 1);
     });
 
     test('smallest containing span wins when nested', () {
@@ -210,7 +215,9 @@ void main() {
       // Bare caret inside 'b' takes the same route.
       final caret = toggleWrap(text: '**a** *b*', selStart: 7, selEnd: 7, open: '*');
       expect(caret.text, '**a** b');
-      expect((caret.selStart, caret.selEnd), (6, 6));
+      // Collapsed caret parks back on the same glyph (index 7 -> 6 after the
+      // leading star is removed) rather than shifting with the word range.
+      expect(caret.caret, 6);
     });
   });
 
@@ -226,10 +233,203 @@ void main() {
       expect(r.text, 'go');
     });
 
-    test('plain text still inserts an empty pair', () {
-      final r = toggleWrap(text: 'ab', selStart: 1, selEnd: 1, open: '**');
-      expect(r.text, 'a****b');
+    test('caret in whitespace still inserts an empty pair', () {
+      // A collapsed caret that is NOT on a word keeps the old empty-pair
+      // behaviour so bold/italic can be started in blank space (feedback F10
+      // only wraps when the caret rests on a word).
+      final r = toggleWrap(text: '  ', selStart: 1, selEnd: 1, open: '**');
+      expect(r.text, ' **** ');
       expect(r.selStart, 3);
+    });
+  });
+
+  group('toggleWrap — editor-cycle regression (feedback F28)', () {
+    // Mirrors _EditorState._applyFormat so the test exercises the exact code
+    // path the key handler drives: a collapsed caret expands to the word
+    // (F10), selection persists between presses, and a second identical press
+    // must TOGGLE OFF rather than re-wrap into the opposite style.
+    TextEditingValue applyFormat(TextEditingValue value, FormatKind kind) {
+      final sel = value.selection;
+      if (!sel.isValid) return value;
+      final r = toggleWrap(
+        text: value.text,
+        selStart: sel.start,
+        selEnd: sel.end,
+        open: kind.open,
+        close: kind.close,
+      );
+      // Mirror of _EditorState._applyFormat: a bare caret parks back on its
+      // original character (collapsed); a real selection keeps the formatted
+      // range highlighted so a second press toggles it off.
+      final next = sel.isCollapsed
+          ? TextSelection.collapsed(offset: r.caret)
+          : TextSelection(baseOffset: r.selStart, extentOffset: r.selEnd);
+      return TextEditingValue(text: r.text, selection: next);
+    }
+
+    test('italic toggles off on a second press (no bold side-effect)', () {
+      var v = const TextEditingValue(
+        text: 'word',
+        selection: TextSelection(baseOffset: 0, extentOffset: 4),
+      );
+      // Press 1: wraps to italic.
+      v = applyFormat(v, FormatKind.italic);
+      expect(v.text, '*word*');
+      expect(v.selection, const TextSelection(baseOffset: 1, extentOffset: 5));
+      // Press 2: the same italic intent must UNWRAP back to plain.
+      v = applyFormat(v, FormatKind.italic);
+      expect(v.text, 'word');
+      expect((v.selection.start, v.selection.end), (0, 4));
+      // Press 3: wraps again — a real toggle, not a one-way loop.
+      v = applyFormat(v, FormatKind.italic);
+      expect(v.text, '*word*');
+    });
+
+    test('bold toggles off on a second press (no italic side-effect)', () {
+      var v = const TextEditingValue(
+        text: 'word',
+        selection: TextSelection(baseOffset: 0, extentOffset: 4),
+      );
+      v = applyFormat(v, FormatKind.bold);
+      expect(v.text, '**word**');
+      expect(v.selection, const TextSelection(baseOffset: 2, extentOffset: 6));
+      v = applyFormat(v, FormatKind.bold);
+      expect(v.text, 'word', reason: 'second bold press must unwrap, not nest');
+      expect((v.selection.start, v.selection.end), (0, 4));
+    });
+
+    test('italic from a bare caret expands the word then toggles off', () {
+      // Caret parked at the end of the word (collapsed), as after typing.
+      var v = const TextEditingValue(text: 'word', selection: TextSelection.collapsed(offset: 4));
+      v = applyFormat(v, FormatKind.italic);
+      expect(v.text, '*word*');
+      // Collapsed caret parks back on its original character (offset 4 -> 5 once
+      // the single '*' is inserted before the word), not a trailing selection.
+      expect(v.selection.isCollapsed, isTrue);
+      expect(v.selection.baseOffset, 5);
+      // A second press unwraps cleanly: the caret is collapsed (so the
+      // word-boundary branch is skipped) and sits inside the span it unwraps.
+      v = applyFormat(v, FormatKind.italic);
+      expect(v.text, 'word');
+    });
+  });
+
+  group('toggleWrap — caret park position (italic drift fix)', () {
+    test('wrap parks caret after the close marker', () {
+      final r = toggleWrap(text: 'word', selStart: 0, selEnd: 4, open: '*');
+      expect(r.text, '*word*');
+      expect(r.caret, 6, reason: 'caret sits after the closing star on wrap');
+    });
+
+    test('bold wrap parks caret after **', () {
+      final r = toggleWrap(text: 'word', selStart: 0, selEnd: 4, open: '**');
+      expect(r.text, '**word**');
+      expect(r.caret, 8);
+    });
+
+    test('asymmetric underline wrap parks caret past </u>', () {
+      final r = toggleWrap(text: 'go', selStart: 0, selEnd: 2, open: '<u>', close: '</u>');
+      expect(r.text, '<u>go</u>');
+      expect(r.caret, 9);
+    });
+
+    test('unwrap parks caret at the end of the now-plain word', () {
+      final r = toggleWrap(text: '**word**', selStart: 0, selEnd: 8, open: '**');
+      expect(r.text, 'word');
+      expect(r.caret, 4);
+    });
+
+    test('editor-applied wrap keeps the caret on the same character (F30)', () {
+      // Mirrors _EditorState._applyFormat: a collapsed caret after a wrap must
+      // land on the same character it started on (offset 4 -> 5 once the '*'
+      // is inserted before the word), so a keypress edits the word in place
+      // instead of appending after the close marker.
+      final v = const TextEditingValue(text: 'word', selection: TextSelection.collapsed(offset: 4));
+      final r = toggleWrap(
+        text: v.text,
+        selStart: v.selection.start,
+        selEnd: v.selection.end,
+        open: '*',
+        close: '*',
+      );
+      final applied = TextEditingValue(
+        text: r.text,
+        selection: TextSelection.collapsed(offset: r.caret),
+      );
+      expect(
+        applied.selection.baseOffset,
+        5,
+        reason: 'caret stays on the last char, not past the close marker',
+      );
+      final typed = applied.text.replaceRange(
+        applied.selection.baseOffset,
+        applied.selection.extentOffset,
+        'x',
+      );
+      expect(typed, '*wordx*', reason: 'typing extends the word inside the markers');
+    });
+  });
+
+  group('toggleWrap — caret/selection preservation (feedback F30)', () {
+    // Mirror of _EditorState._applyFormat exactly.
+    TextEditingValue applyFormat(TextEditingValue value, FormatKind kind) {
+      final sel = value.selection;
+      if (!sel.isValid) return value;
+      final r = toggleWrap(
+        text: value.text,
+        selStart: sel.start,
+        selEnd: sel.end,
+        open: kind.open,
+        close: kind.close,
+      );
+      final next = sel.isCollapsed
+          ? TextSelection.collapsed(offset: r.caret)
+          : TextSelection(baseOffset: r.selStart, extentOffset: r.selEnd);
+      return TextEditingValue(text: r.text, selection: next);
+    }
+
+    test('collapsed caret parks inside the span and editing extends the word', () {
+      final v = const TextEditingValue(text: 'word', selection: TextSelection.collapsed(offset: 4));
+      final out = applyFormat(v, FormatKind.bold);
+      expect(out.text, '**word**');
+      expect(out.selection.isCollapsed, isTrue);
+      expect(out.selection.baseOffset, 6); // origCaret 4 + 2 '**'
+      final typed = out.text.replaceRange(out.selection.baseOffset, out.selection.baseOffset, 'x');
+      expect(typed, '**wordx**');
+    });
+
+    test('collapsed caret keeps its mid-word position', () {
+      final v = const TextEditingValue(
+        text: 'hello',
+        selection: TextSelection.collapsed(offset: 3),
+      );
+      final out = applyFormat(v, FormatKind.bold);
+      expect(out.text, '**hello**');
+      expect(out.selection.isCollapsed, isTrue);
+      expect(out.selection.baseOffset, 5); // 3 + 2
+    });
+
+    test('real selection stays selected so a second press toggles off', () {
+      final v = const TextEditingValue(
+        text: 'word',
+        selection: TextSelection(baseOffset: 0, extentOffset: 4),
+      );
+      final wrapped = applyFormat(v, FormatKind.italic);
+      expect(wrapped.selection, const TextSelection(baseOffset: 1, extentOffset: 5));
+      final unwrapped = applyFormat(wrapped, FormatKind.italic);
+      expect(unwrapped.text, 'word');
+      expect(unwrapped.selection, const TextSelection(baseOffset: 0, extentOffset: 4));
+    });
+
+    test('collapsed caret unwrapping returns to the same character', () {
+      final v = const TextEditingValue(
+        text: '**word**',
+        selection: TextSelection.collapsed(offset: 4),
+      );
+      final out = applyFormat(v, FormatKind.bold); // caret inside the word -> unwrap
+      expect(out.text, 'word');
+      expect(out.selection.isCollapsed, isTrue);
+      expect(out.selection.baseOffset, 2); // 4 - 2 '**'
     });
   });
 

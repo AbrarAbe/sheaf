@@ -7,11 +7,16 @@ library;
 
 /// Result of a toggle: the new text plus where the selection should land.
 class FormatEdit {
-  const FormatEdit(this.text, this.selStart, this.selEnd);
+  const FormatEdit(this.text, this.selStart, this.selEnd, this.caret);
 
   final String text;
   final int selStart;
   final int selEnd;
+
+  /// Restored caret position for a *collapsed* (bare-caret) toggle: the original
+  /// caret, mapped into the new text so it sits on the same character it
+  /// started on. A selection keeps `selStart`/`selEnd` instead (feedback F28).
+  final int caret;
 }
 
 /// The three formatting toggles bound to Ctrl+B / Ctrl+I / Ctrl+U.
@@ -51,12 +56,44 @@ FormatEdit toggleWrap({
   final stop = selEnd.clamp(start, text.length);
 
   if (stop > start) {
-    return _toggleAroundSelection(text, start, stop, open, end);
+    return _toggleAroundSelection(
+      text,
+      start,
+      stop,
+      open,
+      end,
+      wasCollapsed: false,
+      origCaret: start,
+    );
+  }
+  // Collapsed caret: if it rests on a word, format that whole word (F10)
+  // instead of splicing an empty pair into it; the original caret offset is
+  // remembered so the parked caret lands on the same character afterwards.
+  final origCaret = start;
+  final (wordStart, wordEnd) = wordBoundary(text, start);
+  if (wordEnd > wordStart && RegExp(r'\w').hasMatch(text[wordStart])) {
+    return _toggleAroundSelection(
+      text,
+      wordStart,
+      wordEnd,
+      open,
+      end,
+      wasCollapsed: true,
+      origCaret: origCaret,
+    );
   }
   return _toggleAtCaret(text, start, open, end);
 }
 
-FormatEdit _toggleAroundSelection(String text, int start, int stop, String open, String end) {
+FormatEdit _toggleAroundSelection(
+  String text,
+  int start,
+  int stop,
+  String open,
+  String end, {
+  required bool wasCollapsed,
+  required int origCaret,
+}) {
   final selected = text.substring(start, stop);
   if (selected.startsWith(open) &&
       selected.endsWith(end) &&
@@ -67,15 +104,26 @@ FormatEdit _toggleAroundSelection(String text, int start, int stop, String open,
       stop,
       selected.substring(open.length, selected.length - end.length),
     );
-    return FormatEdit(unwrapped, start, start + innerLength);
+    return FormatEdit(unwrapped, start, start + innerLength, start + innerLength);
   }
 
   // Selection sits (even partially) inside an existing span → unwrap it.
-  final enclosing = _enclosingSpan(text, start, stop, open, end);
+  final enclosing = _enclosingSpan(
+    text,
+    start,
+    stop,
+    open,
+    end,
+    origCaret: wasCollapsed ? origCaret : null,
+  );
   if (enclosing != null) return enclosing;
 
   final wrapped = '${text.substring(0, start)}$open$selected$end${text.substring(stop)}';
-  return FormatEdit(wrapped, start + open.length, stop + open.length);
+  // A collapsed caret parks back on its original character (origCaret shifts
+  // with the open marker); a real selection keeps the inner text highlighted
+  // so a second press toggles the formatting back off (feedback F28).
+  final caret = wasCollapsed ? origCaret + open.length : stop + open.length + end.length;
+  return FormatEdit(wrapped, start + open.length, stop + open.length, caret);
 }
 
 FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
@@ -85,7 +133,7 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
     // Empty pair around the caret: remove both markers.
     final removed = before.substring(0, before.length - open.length) + after.substring(end.length);
     final at = caret - open.length;
-    return FormatEdit(removed, at, at);
+    return FormatEdit(removed, at, at, at);
   }
 
   // Caret rests inside an existing span → unwrap that span.
@@ -100,7 +148,7 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
   if (touched != null) return touched;
 
   final inserted = '$before$open$end$after';
-  return FormatEdit(inserted, caret + open.length, caret + open.length);
+  return FormatEdit(inserted, caret + open.length, caret + open.length, caret + open.length);
 }
 
 /// Unwraps the `<open>…<end>` span best matching the given range, remapping
@@ -119,6 +167,7 @@ FormatEdit? _enclosingSpan(
   String open,
   String end, {
   bool touchingOnly = false,
+  int? origCaret,
 }) {
   final pattern = RegExp('${RegExp.escape(open)}(.*?)${RegExp.escape(end)}');
   Match? best;
@@ -157,11 +206,8 @@ FormatEdit? _enclosingSpan(
     return o - open.length - end.length; // past the span
   }
 
-  return FormatEdit(
-    unwrapped,
-    map(start).clamp(0, unwrapped.length),
-    map(stop).clamp(0, unwrapped.length),
-  );
+  final caret = map(origCaret ?? stop).clamp(0, unwrapped.length);
+  return FormatEdit(unwrapped, map(start).clamp(0, unwrapped.length), caret, caret);
 }
 
 /// VS Code-style select-word bounds around [offset] (spec story 11, F6).
