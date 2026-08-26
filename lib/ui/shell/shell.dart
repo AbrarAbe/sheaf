@@ -165,16 +165,21 @@ class _ShellState extends State<Shell> {
                 if (_focusInsideEditable()) {
                   final editCtx = FocusManager.instance.primaryFocus?.context;
                   if (editCtx != null && editCtx.mounted) {
-                    Actions.invoke(editCtx, const DeleteCharacterIntent(forward: true));
+                    Actions.invoke(
+                      editCtx,
+                      const DeleteCharacterIntent(forward: true),
+                    );
                   }
                   return;
                 }
                 _deleteSelectedWithUndo(context);
               },
-              onZoomIn: () =>
-                  controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
-              onZoomOut: () =>
-                  controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
+              onZoomIn: () => controller.setZoom(
+                stepZoom(controller.settings.zoomFactor, up: true),
+              ),
+              onZoomOut: () => controller.setZoom(
+                stepZoom(controller.settings.zoomFactor, up: false),
+              ),
               onZoomReset: () => controller.setZoom(1.0),
               onCycleEditorMode: () => _editor?.cycleMode(),
               onCycleNote: _cycleNote,
@@ -193,8 +198,10 @@ class _ShellState extends State<Shell> {
                           Sidebar(
                             controller: controller,
                             width: widths.sidebar,
-                            onTrashTapped: () => showTrashDialog(context, controller),
-                            onSettingsTapped: () => showSettingsDialog(context, controller),
+                            onTrashTapped: () =>
+                                showTrashDialog(context, controller),
+                            onSettingsTapped: () =>
+                                showSettingsDialog(context, controller),
                           ),
                           DragDivider(onDrag: (dx) => widths.sidebar += dx),
                         ],
@@ -217,7 +224,8 @@ class _ShellState extends State<Shell> {
                   focusMode: _focusMode,
                   onToggleSidebar: () => widths.toggleSidebarFor(tier),
                   onToggleFocusMode: _toggleFocusMode,
-                  windowControls: widget._windowControls ?? const WindowManagerControls(),
+                  windowControls:
+                      widget._windowControls ?? const WindowManagerControls(),
                   showWindowControls: controller.settings.showWindowControls,
                   onOpenPalette: () => showCommandPalette(context, controller),
                 ),
@@ -236,8 +244,13 @@ class _ShellState extends State<Shell> {
                         Expanded(
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTap: () => widths.setSidebarVisible(WindowTier.stack, false),
-                            child: ColoredBox(color: Colors.black.withValues(alpha: 0.38)),
+                            onTap: () => widths.setSidebarVisible(
+                              WindowTier.stack,
+                              false,
+                            ),
+                            child: ColoredBox(
+                              color: Colors.black.withValues(alpha: 0.38),
+                            ),
                           ),
                         ),
                         Sidebar(
@@ -246,8 +259,10 @@ class _ShellState extends State<Shell> {
                             PaneWidths.sidebarMin,
                             PaneWidths.sidebarMax,
                           ),
-                          onTrashTapped: () => showTrashDialog(context, controller),
-                          onSettingsTapped: () => showSettingsDialog(context, controller),
+                          onTrashTapped: () =>
+                              showTrashDialog(context, controller),
+                          onSettingsTapped: () =>
+                              showSettingsDialog(context, controller),
                         ),
                       ],
                     ),
@@ -273,7 +288,9 @@ class _ShellState extends State<Shell> {
   Future<Note?> _createNote() async {
     final custom = widget.onCreateNote;
     final controller = widget.controller;
-    final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
+    final note = await (custom != null
+        ? custom()
+        : controller.createNote(title: 'Untitled'));
     if (note != null) controller.selectNote(note);
     return note;
   }
@@ -302,7 +319,9 @@ class _ShellState extends State<Shell> {
     if (visible.isEmpty) return;
 
     final current = controller.selectedNote;
-    final index = current == null ? -1 : visible.indexWhere((n) => n.path == current.path);
+    final index = current == null
+        ? -1
+        : visible.indexWhere((n) => n.path == current.path);
     final step = forward ? 1 : -1;
     // +visible.length keeps negative indexes (nothing selected) in range.
     final next = visible[(index + step + visible.length) % visible.length];
@@ -330,7 +349,11 @@ class _ShellState extends State<Shell> {
   /// Settings-derived type controls handed down to the editor (story 16).
   Widget _editorPane({Key? key}) {
     final s = widget.controller.settings;
-    return EditorPane(key: key, controller: _editor, baseFontSize: s.editorFontSize);
+    return EditorPane(
+      key: key,
+      controller: _editor,
+      baseFontSize: s.editorFontSize,
+    );
   }
 
   Widget _listAndEditor(VaultController controller, PaneWidths widths) {
@@ -349,10 +372,6 @@ class _ShellState extends State<Shell> {
 }
 
 class _HeaderBar extends StatelessWidget {
-  /// Width of the reserved window-dots region (3 × 18px dots + inset) so the
-  /// search pill holds position when the controls are hidden.
-  static const double _windowControlsSlotWidth = 56;
-
   const _HeaderBar({
     required this.controller,
     required this.tier,
@@ -379,196 +398,43 @@ class _HeaderBar extends StatelessWidget {
     final theme = Theme.of(context);
     final isLight = theme.brightness == Brightness.light;
     // Highlighter tokens double as the window-dot palette (feedback F15).
-    final quire = theme.extension<QuireColors>() ?? (isLight ? quireColorsLight : quireColorsDark);
+    final quire =
+        theme.extension<QuireColors>() ??
+        (isLight ? quireColorsLight : quireColorsDark);
+
     return Container(
       height: 48,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        border: Border(bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
+      // Layered header (round 6): the search pill floats dead-center so
+      // neither side's width can move it; window chrome packs tight right.
+      child: Stack(
         children: [
-          // Sidebar visibility toggle — user-owned in every tier (task 10).
-          Tooltip(
-            message: sidebarVisible ? 'Hide sidebar  (Ctrl+\\)' : 'Show sidebar  (Ctrl+\\)',
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                key: const Key('sidebar-toggle'),
-                borderRadius: BorderRadius.circular(8),
-                onTap: onToggleSidebar,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(
-                    sidebarVisible ? Icons.menu_open_rounded : Icons.menu_rounded,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          // Wordmark
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    'T',
-                    style: GoogleFonts.bricolageGrotesque(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: theme.colorScheme.onPrimary,
-                      height: 1,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Sheaf',
-                style: GoogleFonts.bricolageGrotesque(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  letterSpacing: -0.3,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-                  ),
-                ),
-                child: Text(
-                  'QUIRE',
-                  style: GoogleFonts.splineSansMono(
-                    fontSize: 9,
-                    letterSpacing: 0.8,
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          // Quick-switcher pill (feedback F12): the vault-wide search entry.
-          // Hidden on stack tier where space is scarce — Ctrl+K still works.
-          if (tier != WindowTier.stack)
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: Material(
-                    color: theme.colorScheme.surfaceContainerLowest,
-                    shape: StadiumBorder(
-                      side: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: .7),
-                      ),
-                    ),
-                    child: InkWell(
-                      key: const Key('palette-pill'),
-                      customBorder: const StadiumBorder(),
-                      onTap: onOpenPalette,
-                      hoverColor: theme.colorScheme.surfaceContainerHighest,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.search, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Search notes…',
-                              style: GoogleFonts.hankenGrotesk(
-                                fontSize: 12.5,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHigh,
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(
-                                  color: theme.colorScheme.outlineVariant.withValues(alpha: .6),
-                                ),
-                              ),
-                              child: Text(
-                                'Ctrl K',
-                                style: GoogleFonts.splineSansMono(
-                                  fontSize: 10,
-                                  letterSpacing: 0.4,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            const Spacer(),
-          // Right controls. Focus mode lives here too (feedback F14):
-          // window-level chrome clusters on the right, away from navigation.
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Focus mode (task 12): editor-only surface.
+              // Sidebar visibility toggle — user-owned in every tier (task 10).
               Tooltip(
-                message: focusMode ? 'Exit focus mode  (F10)' : 'Focus mode  (F10)',
-                child: Material(
-                  color: focusMode ? theme.colorScheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    key: const Key('focus-toggle'),
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: onToggleFocusMode,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        focusMode ? Icons.center_focus_weak : Icons.center_focus_strong,
-                        size: 18,
-                        color: focusMode
-                            ? theme.colorScheme.onPrimary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Tooltip(
-                message: 'Cycle theme  (Ctrl+Shift+L)',
+                message: sidebarVisible
+                    ? 'Hide sidebar  (Ctrl+\\)'
+                    : 'Show sidebar  (Ctrl+\\)',
                 child: Material(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                   child: InkWell(
+                    key: const Key('sidebar-toggle'),
                     borderRadius: BorderRadius.circular(8),
-                    onTap: () => controller.cycleTheme(),
+                    onTap: onToggleSidebar,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: Icon(
-                        isLight ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                        sidebarVisible
+                            ? Icons.menu_open_rounded
+                            : Icons.menu_rounded,
                         size: 18,
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -576,45 +442,230 @@ class _HeaderBar extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
-              // Fixed-width slot (round 6 bug): hiding the dots must not
-              // reflow the search pill, so the space is reserved either way.
-              SizedBox(
-                width: _windowControlsSlotWidth,
-                child: showWindowControls
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 2),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _WinDot(
-                              key: const Key('win-minimize'),
-                              color: quire.hlPinBase,
-                              glyph: Icons.remove_rounded,
-                              tooltip: 'Minimize',
-                              onTap: () => windowControls.minimize(),
-                            ),
-                            _WinDot(
-                              key: const Key('win-maximize'),
-                              color: quire.hlGrowBase,
-                              glyph: Icons.crop_square_rounded,
-                              tooltip: 'Maximize',
-                              onTap: () => windowControls.toggleMaximize(),
-                            ),
-                            _WinDot(
-                              key: const Key('win-close'),
-                              color: quire.hlAlertBase,
-                              glyph: Icons.close_rounded,
-                              tooltip: 'Close',
-                              onTap: () => windowControls.close(),
-                            ),
-                          ],
+              const SizedBox(width: 6),
+              // Wordmark
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'T',
+                        style: GoogleFonts.bricolageGrotesque(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: theme.colorScheme.onPrimary,
+                          height: 1,
                         ),
-                      )
-                    : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sheaf',
+                    style: GoogleFonts.bricolageGrotesque(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      letterSpacing: -0.3,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      'QUIRE',
+                      style: GoogleFonts.splineSansMono(
+                        fontSize: 9,
+                        letterSpacing: 0.8,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              // Right controls. Focus mode lives here too (feedback F14):
+              // window-level chrome clusters on the right, away from navigation.
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Focus mode (task 12): editor-only surface.
+                  Tooltip(
+                    message: focusMode
+                        ? 'Exit focus mode  (F10)'
+                        : 'Focus mode  (F10)',
+                    child: Material(
+                      color: focusMode
+                          ? theme.colorScheme.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        key: const Key('focus-toggle'),
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: onToggleFocusMode,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            focusMode
+                                ? Icons.center_focus_weak
+                                : Icons.center_focus_strong,
+                            size: 18,
+                            color: focusMode
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Tooltip(
+                    message: 'Cycle theme  (Ctrl+Shift+L)',
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        key: const Key('theme-toggle'),
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => controller.cycleTheme(),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            isLight
+                                ? Icons.dark_mode_outlined
+                                : Icons.light_mode_outlined,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (showWindowControls)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _WinDot(
+                            key: const Key('win-minimize'),
+                            color: quire.hlPinBase,
+                            glyph: Icons.remove_rounded,
+                            tooltip: 'Minimize',
+                            onTap: () => windowControls.minimize(),
+                          ),
+                          _WinDot(
+                            key: const Key('win-maximize'),
+                            color: quire.hlGrowBase,
+                            glyph: Icons.crop_square_rounded,
+                            tooltip: 'Maximize',
+                            onTap: () => windowControls.toggleMaximize(),
+                          ),
+                          _WinDot(
+                            key: const Key('win-close'),
+                            color: quire.hlAlertBase,
+                            glyph: Icons.close_rounded,
+                            tooltip: 'Close',
+                            onTap: () => windowControls.close(),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
+          // Quick-switcher pill (feedback F12): vault-wide search entry.
+          // Hidden on stack tier where space is scarce — Ctrl+K still works.
+          if (tier != WindowTier.stack)
+            Align(
+              alignment: Alignment.center,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Material(
+                  color: theme.colorScheme.surfaceContainerLowest,
+                  shape: StadiumBorder(
+                    side: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: .7,
+                      ),
+                    ),
+                  ),
+                  child: InkWell(
+                    key: const Key('palette-pill'),
+                    customBorder: const StadiumBorder(),
+                    onTap: onOpenPalette,
+                    hoverColor: theme.colorScheme.surfaceContainerHighest,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.search,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Search notes…',
+                            style: GoogleFonts.hankenGrotesk(
+                              fontSize: 12.5,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: theme.colorScheme.outlineVariant
+                                    .withValues(alpha: .6),
+                              ),
+                            ),
+                            child: Text(
+                              'Ctrl K',
+                              style: GoogleFonts.splineSansMono(
+                                fontSize: 10,
+                                letterSpacing: 0.4,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -665,12 +716,19 @@ class _WinDotState extends State<_WinDot> {
                 curve: Curves.easeOut,
                 width: _hover ? 13 : 11,
                 height: _hover ? 13 : 11,
-                decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  shape: BoxShape.circle,
+                ),
                 child: AnimatedOpacity(
                   opacity: _hover ? 1 : 0,
                   duration: const Duration(milliseconds: 100),
                   child: FittedBox(
-                    child: Icon(widget.glyph, size: 8, color: Colors.black.withValues(alpha: .55)),
+                    child: Icon(
+                      widget.glyph,
+                      size: 8,
+                      color: Colors.black.withValues(alpha: .55),
+                    ),
                   ),
                 ),
               ),
@@ -683,7 +741,11 @@ class _WinDotState extends State<_WinDot> {
 }
 
 class _StackShell extends StatelessWidget {
-  const _StackShell({required this.controller, required this.onCreateNote, required this.editor});
+  const _StackShell({
+    required this.controller,
+    required this.onCreateNote,
+    required this.editor,
+  });
 
   final VaultController controller;
   final EditorController? editor;
@@ -704,7 +766,9 @@ class _StackShell extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerLowest,
                   border: Border(
-                    bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                    bottom: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -721,7 +785,10 @@ class _StackShell extends StatelessWidget {
                         selected.title.isEmpty ? 'Untitled' : selected.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.hankenGrotesk(fontWeight: FontWeight.w600, fontSize: 14),
+                        style: GoogleFonts.hankenGrotesk(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],

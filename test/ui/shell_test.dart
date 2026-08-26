@@ -265,7 +265,7 @@ void main() {
       expect(find.widgetWithText(TextField, 'Untitled'), findsOneWidget);
     });
 
-    testWidgets('hiding window dots keeps the search pill anchored', (tester) async {
+    testWidgets('hiding dots keeps the search pill anchored', (tester) async {
       final centers = <double>[];
 
       for (final shown in [true, false]) {
@@ -273,8 +273,20 @@ void main() {
         centers.add(tester.getRect(find.byKey(const Key('palette-pill'))).center.dx);
       }
 
-      // Reserved slot width means the pill cannot shift by even half a pixel.
+      // The pill is layer-centered, so toggling the setting cannot move it.
       expect((centers[0] - centers[1]).abs(), lessThan(0.5));
+    });
+
+    testWidgets('hiding dots slides the chrome buttons flush right', (tester) async {
+      final rights = <double>[];
+
+      for (final shown in [true, false]) {
+        await pumpShell(tester, width: 1280, height: 800, showWindowControls: shown);
+        rights.add(tester.getRect(find.byKey(const Key('theme-toggle'))).right);
+      }
+
+      // With the dots gone, theme/focus slide right toward the edge.
+      expect(rights[1], greaterThan(rights[0]));
     });
 
     testWidgets('traffic-light dots drive the injected window seam (F15)', (tester) async {
