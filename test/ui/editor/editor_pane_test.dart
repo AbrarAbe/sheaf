@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -141,6 +143,116 @@ void main() {
 
     expect(find.byTooltip('Insert image'), findsNothing);
     expect(find.byIcon(Icons.image_outlined), findsNothing);
+  });
+
+  group('body edit menu (round 6 F21)', () {
+    /// Runs [body] with a desktop platform override restored before the test
+    /// ends (the binding checks debug invariants right after the body).
+    Future<void> onDesktop(Future<void> Function() body) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await body();
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    }
+
+    Future<void> openMenuAtSelection(WidgetTester tester, TextSelection selection) async {
+      final note = await real(() => vaultController.createNote(title: 'Menu'), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // Known body so selections below are valid.
+      await tester.enterText(find.byKey(const Key('editor-body')), 'hello world');
+      editorController.updateBody('hello world');
+      await tester.pump();
+
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = selection;
+      await tester.pump();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('editor-body'))),
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryButton,
+      );
+      await tester.pump();
+      await gesture.up();
+      await tester.pump(); // builder schedules the Quire route
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('secondary tap opens the Quire-styled edit menu', (tester) async {
+      await onDesktop(() async {
+        await openMenuAtSelection(tester, const TextSelection(baseOffset: 6, extentOffset: 11));
+
+        for (final label in ['Cut', 'Copy', 'Paste', 'Select all']) {
+          expect(find.text(label), findsOneWidget, reason: label);
+        }
+
+        // Quire typography on our component, not stock Material chrome.
+        final label = tester.widget<Text>(find.text('Copy'));
+        expect(label.style?.fontSize, 13);
+        expect(label.style?.fontWeight, FontWeight.w500);
+
+        await tester.runAsync(editorController.flush); // settle autosave
+      });
+    });
+
+    testWidgets('Copy puts the selection on the clipboard', (tester) async {
+      Object? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (
+        call,
+      ) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = call.arguments['text'];
+        }
+        return null;
+      });
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await onDesktop(() async {
+        await openMenuAtSelection(tester, const TextSelection(baseOffset: 6, extentOffset: 11));
+        await tester.tap(find.text('Copy'));
+        await tester.pump();
+
+        expect(copied, 'world');
+        await tester.runAsync(editorController.flush); // settle autosave
+      });
+    });
+
+    testWidgets('Paste replaces the selection from the clipboard', (tester) async {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async =>
+            call.method == 'Clipboard.getData' ? <String, dynamic>{'text': 'there'} : null,
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await onDesktop(() async {
+        await openMenuAtSelection(tester, const TextSelection(baseOffset: 0, extentOffset: 11));
+        await tester.tap(find.text('Paste'));
+        await tester.pump();
+
+        expect(editorController.body, 'there');
+        await tester.runAsync(editorController.flush); // settle autosave
+      });
+    });
   });
 
   group('find in note (spec story 14)', () {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
@@ -17,6 +18,7 @@ import '../../models/settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
 import 'highlighting_controller.dart';
+import 'edit_menu.dart';
 import 'markdown_preview.dart';
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
@@ -571,6 +573,16 @@ class _EditorState extends State<_Editor> {
                               controller: _body,
                               focusNode: _bodyFocus,
                               onChanged: controller.updateBody,
+                              // Quire-styled cut/copy/paste menu (round 6):
+                              // defer into our own overlay route; the inline
+                              // toolbar slot stays empty.
+                              contextMenuBuilder: (context, editableState) {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (!context.mounted) return;
+                                  unawaited(showBodyEditMenu(context, editableState));
+                                });
+                                return const SizedBox.shrink();
+                              },
                               maxLines: null,
                               expands: true,
                               textAlignVertical: TextAlignVertical.top,
