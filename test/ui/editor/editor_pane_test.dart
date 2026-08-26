@@ -41,11 +41,7 @@ void main() {
   Future<T> real<T>(Future<T> Function() action, WidgetTester tester) async =>
       (await tester.runAsync(action)) as T;
 
-  Future<void> pumpEditor(
-    WidgetTester tester, {
-    Future<File?> Function()? pickImage,
-    Future<String> Function(File)? importImage,
-  }) async {
+  Future<void> pumpEditor(WidgetTester tester, {Future<String> Function(File)? importImage}) async {
     tester.view.physicalSize = const Size(900, 700);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -54,11 +50,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: EditorPane(
-            controller: editorController,
-            pickImage: pickImage,
-            importImage: importImage,
-          ),
+          body: EditorPane(controller: editorController, importImage: importImage),
         ),
       ),
     );
@@ -144,31 +136,11 @@ void main() {
     expect(find.text('Rendered Heading', findRichText: true), findsWidgets);
   });
 
-  testWidgets('insert button invokes picker and marks the note dirty', (tester) async {
-    var picked = 0;
-    final note = await real(() => vaultController.createNote(title: 'Pics'), tester);
-    await real(() => editorController.open(note), tester);
+  testWidgets('image picker button is hidden (round 6 deferral)', (tester) async {
+    await pumpEditor(tester);
 
-    final upload = File('${tempDir.path}/upload.png')..writeAsBytesSync([9]);
-    await pumpEditor(
-      tester,
-      pickImage: () async {
-        picked++;
-        return upload;
-      },
-      importImage: (_) async => 'attachments/upload.png',
-    );
-
-    await tester.tap(find.byTooltip('Insert image'));
-    await tester.pump();
-
-    expect(picked, 1);
-    expect(editorController.body, '![upload](attachments/upload.png)');
-    expect(editorController.status, EditorStatus.dirty);
-
-    // Cancel the pending autosave timer; persistence of the link lands via
-    // the debounced write covered in editor_controller_test.
-    await tester.runAsync(editorController.flush);
+    expect(find.byTooltip('Insert image'), findsNothing);
+    expect(find.byIcon(Icons.image_outlined), findsNothing);
   });
 
   group('find in note (spec story 14)', () {

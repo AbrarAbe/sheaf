@@ -35,9 +35,10 @@ GTK, shipped as a self-contained tarball.
 - **Focus & fullscreen** — `F10` collapses to an editor-only surface;
   `F11` true native fullscreen; optional traffic-light window controls in
   the header (hideable in settings).
-- **Images** — pick or drop images into `<vault>/attachments/` and reference
+- **Images** — drag & drop images into `<vault>/attachments/` and reference
   them relatively, with Obsidian-compatible width syntax:
-  `![alt|400](attachments/img.png)`.
+  `![alt|400](attachments/img.png)`. The insert-image picker button is
+  **deferred** (round 6) until the file-chooser flow is ready.
 - **Trash** — deletions land in `.trash/`; restore returns notes to their
   original folder, or delete forever; each entry shows when it was trashed.
 - **Auto-refresh** — external changes to the vault appear live via a file

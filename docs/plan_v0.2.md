@@ -221,6 +221,19 @@ are green.
   skip degenerate empty-inner matches, piecewise offset remap; failing-first
   cycle tests for B/I/U.
 
+### Feedback round 6 (2026-08-26) — pre-release bugs
+
+- [x] **F21: editor body uses the Quire context menu** — the stock Material
+  selection toolbar is replaced by our component via `contextMenuBuilder`:
+  Cut/Copy/Paste/Select-all at the caret, driven by EditableTextState's own
+  public actions so autosave/highlighting paths stay intact.
+- [x] **F22: palette hover flicker** — animated background cross-fade while
+  hovering/arrowing reads as flicker; highlight is now an instant paint.
+- [x] **F23: image button hidden** — picker flow not functional yet;
+  drag-and-drop import stays. Deferred until the chooser is wired.
+- [x] **F24: search pill anchored when dots hide** — window controls sit in
+  a fixed-width slot so toggling them never reflows the header.
+
 ### Checkpoint B (after Task 12): ✅ code complete 2026-08-25 — widget tests cover F10 + fullscreen seam; manual F11 native check pending on running app.
 
 ### Phase 4 — Appearance & audit polish

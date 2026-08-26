@@ -23,19 +23,10 @@ import 'markdown_preview.dart';
 /// debounced autosave, and the mono status footer.
 /// Paper on the desk: ink is constant, title is display, body is reading.
 class EditorPane extends StatelessWidget {
-  const EditorPane({
-    super.key,
-    required this.controller,
-    this.pickImage,
-    this.importImage,
-    this.baseFontSize,
-  });
+  const EditorPane({super.key, required this.controller, this.importImage, this.baseFontSize});
 
   /// Null while no vault is open; renders the placeholder.
   final EditorController? controller;
-
-  /// Injectable image chooser for tests; production uses the file picker.
-  final Future<File?> Function()? pickImage;
 
   /// Injectable copier into `<vault>/attachments/`; defaults to the
   /// controller's repository call. Tests inject a fake to stay zone-safe.
@@ -56,12 +47,7 @@ class EditorPane extends StatelessWidget {
         if (editor.current == null) {
           return const _Placeholder();
         }
-        return _Editor(
-          controller: editor,
-          pickImage: pickImage,
-          importImage: importImage,
-          baseFontSize: baseFontSize,
-        );
+        return _Editor(controller: editor, importImage: importImage, baseFontSize: baseFontSize);
       },
     );
   }
@@ -148,10 +134,9 @@ class _Placeholder extends StatelessWidget {
 }
 
 class _Editor extends StatefulWidget {
-  const _Editor({required this.controller, this.pickImage, this.importImage, this.baseFontSize});
+  const _Editor({required this.controller, this.importImage, this.baseFontSize});
 
   final EditorController controller;
-  final Future<File?> Function()? pickImage;
   final Future<String> Function(File file)? importImage;
   final double? baseFontSize;
 
@@ -393,11 +378,6 @@ class _EditorState extends State<_Editor> {
     await widget.controller.renameCurrent(trimmed);
   }
 
-  Future<void> _insertImageFromPicker() async {
-    final file = await widget.pickImage?.call();
-    if (file != null) await _insertImage(file);
-  }
-
   Future<void> _insertDroppedImages(List<dynamic> items) async {
     setState(() => _dragging = false);
     for (final item in items) {
@@ -483,26 +463,8 @@ class _EditorState extends State<_Editor> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Actions
-                Tooltip(
-                  message: 'Insert image',
-                  child: Material(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(QuireRadius.s),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(QuireRadius.s),
-                      onTap: _insertImageFromPicker,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: 18,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                // Image insert button hidden (round 6): picker flow wasn't
+                // ready; drag-and-drop import remains. Deferred in plan.
                 const SizedBox(width: 8),
                 _ModeSwitch(mode: controller.mode, onSelected: controller.setMode),
               ],
