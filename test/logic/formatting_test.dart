@@ -214,6 +214,25 @@ void main() {
     });
   });
 
+  group('toggleWrap — caret touching markers (feedback F25)', () {
+    test('caret before the opener unwraps instead of splicing', () {
+      final r = toggleWrap(text: '*word*', selStart: 0, selEnd: 0, open: '*');
+      expect(r.text, 'word');
+      expect((r.selStart, r.selEnd), (0, 0));
+    });
+
+    test('caret after the closer unwraps', () {
+      final r = toggleWrap(text: '<u>go</u>', selStart: 9, selEnd: 9, open: '<u>', close: '</u>');
+      expect(r.text, 'go');
+    });
+
+    test('plain text still inserts an empty pair', () {
+      final r = toggleWrap(text: 'ab', selStart: 1, selEnd: 1, open: '**');
+      expect(r.text, 'a****b');
+      expect(r.selStart, 3);
+    });
+  });
+
   group('wordBoundary (feedback F6)', () {
     test('selects the word under the caret', () {
       expect(wordBoundary('foo bar baz', 5), (4, 7));

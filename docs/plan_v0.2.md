@@ -234,6 +234,22 @@ are green.
 - [x] **F24: search pill anchored when dots hide** — window controls sit in
   a fixed-width slot so toggling them never reflows the header.
 
+### Feedback round 7 (2026-08-26) — regressions from the round-6 UI work
+
+- [x] **F25: header layering polish** — the Stack's loose fit pinned the
+  base row to the top (lost vertical padding): `StackFit.expand` restores
+  centering; chrome confirmed to slide flush right when dots hide while
+  the pill stays dead-center (layered header replaces reserved slot).
+- [x] **F26: edit menu opened multiple copies** — contextMenuBuilder
+  re-fires on every field rebuild; an `_editMenuOpen` gate suppresses
+  re-fires until the route pops.
+- [x] **F27: italic toggle spliced nested markers** — a collapsed caret
+  merely TOUCHING a span's markers fell through to empty-pair insertion,
+  producing `***word***` (renders bold). Touching-span now unwraps;
+  plain text still inserts pairs. Editor/menu typography also moved onto
+  the guarded `safeHanken/safeMono/safeBricolage` helpers so tests run
+  without network.
+
 ### Checkpoint B (after Task 12): ✅ code complete 2026-08-25 — widget tests cover F10 + fullscreen seam; manual F11 native check pending on running app.
 
 ### Phase 4 — Appearance & audit polish

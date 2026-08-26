@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:path/path.dart' as p;
 
 import '../../data/markdown_parser.dart';
@@ -17,8 +16,8 @@ import '../../logic/search_controller.dart';
 import '../../models/settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
-import 'highlighting_controller.dart';
 import 'edit_menu.dart';
+import 'highlighting_controller.dart';
 import 'markdown_preview.dart';
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
@@ -81,20 +80,24 @@ class _Placeholder extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Select a note',
-                style: GoogleFonts.bricolageGrotesque(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
+                style: safeBricolage(
+                  TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Choose from the list, or create a new one.\nYour words live as plain Markdown files.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 13,
-                  height: 18 / 13,
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: safeHanken(
+                  TextStyle(
+                    fontSize: 13,
+                    height: 18 / 13,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -117,10 +120,12 @@ class _Placeholder extends StatelessWidget {
                       child: Text(
                         'Ctrl+N  ·  Ctrl+K  ·  Ctrl+Shift+L',
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.splineSansMono(
-                          fontSize: 11,
-                          letterSpacing: 0.3,
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: safeMono(
+                          TextStyle(
+                            fontSize: 11,
+                            letterSpacing: 0.3,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
@@ -222,18 +227,22 @@ class _EditorState extends State<_Editor> {
   TextStyle _bodyStyle(ThemeData theme) {
     final base = widget.baseFontSize ?? 16.0;
     if (widget.controller.mode == EditorMode.markdown) {
-      return GoogleFonts.splineSansMono(
-        fontSize: base - 1.5,
-        height: 24 / (base - 1.5),
-        fontWeight: FontWeight.w400,
-        color: theme.colorScheme.onSurface,
+      return safeMono(
+        TextStyle(
+          fontSize: base - 1.5,
+          height: 24 / (base - 1.5),
+          fontWeight: FontWeight.w400,
+          color: theme.colorScheme.onSurface,
+        ),
       );
     }
-    return GoogleFonts.hankenGrotesk(
-      fontSize: base,
-      height: 26 / base,
-      fontWeight: FontWeight.w400,
-      color: theme.colorScheme.onSurface,
+    return safeHanken(
+      TextStyle(
+        fontSize: base,
+        height: 26 / base,
+        fontWeight: FontWeight.w400,
+        color: theme.colorScheme.onSurface,
+      ),
     );
   }
 
@@ -444,19 +453,23 @@ class _EditorState extends State<_Editor> {
                 Expanded(
                   child: TextField(
                     controller: _title,
-                    style: GoogleFonts.bricolageGrotesque(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      height: 30 / 24,
-                      letterSpacing: -0.3,
-                      color: theme.colorScheme.onSurface,
+                    style: safeBricolage(
+                      TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        height: 30 / 24,
+                        letterSpacing: -0.3,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
                     decoration: InputDecoration(
                       hintText: 'Title',
-                      hintStyle: GoogleFonts.bricolageGrotesque(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: quire.textTertiary,
+                      hintStyle: safeBricolage(
+                        TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: quire.textTertiary,
+                        ),
                       ),
                       filled: false,
                       border: InputBorder.none,
@@ -513,11 +526,13 @@ class _EditorState extends State<_Editor> {
                       ),
                       child: Text(
                         '#$tag',
-                        style: GoogleFonts.hankenGrotesk(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
-                          height: 16 / 12.5,
-                          color: theme.colorScheme.onSurface,
+                        style: safeHanken(
+                          TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            height: 16 / 12.5,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
@@ -583,7 +598,9 @@ class _EditorState extends State<_Editor> {
                               // toolbar slot stays empty. The gate keeps
                               // builder re-fires from stacking menus.
                               contextMenuBuilder: (context, editableState) {
-                                if (_editMenuOpen) return const SizedBox.shrink();
+                                if (_editMenuOpen) {
+                                  return const SizedBox.shrink();
+                                }
                                 _editMenuOpen = true;
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
                                   if (!context.mounted) {
@@ -607,10 +624,12 @@ class _EditorState extends State<_Editor> {
                               decoration: InputDecoration(
                                 hintText:
                                     'Take a note…  Type #tags, drag images, write in Markdown.',
-                                hintStyle: GoogleFonts.hankenGrotesk(
-                                  fontSize: 16,
-                                  height: 26 / 16,
-                                  color: quire.textTertiary.withValues(alpha: 0.9),
+                                hintStyle: safeHanken(
+                                  TextStyle(
+                                    fontSize: 16,
+                                    height: 26 / 16,
+                                    color: quire.textTertiary.withValues(alpha: 0.9),
+                                  ),
                                 ),
                                 filled: false,
                                 border: InputBorder.none,
@@ -649,11 +668,13 @@ class _StatusFooter extends StatelessWidget {
     final quire =
         theme.extension<QuireColors>() ??
         (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
-    final mono = GoogleFonts.splineSansMono(
-      fontSize: 12,
-      letterSpacing: 0.2,
-      color: theme.colorScheme.onSurfaceVariant,
-      fontFeatures: const [FontFeature.tabularFigures()],
+    final mono = safeMono(
+      TextStyle(
+        fontSize: 12,
+        letterSpacing: 0.2,
+        color: theme.colorScheme.onSurfaceVariant,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     );
     final status = switch (controller.status) {
       EditorStatus.clean => '',
@@ -683,11 +704,7 @@ class _StatusFooter extends StatelessWidget {
           Expanded(child: Text(status.isEmpty ? '$words words' : status, style: mono)),
           Text(
             'Markdown  ·  #tag  ·  ![image|400]',
-            style: GoogleFonts.splineSansMono(
-              fontSize: 11,
-              letterSpacing: 0.3,
-              color: quire.textTertiary,
-            ),
+            style: safeMono(TextStyle(fontSize: 11, letterSpacing: 0.3, color: quire.textTertiary)),
           ),
         ],
       ),
@@ -788,15 +805,14 @@ class _FindBar extends StatelessWidget {
                   controller: controller,
                   autofocus: true,
                   onChanged: onChanged,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurface,
-                  ),
+                  style: safeHanken(TextStyle(fontSize: 13, color: theme.colorScheme.onSurface)),
                   decoration: InputDecoration(
                     hintText: 'Find in note…',
-                    hintStyle: GoogleFonts.hankenGrotesk(
-                      fontSize: 13,
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    hintStyle: safeHanken(
+                      TextStyle(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
                     ),
                     filled: false,
                     border: InputBorder.none,
@@ -809,10 +825,7 @@ class _FindBar extends StatelessWidget {
               ),
               Text(
                 counter,
-                style: GoogleFonts.splineSansMono(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: safeMono(TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant)),
               ),
               IconButton(
                 key: const Key('find-prev'),
@@ -880,12 +893,14 @@ class _ModeSwitch extends StatelessWidget {
                   const SizedBox(width: 5),
                   Text(
                     label,
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: selected
-                          ? theme.colorScheme.onPrimary
-                          : theme.colorScheme.onSurfaceVariant,
+                    style: safeHanken(
+                      TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: selected
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],

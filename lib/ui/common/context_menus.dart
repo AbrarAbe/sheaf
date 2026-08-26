@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart' hide MenuItem;
-import 'package:google_fonts/google_fonts.dart';
+
+import '../../theme/quire_theme.dart';
 
 export 'package:flutter_context_menu/flutter_context_menu.dart'
-    show ContextMenu, ContextMenuEntry, ContextMenuItem, ContextMenuState, MenuHeader, MenuDivider;
+    show
+        ContextMenu,
+        ContextMenuEntry,
+        ContextMenuItem,
+        ContextMenuState,
+        MenuHeader,
+        MenuDivider;
 
 // ---- Shortcut activators reused by menus and the key map ----
 const deleteActivator = SingleActivator(LogicalKeyboardKey.delete);
 const renameActivator = SingleActivator(LogicalKeyboardKey.f2);
-const newNoteActivator = SingleActivator(LogicalKeyboardKey.keyN, control: true);
+const newNoteActivator = SingleActivator(
+  LogicalKeyboardKey.keyN,
+  control: true,
+);
 
 /// Wraps [child] so secondary-click opens [menu].
 class QuireContextMenuRegion extends StatelessWidget {
@@ -48,7 +58,12 @@ ContextMenu<Object?> quireMenu(List<ContextMenuEntry<Object?>> entries) {
 }
 
 /// Hairline separator instead of the package's invisible zero-thickness one.
-const MenuDivider menuDivider = MenuDivider(height: 9, thickness: 1, indent: 10, endIndent: 10);
+const MenuDivider menuDivider = MenuDivider(
+  height: 9,
+  thickness: 1,
+  indent: 10,
+  endIndent: 10,
+);
 
 /// Builds a Sheaf-styled entry. Signature mirrors the old MenuItem helper so
 /// call sites don't change.
@@ -129,7 +144,9 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
         : cs.onSurface;
 
     return Material(
-      color: enabled && focused ? cs.surfaceContainerHighest : Colors.transparent,
+      color: enabled && focused
+          ? cs.surfaceContainerHighest
+          : Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: enabled ? () => handleItemSelection(context, menuState) : null,
@@ -156,10 +173,12 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
                     _label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: foreground,
+                    style: safeHanken(
+                      TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: foreground,
+                      ),
                     ),
                   ),
                 ),
@@ -168,10 +187,14 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
                     padding: const EdgeInsets.only(left: 50.0),
                     child: Text(
                       _shortcutLabel,
-                      style: GoogleFonts.splineSansMono(
-                        fontSize: 11,
-                        letterSpacing: 0.3,
-                        color: foreground.withValues(alpha: enabled ? .62 : .3),
+                      style: safeMono(
+                        TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 0.3,
+                          color: foreground.withValues(
+                            alpha: enabled ? .62 : .3,
+                          ),
+                        ),
                       ),
                     ),
                   ),

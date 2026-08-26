@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:path/path.dart' as p;
@@ -29,7 +28,9 @@ class _UnderlineNode extends SpanNode {
   @override
   InlineSpan build() => TextSpan(
     text: _element.textContent,
-    style: (parentStyle ?? const TextStyle()).copyWith(decoration: TextDecoration.underline),
+    style: (parentStyle ?? const TextStyle()).copyWith(
+      decoration: TextDecoration.underline,
+    ),
   );
 }
 
@@ -58,7 +59,9 @@ class MarkdownPreview extends StatelessWidget {
     final theme = Theme.of(context);
     final quire =
         theme.extension<QuireColors>() ??
-        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
+        (theme.brightness == Brightness.dark
+            ? quireColorsDark
+            : quireColorsLight);
     final onSurface = theme.colorScheme.onSurface;
     final inset = theme.colorScheme.surfaceContainerHighest;
 
@@ -66,65 +69,86 @@ class MarkdownPreview extends StatelessWidget {
       configs: [
         ImgConfig(builder: _image),
         PConfig(
-          textStyle: GoogleFonts.hankenGrotesk(
-            fontSize: 16 * _scale,
-            height: 26 / 16,
-            fontWeight: FontWeight.w400,
-            color: onSurface,
+          textStyle: safeHanken(
+            TextStyle(
+              fontSize: 16 * _scale,
+              height: 26 / 16,
+              fontWeight: FontWeight.w400,
+              color: onSurface,
+            ),
           ),
         ),
         H1Config(
-          style: GoogleFonts.bricolageGrotesque(
-            fontSize: 28,
-            height: 34 / 28,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.4,
-            color: onSurface,
+          style: safeBricolage(
+            TextStyle(
+              fontSize: 28,
+              height: 34 / 28,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.4,
+              color: onSurface,
+            ),
           ),
         ),
         H2Config(
-          style: GoogleFonts.bricolageGrotesque(
-            fontSize: 22,
-            height: 28 / 22,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.3,
-            color: onSurface,
+          style: safeBricolage(
+            TextStyle(
+              fontSize: 22,
+              height: 28 / 22,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.3,
+              color: onSurface,
+            ),
           ),
         ),
         H3Config(
-          style: GoogleFonts.hankenGrotesk(
-            fontSize: 17,
-            height: 24 / 17,
-            fontWeight: FontWeight.w600,
-            color: onSurface,
+          style: safeHanken(
+            TextStyle(
+              fontSize: 17,
+              height: 24 / 17,
+              fontWeight: FontWeight.w600,
+              color: onSurface,
+            ),
           ),
         ),
         CodeConfig(
-          style: GoogleFonts.splineSansMono(
-            fontSize: 13,
-            height: 18 / 13,
-            color: onSurface,
-            backgroundColor: inset,
+          style: safeMono(
+            TextStyle(
+              fontSize: 13,
+              height: 18 / 13,
+              color: onSurface,
+              backgroundColor: inset,
+            ),
           ),
         ),
         PreConfig(
-          textStyle: GoogleFonts.splineSansMono(fontSize: 13, height: 18 / 13, color: onSurface),
+          textStyle: safeMono(
+            TextStyle(fontSize: 13, height: 18 / 13, color: onSurface),
+          ),
           decoration: BoxDecoration(
             color: inset,
             borderRadius: BorderRadius.circular(QuireRadius.s),
-            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+            ),
           ),
           padding: const EdgeInsets.all(14),
           language: '',
         ),
-        BlockquoteConfig(sideColor: theme.colorScheme.primary, textColor: onSurface),
+        BlockquoteConfig(
+          sideColor: theme.colorScheme.primary,
+          textColor: onSurface,
+        ),
         TableConfig(
-          headerStyle: GoogleFonts.hankenGrotesk(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: onSurface,
+          headerStyle: safeHanken(
+            TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: onSurface,
+            ),
           ),
-          bodyStyle: GoogleFonts.hankenGrotesk(fontSize: 14, height: 20 / 14, color: onSurface),
+          bodyStyle: safeHanken(
+            TextStyle(fontSize: 14, height: 20 / 14, color: onSurface),
+          ),
           wrapper: (child) => Container(
             decoration: BoxDecoration(
               border: Border.all(color: theme.colorScheme.outlineVariant),
@@ -139,12 +163,17 @@ class MarkdownPreview extends StatelessWidget {
             margin: const EdgeInsets.only(top: 10, right: 8),
             width: 5,
             height: 5,
-            decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
           ),
         ),
         CheckBoxConfig(
           builder: (checked) => Icon(
-            checked ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+            checked
+                ? Icons.check_box_rounded
+                : Icons.check_box_outline_blank_rounded,
             size: 18,
             color: checked ? theme.colorScheme.primary : quire.textTertiary,
           ),
@@ -160,10 +189,12 @@ class MarkdownPreview extends StatelessWidget {
           child: Text(
             'Nothing written yet.\nSwitch to Normal or Markdown to start.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.hankenGrotesk(
-              fontSize: 14,
-              height: 20 / 14,
-              color: quire.textTertiary,
+            style: safeHanken(
+              TextStyle(
+                fontSize: 14,
+                height: 20 / 14,
+                color: quire.textTertiary,
+              ),
             ),
           ),
         ),
@@ -185,7 +216,10 @@ class MarkdownPreview extends StatelessWidget {
     linesMargin: const EdgeInsets.symmetric(vertical: 7),
     inlineSyntaxList: [_UnderlineSyntax()],
     generators: [
-      SpanNodeGeneratorWithTag(tag: 'u', generator: (e, config, visitor) => _UnderlineNode(e)),
+      SpanNodeGeneratorWithTag(
+        tag: 'u',
+        generator: (e, config, visitor) => _UnderlineNode(e),
+      ),
     ],
   );
 
@@ -214,18 +248,26 @@ class MarkdownPreview extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(QuireRadius.s),
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.broken_image, size: 16, color: Theme.of(context).colorScheme.error),
+              Icon(
+                Icons.broken_image,
+                size: 16,
+                color: Theme.of(context).colorScheme.error,
+              ),
               const SizedBox(width: 8),
               Text(
                 alt.isEmpty ? url : alt,
-                style: GoogleFonts.splineSansMono(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                style: safeMono(
+                  TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ],
@@ -244,6 +286,9 @@ class MarkdownPreview extends StatelessWidget {
       );
     }
 
-    return KeyedSubtree(key: Key(width == null ? 'md-img-natural' : 'md-img-$width'), child: image);
+    return KeyedSubtree(
+      key: Key(width == null ? 'md-img-natural' : 'md-img-$width'),
+      child: image,
+    );
   }
 }

@@ -92,6 +92,13 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
   final enclosing = _enclosingSpan(text, caret, caret, open, end);
   if (enclosing != null) return enclosing;
 
+  // Collapsed caret merely TOUCHING a span's markers (e.g. line-start
+  // before the opener): splicing an empty pair here would nest markers and
+  // render as the wrong style (`***word***` reads bold). Toggle the touched
+  // span off instead (feedback F25).
+  final touched = _enclosingSpan(text, caret, caret, open, end, touchingOnly: true);
+  if (touched != null) return touched;
+
   final inserted = '$before$open$end$after';
   return FormatEdit(inserted, caret + open.length, caret + open.length);
 }
@@ -99,13 +106,20 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
 /// Unwraps the `<open>…<end>` span best matching the given range, remapping
 /// the selection into unwrapped coordinates. Null when no span qualifies.
 ///
-/// A span qualifies when the range overlaps or even just touches its inner
-/// region (`start <= innerEnd && stop >= innerStart`) — which subsumes
-/// selections covering the whole span, so marker-inclusive toggles unwrap
-/// instead of silently nesting a second layer (feedback F11/F20). The
-/// smallest qualifying inner wins; zero-length inners are skipped so
-/// adjacent bold markers never masquerade as an empty italic pair.
-FormatEdit? _enclosingSpan(String text, int start, int stop, String open, String end) {
+/// Default qualification: the range overlaps or even just touches the inner
+/// region — which subsumes selections covering the whole span, so marker-
+/// inclusive toggles unwrap instead of silently nesting (F11/F20).
+///
+/// With [touchingOnly] (collapsed-caret fallback), a span qualifies when the
+/// caret sits anywhere within its full marker-to-marker bounds.
+FormatEdit? _enclosingSpan(
+  String text,
+  int start,
+  int stop,
+  String open,
+  String end, {
+  bool touchingOnly = false,
+}) {
   final pattern = RegExp('${RegExp.escape(open)}(.*?)${RegExp.escape(end)}');
   Match? best;
   for (final m in pattern.allMatches(text)) {
@@ -113,7 +127,12 @@ FormatEdit? _enclosingSpan(String text, int start, int stop, String open, String
     if (inner.isEmpty) continue;
     final innerStart = m.start + open.length;
     final innerEnd = innerStart + inner.length;
-    final qualifies = start <= innerEnd && stop >= innerStart;
+    final bool qualifies;
+    if (touchingOnly) {
+      qualifies = start >= m.start && stop <= m.end;
+    } else {
+      qualifies = start <= innerEnd && stop >= innerStart;
+    }
     if (qualifies && (best == null || inner.length < best.group(1)!.length)) {
       best = m;
     }

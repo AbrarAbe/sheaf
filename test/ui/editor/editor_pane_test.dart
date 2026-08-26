@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/editor_controller.dart';
@@ -17,6 +18,9 @@ import 'package:sheaf/ui/editor/markdown_preview.dart';
 /// Widget tests must route every real-I/O call through [real] because
 /// unwrapped awaits deadlock inside the tester's FakeAsync zone.
 void main() {
+  // Hermetic font handling (matches theme tests): resolve to plain family
+  // names instead of hitting fonts.gstatic.com mid-test.
+  GoogleFonts.config.allowRuntimeFetching = false;
   late Directory tempDir;
   late VaultController vaultController;
   late EditorController editorController;
@@ -465,6 +469,45 @@ void main() {
       Actions.invoke(ctx, const FormatIntent(FormatKind.underline));
       await tester.pump();
       expect(editorController.body, '<u>word</u>');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('F25: italic triple-press cycles italic/plain without bolding', (tester) async {
+      await openNormal(tester);
+
+      // Natural flow: type a word (caret rests at its end, ON the word),
+      // then keep hammering Ctrl+I without touching the mouse.
+      await tester.enterText(find.byKey(const Key('editor-body')), 'word');
+      await tester.pump();
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+
+      Actions.invoke(ctx, const FormatIntent(FormatKind.italic));
+      await tester.pump();
+      expect(editorController.body, '*word*', reason: 'P1 wraps italic');
+
+      Actions.invoke(ctx, const FormatIntent(FormatKind.italic));
+      await tester.pump();
+      expect(editorController.body, 'word', reason: 'P2 unwraps — never bolds');
+
+      Actions.invoke(ctx, const FormatIntent(FormatKind.italic));
+      await tester.pump();
+      expect(editorController.body, '*word*', reason: 'P3 re-wraps italic');
+
+      // Caret parked at line start (Home) sits before the leading marker;
+      // pressing again must unwrap/toggle, never splice a nested pair that
+      // renders as bold.
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = const TextSelection.collapsed(offset: 0);
+      await tester.pump();
+
+      Actions.invoke(ctx, const FormatIntent(FormatKind.italic));
+      await tester.pump();
+      expect(editorController.body, isNot(contains('***')), reason: 'no nested splices');
       await real(editorController.flush, tester);
     });
 
