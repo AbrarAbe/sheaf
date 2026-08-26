@@ -265,6 +265,15 @@ void main() {
       expect(find.widgetWithText(TextField, 'Untitled'), findsOneWidget);
     });
 
+    testWidgets('header controls stay vertically centered in the bar', (tester) async {
+      await pumpShell(tester, width: 1280, height: 800);
+
+      // Bar is 48 tall; a centered 34px button sits at y≈24. A loose Stack
+      // fit used to pin the row to the top (round 6 bug).
+      final rect = tester.getRect(find.byKey(const Key('sidebar-toggle')));
+      expect((rect.center.dy - 24).abs(), lessThan(1.0));
+    });
+
     testWidgets('hiding dots keeps the search pill anchored', (tester) async {
       final centers = <double>[];
 
