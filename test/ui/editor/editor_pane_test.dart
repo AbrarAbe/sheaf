@@ -195,6 +195,24 @@ void main() {
           expect(find.text(label), findsOneWidget, reason: label);
         }
 
+        // The builder re-fires whenever the field rebuilds (clipboard status,
+        // highlighting ticks); the menu must never stack a second copy.
+        final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+        final editableState = tester.state<EditableTextState>(
+          find.descendant(
+            of: find.byKey(const Key('editor-body')),
+            matching: find.byType(EditableText),
+          ),
+        );
+        field.contextMenuBuilder!(
+          tester.element(find.byKey(const Key('editor-body'))),
+          editableState,
+        );
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text('Select all'), findsOneWidget);
+
         // Quire typography on our component, not stock Material chrome.
         final label = tester.widget<Text>(find.text('Copy'));
         expect(label.style?.fontSize, 13);

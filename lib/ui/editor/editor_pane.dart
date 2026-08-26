@@ -148,6 +148,11 @@ class _Editor extends StatefulWidget {
 
 class _EditorState extends State<_Editor> {
   late final HighlightingController _body;
+
+  /// Guards the edit-menu overlay: contextMenuBuilder re-fires on every
+  /// field rebuild while a menu is open, and each fire used to stack
+  /// another route (round 6 bug).
+  bool _editMenuOpen = false;
   late final TextEditingController _title;
   late final FocusNode _bodyFocus;
   String? _loadedPath;
@@ -575,11 +580,22 @@ class _EditorState extends State<_Editor> {
                               onChanged: controller.updateBody,
                               // Quire-styled cut/copy/paste menu (round 6):
                               // defer into our own overlay route; the inline
-                              // toolbar slot stays empty.
+                              // toolbar slot stays empty. The gate keeps
+                              // builder re-fires from stacking menus.
                               contextMenuBuilder: (context, editableState) {
+                                if (_editMenuOpen) return const SizedBox.shrink();
+                                _editMenuOpen = true;
                                 WidgetsBinding.instance.addPostFrameCallback((_) {
-                                  if (!context.mounted) return;
-                                  unawaited(showBodyEditMenu(context, editableState));
+                                  if (!context.mounted) {
+                                    _editMenuOpen = false;
+                                    return;
+                                  }
+                                  unawaited(
+                                    showBodyEditMenu(
+                                      context,
+                                      editableState,
+                                    ).whenComplete(() => _editMenuOpen = false),
+                                  );
                                 });
                                 return const SizedBox.shrink();
                               },
