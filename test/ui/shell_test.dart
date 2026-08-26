@@ -265,6 +265,18 @@ void main() {
       expect(find.widgetWithText(TextField, 'Untitled'), findsOneWidget);
     });
 
+    testWidgets('hiding window dots keeps the search pill anchored', (tester) async {
+      final centers = <double>[];
+
+      for (final shown in [true, false]) {
+        await pumpShell(tester, width: 1280, height: 800, showWindowControls: shown);
+        centers.add(tester.getRect(find.byKey(const Key('palette-pill'))).center.dx);
+      }
+
+      // Reserved slot width means the pill cannot shift by even half a pixel.
+      expect((centers[0] - centers[1]).abs(), lessThan(0.5));
+    });
+
     testWidgets('traffic-light dots drive the injected window seam (F15)', (tester) async {
       final controls = RecordingControls();
       await pumpShell(tester, width: 1280, height: 800, windowControls: controls);

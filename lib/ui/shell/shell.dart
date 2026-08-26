@@ -349,6 +349,10 @@ class _ShellState extends State<Shell> {
 }
 
 class _HeaderBar extends StatelessWidget {
+  /// Width of the reserved window-dots region (3 × 18px dots + inset) so the
+  /// search pill holds position when the controls are hidden.
+  static const double _windowControlsSlotWidth = 56;
+
   const _HeaderBar({
     required this.controller,
     required this.tier,
@@ -573,38 +577,42 @@ class _HeaderBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              // Functional traffic-light controls (feedback F15). Colors come
-              // from the QuireColors highlighter tokens — no new hex.
-              if (showWindowControls)
-                Padding(
-                  padding: const EdgeInsets.only(left: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _WinDot(
-                        key: const Key('win-minimize'),
-                        color: quire.hlPinBase,
-                        glyph: Icons.remove_rounded,
-                        tooltip: 'Minimize',
-                        onTap: () => windowControls.minimize(),
-                      ),
-                      _WinDot(
-                        key: const Key('win-maximize'),
-                        color: quire.hlGrowBase,
-                        glyph: Icons.crop_square_rounded,
-                        tooltip: 'Maximize',
-                        onTap: () => windowControls.toggleMaximize(),
-                      ),
-                      _WinDot(
-                        key: const Key('win-close'),
-                        color: quire.hlAlertBase,
-                        glyph: Icons.close_rounded,
-                        tooltip: 'Close',
-                        onTap: () => windowControls.close(),
-                      ),
-                    ],
-                  ),
-                ),
+              // Fixed-width slot (round 6 bug): hiding the dots must not
+              // reflow the search pill, so the space is reserved either way.
+              SizedBox(
+                width: _windowControlsSlotWidth,
+                child: showWindowControls
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _WinDot(
+                              key: const Key('win-minimize'),
+                              color: quire.hlPinBase,
+                              glyph: Icons.remove_rounded,
+                              tooltip: 'Minimize',
+                              onTap: () => windowControls.minimize(),
+                            ),
+                            _WinDot(
+                              key: const Key('win-maximize'),
+                              color: quire.hlGrowBase,
+                              glyph: Icons.crop_square_rounded,
+                              tooltip: 'Maximize',
+                              onTap: () => windowControls.toggleMaximize(),
+                            ),
+                            _WinDot(
+                              key: const Key('win-close'),
+                              color: quire.hlAlertBase,
+                              glyph: Icons.close_rounded,
+                              tooltip: 'Close',
+                              onTap: () => windowControls.close(),
+                            ),
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
             ],
           ),
         ],
