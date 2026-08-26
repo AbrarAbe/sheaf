@@ -199,8 +199,12 @@ class _PaletteRow extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 80),
+        // Our own background carries the highlight; ripple/hover washes
+        // double-paint it and read as flicker while arrowing through rows.
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           decoration: BoxDecoration(
             color: selected ? theme.colorScheme.surfaceContainerHighest : Colors.transparent,

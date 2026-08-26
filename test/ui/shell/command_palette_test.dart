@@ -146,6 +146,39 @@ void main() {
     expect(find.byKey(const Key('palette-dialog')), findsOneWidget);
   });
 
+  testWidgets('row highlight switches instantly after one pump', (tester) async {
+    final first = note('First', at: DateTime(2026, 8, 25));
+    final second = note('Second', at: DateTime(2026, 8, 24));
+    await pumpHost(tester, notes: [first, second]);
+
+    // Animated backgrounds cross-fade between rows while arrowing — reads as
+    // background flicker. Highlight must be a plain paint.
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('palette-dialog')),
+        matching: find.byType(AnimatedContainer),
+      ),
+      findsNothing,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump(); // a single frame must land the new highlight
+
+    bool highlighted(String title) {
+      final context = tester.element(find.text(title));
+      final wanted = Theme.of(context).colorScheme.surfaceContainerHighest;
+      return tester
+          .widgetList<Container>(
+            find.ancestor(of: find.text(title), matching: find.byType(Container)),
+          )
+          .where((c) => c.decoration is BoxDecoration)
+          .any((c) => (c.decoration! as BoxDecoration).color == wanted);
+    }
+
+    expect(highlighted('Second'), isTrue);
+    expect(highlighted('First'), isFalse);
+  });
+
   testWidgets('header pill opens the palette on expanded tier', (tester) async {
     final controller = SpyVaultController('${tempDir.path}/settings.json');
     addTearDown(controller.dispose);
