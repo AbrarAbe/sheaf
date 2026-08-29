@@ -169,6 +169,78 @@ FormatEdit? _enclosingSpan(
   bool touchingOnly = false,
   int? origCaret,
 }) {
+  // Italic needs overlapping-aware scanning: RegExp's non-overlapping
+  // allMatches would consume a '**' opener or a list marker '* ' and hide
+  // the valid '*word*' span.
+  if (open == '*' && end == '*') {
+    int? bestStart;
+    int? bestEnd;
+    String? bestInner;
+    for (var i = 0; i < text.length; i++) {
+      if (text[i] != '*') continue;
+      if (i + 1 < text.length &&
+          (text[i + 1].trim().isEmpty || text[i + 1] == '*')) {
+        continue;
+      }
+      if ((i == 0 || text[i - 1] == '\n') &&
+          i + 1 < text.length &&
+          text[i + 1] == ' ') {
+        continue;
+      }
+      if (i > 0 && text[i - 1] == '*') continue;
+      var j = i + 1;
+      while (j < text.length && text[j] != '*') {
+        if (text[j] == '\n') break;
+        j++;
+      }
+      if (j >= text.length || text[j] != '*') continue;
+      var hasNewline = false;
+      for (var k = i + 1; k < j; k++) {
+        if (text[k] == '\n') { hasNewline = true; break; }
+        if (text[k] == '*') { hasNewline = true; break; }
+      }
+      if (hasNewline) continue;
+      final inner = text.substring(i + 1, j);
+      if (inner.isEmpty || inner.trim().isEmpty) continue;
+      if (inner.contains('\n') || inner.contains('*')) continue;
+      final mStart = i;
+      final mEnd = j + 1;
+      final innerStart = i + 1;
+      final innerEnd = j;
+      final bool qualifies;
+      if (touchingOnly) {
+        qualifies = start >= mStart && stop <= mEnd;
+      } else {
+        qualifies = start <= innerEnd && stop >= innerStart;
+      }
+      if (qualifies &&
+          (bestInner == null || inner.length < bestInner.length)) {
+        bestStart = mStart;
+        bestEnd = mEnd;
+        bestInner = inner;
+      }
+    }
+    if (bestStart == null || bestEnd == null || bestInner == null) {
+      return null;
+    }
+    final spanStart = bestStart;
+    final innerStart = spanStart + open.length;
+    final innerEnd = innerStart + bestInner.length;
+    final spanEnd = bestEnd;
+    final unwrapped = text
+        .replaceRange(spanEnd - end.length, spanEnd, '')
+        .replaceRange(spanStart, innerStart, '');
+    int map(int o) {
+      if (o <= spanStart) return o;
+      if (o < innerStart) return spanStart;
+      if (o <= innerEnd) return o - open.length;
+      if (o < spanEnd) return innerEnd - open.length;
+      return o - open.length - end.length;
+    }
+    final caret = map(origCaret ?? stop).clamp(0, unwrapped.length);
+    return FormatEdit(
+        unwrapped, map(start).clamp(0, unwrapped.length), caret, caret);
+  }
   final pattern = RegExp('${RegExp.escape(open)}(.*?)${RegExp.escape(end)}');
   Match? best;
   for (final m in pattern.allMatches(text)) {
@@ -209,6 +281,7 @@ FormatEdit? _enclosingSpan(
   final caret = map(origCaret ?? stop).clamp(0, unwrapped.length);
   return FormatEdit(unwrapped, map(start).clamp(0, unwrapped.length), caret, caret);
 }
+
 
 /// VS Code-style select-word bounds around [offset] (spec story 11, F6).
 ///

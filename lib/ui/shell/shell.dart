@@ -62,6 +62,7 @@ class _ShellState extends State<Shell> {
   EditorController? _editor;
   String? _syncedPath;
   bool _focusMode = false;
+  late final FocusNode _shellFocus;
 
   void _toggleFocusMode() => setState(() => _focusMode = !_focusMode);
 
@@ -73,6 +74,7 @@ class _ShellState extends State<Shell> {
   @override
   void initState() {
     super.initState();
+    _shellFocus = FocusNode(debugLabel: 'shell');
     widget.controller.addListener(_syncSelection);
     _bindWidths(widget.paneWidths);
     _ensureEditor();
@@ -119,6 +121,7 @@ class _ShellState extends State<Shell> {
   void dispose() {
     widget.controller.removeListener(_syncSelection);
     _editor?.dispose();
+    _shellFocus.dispose();
     super.dispose();
   }
 
@@ -256,11 +259,18 @@ class _ShellState extends State<Shell> {
               );
             }
 
-            return Actions(
-              actions: actions,
-              child: Shortcuts(
-                shortcuts: sheafShortcuts(),
-                child: Focus(autofocus: true, child: content),
+            return Shortcuts(
+              shortcuts: sheafShortcuts(),
+              child: Actions(
+                actions: actions,
+                child: FocusScope(
+                  autofocus: true,
+                  child: Focus(
+                    focusNode: _shellFocus,
+                    autofocus: true,
+                    child: content,
+                  ),
+                ),
               ),
             );
           },
