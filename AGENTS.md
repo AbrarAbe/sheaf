@@ -84,6 +84,10 @@ skill and follow it.
   - `test(vault): cover trash restore round-trip (#12)`
 - Verify scope before committing (`git --no-pager diff --stat`); only files the
   task touched belong in the commit.
+- Confirm before pushing: run `git status`, `git log --oneline -5`, and
+  `git diff origin/main..HEAD --stat` (or `git diff --stat` if no remote tracking),
+  state what will be pushed and to where, and wait for explicit user confirmation
+  before `git push`.
 
 Whenever you make edits to any Dart or Flutter files in this project:
 1. Proactively connect to the running application using the `dtd` tool and its subcommands. Make sure to read the schema for this tool.

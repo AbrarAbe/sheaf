@@ -41,19 +41,22 @@ everything to a GitHub Release.
    `git-cliff --bump` (see step 3).
 3. Regenerate the changelog from Conventional Commits **with the tag** so
    `CHANGELOG.md` gets a versioned header instead of `[Unreleased]`:
-4. Sync docs: read `docs/spec.md` and `docs/plan_v*.md` for new/changed
-   user-visible behavior since the last tag, then update `README.md`
-   (Features, Keyboard shortcuts, Install, Build from source, Project docs)
-   to match — do not ship a release whose README still describes the previous
-   milestone.
-   - **Version supplied by user:** `git cliff --tag vX.Y.Z -o CHANGELOG.md`
-     (e.g. `git cliff --tag v0.1.1 -o CHANGELOG.md`) — assigns all unreleased
-     commits to that tag.
-   - **Version from commit history:** `git cliff --bump -o CHANGELOG.md` — bumps
-     per `cliff.toml` + Conventional Commits; preview the bump first with
-     `git cliff --bumped-version` or `git cliff --bump --dry-run`.
-   Do not use bare `git cliff -o CHANGELOG.md` here — it leaves the new section
-   under `[Unreleased]`.
+    - **Version supplied by user:** `git cliff --tag vX.Y.Z -o CHANGELOG.md`
+      (e.g. `git cliff --tag v0.1.1 -o CHANGELOG.md`) — assigns all unreleased
+      commits to that tag.
+    - **Version from commit history:** `git cliff --bump -o CHANGELOG.md` — bumps
+      per `cliff.toml` + Conventional Commits; preview the bump first with
+      `git cliff --bumped-version` or `git cliff --bump --dry-run`.
+    Do not use bare `git cliff -o CHANGELOG.md` here — it leaves the new section
+    under `[Unreleased]`.
+4. Sync docs: triangulate user-visible changes since the last tag from three
+   sources, then update `README.md` (Features, Keyboard shortcuts, Install,
+   Build from source, Project docs) to match — do not ship a release whose
+   README still describes the previous milestone or contradicts commit history:
+    - `docs/spec.md` + `docs/plan_v*.md` — intended scope
+    - `git log <last-tag>..HEAD --oneline` + `git diff <last-tag>..HEAD --stat`
+      — what actually shipped (features, shortcuts, flags, install paths, deps)
+    - Current `README.md` — what users will read on the release page
 5. Commit the version bump + changelog + README/docs with a semantic message
    (`chore(release): v0.1.1`) and push to the default branch.
 
@@ -118,8 +121,9 @@ Before tagging:
  - [ ] `CHANGELOG.md` regenerated via `git cliff --tag vX.Y.Z -o CHANGELOG.md`
    or `git cliff --bump -o CHANGELOG.md`, committed — header is `## [X.Y.Z]`,
    not `[Unreleased]`
- - [ ] `README.md` reviewed against `docs/spec.md` / `docs/plan_v*.md`; new or
-   changed features, shortcuts, install steps, and doc links updated
+  - [ ] `README.md` reviewed against `docs/spec.md` / `docs/plan_v*.md` **and**
+    `git log`/`git diff` since last tag; new or changed features, shortcuts,
+    install steps, and doc links updated (no stale version strings)
 - [ ] `.github/workflows/release.yml` present on the default branch with
   `checkout: fetch-depth: 0` and notes step `args: --current --strip header`
 
