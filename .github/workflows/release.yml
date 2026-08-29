@@ -44,8 +44,9 @@ jobs:
 
             - name: Package tarball
               run: |
-                  cd build/linux/x64/release/bundle
-                  tar czf "$GITHUB_WORKSPACE/sheaf-$GITHUB_REF_NAME-linux-x64.tar.gz" .
+                  mkdir -p /tmp/sheaf-package/sheaf
+                  cp -r build/linux/x64/release/bundle/* /tmp/sheaf-package/sheaf/
+                  tar czf "$GITHUB_WORKSPACE/sheaf-$GITHUB_REF_NAME-linux-x64.tar.gz" -C /tmp/sheaf-package sheaf
 
             - name: Generate release notes (git-cliff)
               id: notes
