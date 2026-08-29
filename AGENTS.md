@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **taker** (1281 symbols, 2690 relationships, 105 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **sheaf** (1281 symbols, 2690 relationships, 105 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -25,10 +25,10 @@ This project is indexed by GitNexus as **taker** (1281 symbols, 2690 relationshi
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/taker/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/taker/clusters` | All functional areas |
-| `gitnexus://repo/taker/processes` | All execution flows |
-| `gitnexus://repo/taker/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/sheaf/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/sheaf/clusters` | All functional areas |
+| `gitnexus://repo/sheaf/processes` | All execution flows |
+| `gitnexus://repo/sheaf/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 
