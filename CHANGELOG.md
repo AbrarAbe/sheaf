@@ -2,6 +2,72 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Scope v0.2 editor milestone with resolved decisions
+- Extend schema for v0.2 editor and appearance
+- App-wide view zoom with Ctrl+=/-/0
+- Pure wrap/unwrap engine for bold, italic, underline
+- Render <u> underline spans in markdown preview
+- Three modes — Normal, Markdown, Preview
+- Bind Ctrl+B/I/U formatting and Ctrl+Shift+C/V
+- Continue markdown lists on Enter
+- Ctrl+Tab cycles through visible notes
+- Find-in-note bar with match traversal
+- Tick phase 1-2 tasks, mark checkpoint A
+- Live-render Normal mode; keys in both modes; top-aligned preview
+- Hide markers until touched; Ctrl+D selects word
+- Record feedback round 2 decisions and delight_toast findings
+- Quire corner toast replaces snackbars
+- User-owned sidebar visibility per tier
+- Tick task 10
+- Pin notes with .sheaf/meta.json sidecar
+- Tick task 11
+- Focus mode (F10) and OS fullscreen (F11)
+- Tick task 12, note checkpoint B verification
+- Theme worlds — Quire, Graphite, Sepia
+- Tick task 13
+- Type size, zoom stepper, and local font picker
+- Tick task 14
+- Audit sweep — drop dead decorations, fix stale copy
+- Tick task 15
+- V0.2 ADRs, README refresh, tick task 16
+- Tick task 16 — v0.2 complete
+- Focus-mode button joins the right cluster
+- Functional traffic-light window controls
+- Ctrl+K quick-switcher palette with search pill
+- Scope chips replace the list-filter search
+- Show when each entry was deleted
+- Quire-styled context menus
+- Tabs proposal (ADR 0007), spec/README refresh for round 5
+- Row spacing/dimension tuning
+- Hide image picker button, defer feature
+- Quire context menu for the note body
+- Docs(agents): update GitNexus metadata from taker to sheaf
+
+### Fixed
+
+- Pin repo links in cliff config and sync changelog
+- Unwrap spans from caret or partial selection
+- Del edits text while an editor holds focus
+- Bare caret on a word formats the whole word
+- Formatting toggles no longer nest or shrink selection
+- Instant row highlight — no more hover flicker
+- Search pill holds position when window dots hide
+- Layer the header so chrome packs right and pill stays put
+- Edit menu opens once — no more stacked duplicates
+- Restore vertical centering lost by the layered Stack
+- Italic toggle no longer splices nested markers
+- Preserve caret/selection on format toggle, anchor preview left
+- Enable formatting shortcuts in Markdown mode
+- Sort listNotes newest-first to restore pinned order
+
+### Removed
+
+- Remove local-font feature, add window-controls flag
+
 ## [0.1.0] - 2026-08-24
 
 ### Added
@@ -67,5 +133,6 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[unreleased]: https://github.com/AbrarAbe/sheaf/compare/v0.1.0..HEAD
 [0.1.0]: https://github.com/AbrarAbe/sheaf/tree/v0.1.0
 
