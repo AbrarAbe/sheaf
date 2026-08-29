@@ -83,6 +83,7 @@ class VaultRepository {
   }
 
   /// Every markdown note in the vault, excluding dot-directories.
+  /// Returned newest-first by file modification time (spec story 13).
   Future<List<Note>> listNotes() async {
     final notes = <Note>[];
     await for (final entity in root.list(recursive: true, followLinks: false)) {
@@ -91,6 +92,13 @@ class VaultRepository {
       if (rel == null || !rel.endsWith('.md')) continue;
       notes.add(await _noteFrom(rel, entity));
     }
+    notes.sort((a, b) {
+      final am = a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bm = b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final cmp = bm.compareTo(am);
+      if (cmp != 0) return cmp;
+      return b.path.compareTo(a.path);
+    });
     return notes;
   }
 
