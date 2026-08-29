@@ -107,3 +107,4 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/design/`](docs/design) — design docs (theming, layout, voice)
 - [`docs/adr/`](docs/adr) — architecture decision records
 - [`docs/plan_v0.1.md`](docs/plan_v0.1.md) — v0.1 implementation plan
+- [`docs/plan_v0.2.md`](docs/plan_v0.2.md) — v0.2 implementation plan (editor, modes, pinning, appearance)
