@@ -67,16 +67,24 @@ GTK, shipped as a self-contained tarball.
 
 ## Install (Linux x64)
 
-Download the latest tarball from
-[Releases](https://github.com/AbrarAbe/sheaf/releases), extract, and run (keep the `sheaf/` folder intact — `lib/` and `data/` must stay beside the binary):
+Download and install to `~/.local/share/sheaf` (keep the `sheaf/` folder intact — `lib/` and `data/` must stay beside the binary):
 
 ```
-tar xzf sheaf-v0.2.0-linux-x64.tar.gz
-./sheaf/sheaf
+curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/sheaf-v0.2.0-linux-x64.tar.gz
+mkdir -p ~/.local/share
+tar xzf sheaf-v0.2.0-linux-x64.tar.gz -C ~/.local/share
+~/.local/share/sheaf/sheaf
+```
+
+Optional — add to `PATH`:
+
+```
+mkdir -p ~/.local/bin
+ln -sf ~/.local/share/sheaf/sheaf ~/.local/bin/sheaf
 ```
 
 GTK 3 is the only runtime expectation, and it ships with virtually every
-desktop distribution.
+desktop distribution. Download a specific version by replacing `latest` with `download/v0.2.0` in the URL, or pick a tarball from [Releases](https://github.com/AbrarAbe/sheaf/releases).
 
 ## Build from source
 
