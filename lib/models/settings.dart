@@ -5,6 +5,7 @@
 class AppSettings {
   const AppSettings({
     this.vaultPath,
+    this.vaultPaths,
     this.theme = ThemeSetting.system,
     this.editorMode = EditorMode.normal,
     this.zoomFactor = 1.0,
@@ -18,6 +19,15 @@ class AppSettings {
 
   /// Absolute path of the chosen vault folder, or null until one is picked.
   final String? vaultPath;
+
+  /// Multi-vault support: ordered list of vault roots, primary = [0].
+  final List<String>? vaultPaths;
+
+  List<String> get effectiveVaultPaths {
+    if (vaultPaths != null && vaultPaths!.isNotEmpty) return vaultPaths!;
+    if (vaultPath != null) return [vaultPath!];
+    return const [];
+  }
 
   final ThemeSetting theme;
 
@@ -47,6 +57,7 @@ class AppSettings {
   /// Note: `??` semantics mean nulls cannot be written through [copyWith].
   AppSettings copyWith({
     String? vaultPath,
+    List<String>? vaultPaths,
     ThemeSetting? theme,
     EditorMode? editorMode,
     double? zoomFactor,
@@ -58,6 +69,7 @@ class AppSettings {
     bool? showWindowControls,
   }) => AppSettings(
     vaultPath: vaultPath ?? this.vaultPath,
+    vaultPaths: vaultPaths ?? this.vaultPaths,
     theme: theme ?? this.theme,
     editorMode: editorMode ?? this.editorMode,
     zoomFactor: zoomFactor ?? this.zoomFactor,
@@ -71,6 +83,7 @@ class AppSettings {
 
   Map<String, Object?> toJson() => {
     'vaultPath': vaultPath,
+    'vaultPaths': vaultPaths,
     'theme': theme.toJson(),
     'editorMode': editorMode.toJson(),
     'zoomFactor': zoomFactor,
@@ -82,23 +95,35 @@ class AppSettings {
     'showWindowControls': showWindowControls,
   };
 
-  factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
-    vaultPath: json['vaultPath'] as String?,
-    theme: ThemeSetting.fromJson(json['theme'] as String?),
-    editorMode: EditorMode.fromJson(json['editorMode'] as String?),
-    zoomFactor: (json['zoomFactor'] as num?)?.toDouble() ?? 1.0,
-    editorFontSize: (json['editorFontSize'] as num?)?.toDouble() ?? 16.0,
-    themeWorld: json['themeWorld'] as String? ?? 'quire',
-    sidebarExpanded: json['sidebarExpanded'] as bool? ?? true,
-    sidebarFull: json['sidebarFull'] as bool? ?? false,
-    sidebarStack: json['sidebarStack'] as bool? ?? false,
-    showWindowControls: json['showWindowControls'] as bool? ?? true,
-  );
+  factory AppSettings.fromJson(Map<String, Object?> json) {
+    List<String>? vps;
+    final rawVps = json['vaultPaths'];
+    if (rawVps is List) {
+      vps = rawVps.whereType<String>().toList();
+      if (vps.isEmpty) vps = null;
+    }
+    final legacy = json['vaultPath'] as String?;
+    if (vps == null && legacy != null) vps = [legacy];
+    return AppSettings(
+      vaultPath: legacy,
+      vaultPaths: vps,
+      theme: ThemeSetting.fromJson(json['theme'] as String?),
+      editorMode: EditorMode.fromJson(json['editorMode'] as String?),
+      zoomFactor: (json['zoomFactor'] as num?)?.toDouble() ?? 1.0,
+      editorFontSize: (json['editorFontSize'] as num?)?.toDouble() ?? 16.0,
+      themeWorld: json['themeWorld'] as String? ?? 'quire',
+      sidebarExpanded: json['sidebarExpanded'] as bool? ?? true,
+      sidebarFull: json['sidebarFull'] as bool? ?? false,
+      sidebarStack: json['sidebarStack'] as bool? ?? false,
+      showWindowControls: json['showWindowControls'] as bool? ?? true,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
       other is AppSettings &&
       other.vaultPath == vaultPath &&
+      _listEq(other.vaultPaths, vaultPaths) &&
       other.theme == theme &&
       other.editorMode == editorMode &&
       other.zoomFactor == zoomFactor &&
@@ -112,6 +137,7 @@ class AppSettings {
   @override
   int get hashCode => Object.hash(
     vaultPath,
+    Object.hashAll(vaultPaths ?? const []),
     theme,
     editorMode,
     zoomFactor,
@@ -124,6 +150,14 @@ class AppSettings {
   );
 }
 
+bool _listEq(List<String>? a, List<String>? b) {
+  if (identical(a, b)) return true;
+  if (a == null || b == null) return a == b;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) if (a[i] != b[i]) return false;
+  return true;
+}
+
 enum ThemeSetting {
   system,
   light,
@@ -131,8 +165,10 @@ enum ThemeSetting {
 
   String toJson() => name;
 
-  factory ThemeSetting.fromJson(String? value) =>
-      values.firstWhere((v) => v.name == value, orElse: () => ThemeSetting.system);
+  factory ThemeSetting.fromJson(String? value) => values.firstWhere(
+    (v) => v.name == value,
+    orElse: () => ThemeSetting.system,
+  );
 }
 
 /// The three surfaces the note editor can render. See spec story 12:
@@ -145,8 +181,10 @@ enum EditorMode {
 
   String toJson() => name;
 
-  factory EditorMode.fromJson(String? value) =>
-      values.firstWhere((v) => v.name == value, orElse: () => EditorMode.normal);
+  factory EditorMode.fromJson(String? value) => values.firstWhere(
+    (v) => v.name == value,
+    orElse: () => EditorMode.normal,
+  );
 }
 
 /// Window layout tier (spec story 15). Lives beside settings so per-tier
