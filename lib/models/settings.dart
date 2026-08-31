@@ -101,9 +101,17 @@ class AppSettings {
     if (rawVps is List) {
       vps = rawVps.whereType<String>().toList();
       if (vps.isEmpty) vps = null;
+      // Normalize single vault stored as vaultPaths to null for equality
+      // with legacy AppSettings(vaultPath: ...) that had vaultPaths null.
+      final legacySingle = json['vaultPath'] as String?;
+      if (vps != null && vps.length == 1 && vps[0] == legacySingle) vps = null;
     }
     final legacy = json['vaultPath'] as String?;
-    if (vps == null && legacy != null) vps = [legacy];
+    if (vps == null && legacy != null) {
+      // Keep vaultPaths null for single vault to preserve round-trip equality;
+      // effectiveVaultPaths will still return [legacy].
+      vps = null;
+    }
     return AppSettings(
       vaultPath: legacy,
       vaultPaths: vps,
