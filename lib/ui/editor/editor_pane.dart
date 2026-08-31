@@ -14,6 +14,7 @@ import '../../logic/image_link.dart';
 import '../../logic/list_continuation.dart';
 import '../../logic/search_controller.dart';
 import '../../models/settings.dart';
+import '../../models/shortcut_settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
 import '../shell/shortcuts.dart';
@@ -31,6 +32,7 @@ class EditorPane extends StatelessWidget {
     this.importImage,
     this.baseFontSize,
     this.focusMode = false,
+    this.settings,
   });
 
   /// Null while no vault is open; renders the placeholder.
@@ -46,6 +48,8 @@ class EditorPane extends StatelessWidget {
   /// When true, the body column is centered and slightly wider (focus mode).
   final bool focusMode;
 
+  /// Settings for shortcut customization; if null, defaults are used.
+  final AppSettings? settings;
   @override
   Widget build(BuildContext context) {
     final editor = controller;
@@ -63,6 +67,7 @@ class EditorPane extends StatelessWidget {
           importImage: importImage,
           baseFontSize: baseFontSize,
           focusMode: focusMode,
+          settings: settings,
         );
       },
     );
@@ -168,12 +173,14 @@ class _Editor extends StatefulWidget {
     this.importImage,
     this.baseFontSize,
     this.focusMode = false,
+    this.settings,
   });
 
   final EditorController controller;
   final Future<String> Function(File file)? importImage;
   final double? baseFontSize;
   final bool focusMode;
+  final AppSettings? settings;
 
   @override
   State<_Editor> createState() => _EditorState();
@@ -264,27 +271,32 @@ class _EditorState extends State<_Editor> {
 
   /// Key map for the editing surfaces. Formatting keys are bound in both
   /// editing modes (Normal and Markdown), inert only in Preview.
-  Map<ShortcutActivator, Intent> _editShortcuts() => {
-    const SingleActivator(LogicalKeyboardKey.enter): const ContinueListIntent(),
-    const SingleActivator(LogicalKeyboardKey.numpadEnter):
-        const ContinueListIntent(),
-    const SingleActivator(LogicalKeyboardKey.keyF, control: true):
-        const OpenFindIntent(),
-    const SingleActivator(LogicalKeyboardKey.keyD, control: true):
-        const SelectWordIntent(),
-    const SingleActivator(LogicalKeyboardKey.keyC, control: true, shift: true):
-        CopySelectionTextIntent.copy,
-    const SingleActivator(LogicalKeyboardKey.keyV, control: true, shift: true):
-        const PasteTextIntent(SelectionChangedCause.keyboard),
-    if (widget.controller.mode != EditorMode.preview) ...{
-      const SingleActivator(LogicalKeyboardKey.keyB, control: true):
-          const FormatIntent(FormatKind.bold),
-      const SingleActivator(LogicalKeyboardKey.keyI, control: true):
-          const FormatIntent(FormatKind.italic),
-      const SingleActivator(LogicalKeyboardKey.keyU, control: true):
-          const FormatIntent(FormatKind.underline),
-    },
-  };
+  /// Non-formatting shortcuts are settings-driven; formatting (Ctrl+B/I/U)
+  /// remains hard-coded and excluded from customization.
+  Map<ShortcutActivator, Intent> _editShortcuts() {
+    final overrides = widget.settings?.shortcutOverrides ?? const {};
+    SingleActivator a(ShortcutAction action) => activatorFor(action, overrides);
+    return {
+      a(ShortcutAction.continueList): const ContinueListIntent(),
+      const SingleActivator(LogicalKeyboardKey.numpadEnter):
+          const ContinueListIntent(),
+      a(ShortcutAction.openFind): const OpenFindIntent(),
+      a(ShortcutAction.selectWord): const SelectWordIntent(),
+      a(ShortcutAction.copySelection): CopySelectionTextIntent.copy,
+      a(ShortcutAction.pasteSelection): const PasteTextIntent(
+        SelectionChangedCause.keyboard,
+      ),
+      if (widget.controller.mode != EditorMode.preview) ...{
+        // Formatting (Ctrl+B/I/U) excluded from customization.
+        const SingleActivator(LogicalKeyboardKey.keyB, control: true):
+            const FormatIntent(FormatKind.bold),
+        const SingleActivator(LogicalKeyboardKey.keyI, control: true):
+            const FormatIntent(FormatKind.italic),
+        const SingleActivator(LogicalKeyboardKey.keyU, control: true):
+            const FormatIntent(FormatKind.underline),
+      },
+    };
+  }
 
   /// Body text style for the current mode, honoring the settings' base size.
   TextStyle _bodyStyle(ThemeData theme) {
@@ -660,6 +672,7 @@ class _EditorState extends State<_Editor> {
               onNext: _nextMatch,
               onPrev: _prevMatch,
               onClose: _closeFind,
+              settings: widget.settings,
             ),
           // Tag chips: highlighter washes
           if (tags.isNotEmpty)
@@ -721,34 +734,40 @@ class _EditorState extends State<_Editor> {
                     maxWidth: widget.focusMode ? 740 : 680,
                   ),
                   child: switch (controller.mode) {
-                    EditorMode.preview => Focus(
-                      focusNode: _previewFocus,
-                      autofocus: true,
-                      child: Shortcuts(
-                        shortcuts: const {
-                          SingleActivator(
-                            LogicalKeyboardKey.keyM,
-                            control: true,
-                            shift: true,
-                          ): CycleEditorModeIntent(),
-                        },
-                        child: Actions(
-                          actions: {
-                            CycleEditorModeIntent:
-                                CallbackAction<CycleEditorModeIntent>(
-                                  onInvoke: (intent) {
-                                    widget.controller.cycleMode();
-                                    return null;
-                                  },
-                                ),
-                          },
-                          child: MarkdownPreview(
-                            body: _body.text,
-                            vaultRoot: controller.vaultRoot,
-                            baseFontSize: widget.baseFontSize ?? 16,
+                    EditorMode.preview => Builder(
+                      builder: (context) {
+                        final overrides =
+                            widget.settings?.shortcutOverrides ?? const {};
+                        final cycleActivator = activatorFor(
+                          ShortcutAction.cycleEditorMode,
+                          overrides,
+                        );
+                        return Focus(
+                          focusNode: _previewFocus,
+                          autofocus: true,
+                          child: Shortcuts(
+                            shortcuts: {
+                              cycleActivator: const CycleEditorModeIntent(),
+                            },
+                            child: Actions(
+                              actions: {
+                                CycleEditorModeIntent:
+                                    CallbackAction<CycleEditorModeIntent>(
+                                      onInvoke: (intent) {
+                                        widget.controller.cycleMode();
+                                        return null;
+                                      },
+                                    ),
+                              },
+                              child: MarkdownPreview(
+                                body: _body.text,
+                                vaultRoot: controller.vaultRoot,
+                                baseFontSize: widget.baseFontSize ?? 16,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                     _ => Shortcuts(
                       shortcuts: _editShortcuts(),
@@ -980,6 +999,7 @@ class _FindBar extends StatelessWidget {
     required this.onNext,
     required this.onPrev,
     required this.onClose,
+    this.settings,
   });
 
   final TextEditingController controller;
@@ -989,17 +1009,20 @@ class _FindBar extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onPrev;
   final VoidCallback onClose;
+  final AppSettings? settings;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final overrides = settings?.shortcutOverrides ?? const {};
+    SingleActivator a(ShortcutAction action) => activatorFor(action, overrides);
     return Shortcuts(
-      shortcuts: const {
-        SingleActivator(LogicalKeyboardKey.enter): FindNextIntent(),
-        SingleActivator(LogicalKeyboardKey.numpadEnter): FindNextIntent(),
-        SingleActivator(LogicalKeyboardKey.enter, shift: true):
-            FindPrevIntent(),
-        SingleActivator(LogicalKeyboardKey.escape): CloseFindIntent(),
+      shortcuts: {
+        a(ShortcutAction.findNext): const FindNextIntent(),
+        const SingleActivator(LogicalKeyboardKey.numpadEnter):
+            const FindNextIntent(),
+        a(ShortcutAction.findPrev): const FindPrevIntent(),
+        a(ShortcutAction.closeFind): const CloseFindIntent(),
       },
       child: Actions(
         actions: {

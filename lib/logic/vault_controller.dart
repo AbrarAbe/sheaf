@@ -1,19 +1,23 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/shortcut_serializer.dart';
 import 'package:sheaf/logic/theme_setting_x.dart';
 import 'package:sheaf/logic/zoom.dart';
 import 'package:sheaf/models/note.dart';
 import 'package:sheaf/models/settings.dart';
+import 'package:sheaf/models/shortcut_settings.dart';
 import 'package:watcher/watcher.dart';
 
 /// App-wide state: which vault is open, what's in it, and user settings.
 class VaultController extends ChangeNotifier {
-  VaultController({required SettingsRepository settings, required this._vaultFactory})
-    : _settingsRepo = settings;
+  VaultController({
+    required SettingsRepository settings,
+    required this._vaultFactory,
+  }) : _settingsRepo = settings;
 
   final SettingsRepository _settingsRepo;
   final VaultRepository Function(String path) _vaultFactory;
@@ -189,7 +193,42 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Note> createNote({required String title, String? body, String? folder}) async {
+  /// Persists a single shortcut override. Pass `null` to reset to default.
+  Future<void> setShortcutOverride(
+    ShortcutAction action,
+    SingleActivator? activator,
+  ) async {
+    final current = _settings.shortcutOverrides[action.name];
+    final serialized = activator == null ? null : serializeActivator(activator);
+    if (current == serialized) return;
+    final nextMap = Map<String, String>.from(_settings.shortcutOverrides);
+    if (serialized == null) {
+      nextMap.remove(action.name);
+    } else {
+      nextMap[action.name] = serialized;
+    }
+    _settings = _settings.copyWith(shortcutOverrides: nextMap);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
+  /// Clears all shortcut overrides.
+  Future<void> resetAllShortcuts() async {
+    if (_settings.shortcutOverrides.isEmpty) return;
+    _settings = _settings.copyWith(shortcutOverrides: {});
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
+  /// Returns the effective activator for [action].
+  SingleActivator shortcutFor(ShortcutAction action) =>
+      activatorFor(action, _settings.shortcutOverrides);
+
+  Future<Note> createNote({
+    required String title,
+    String? body,
+    String? folder,
+  }) async {
     final note = await _requireVault().createNote(
       title: title,
       body: body,
@@ -222,7 +261,8 @@ class VaultController extends ChangeNotifier {
 
   Future<void> renameFolder(String relPath, String newName) async {
     await _requireVault().renameFolder(relPath, newName);
-    if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
+    if (selectedFolder == relPath ||
+        selectedFolder?.startsWith('$relPath/') == true) {
       // The scoped path no longer exists; fall back to all notes.
       selectedFolder = null;
     }
@@ -231,7 +271,8 @@ class VaultController extends ChangeNotifier {
 
   Future<void> deleteFolder(String relPath) async {
     await _requireVault().deleteFolder(relPath);
-    if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
+    if (selectedFolder == relPath ||
+        selectedFolder?.startsWith('$relPath/') == true) {
       selectedFolder = null;
     }
     await refresh();

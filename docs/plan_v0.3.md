@@ -152,6 +152,18 @@ Three thrusts: (1) correctness & perf hardening surfaced by audit (word-aware it
   - Files: `pubspec.yaml`, `lib/theme/worlds.dart`, `lib/theme/quire_theme.dart`.
   - Scope: S
 
+- [x] **Task 14: Keyboard shortcut customization (excluding formatting)**
+  - Customize shell + editor non-formatting shortcuts; formatting `Ctrl+B/I/U` remains hard-coded and excluded.
+  - `AppSettings.shortcutOverrides: Map<String,String>` (`lib/models/settings.dart`, `lib/models/shortcut_settings.dart` defines `enum ShortcutAction` with `label`/`defaultActivator`/`defaultActivatorLabel`, `activatorFor`; `lib/logic/shortcut_serializer.dart` `serializeActivator`/`tryParseActivator` `Ctrl+Shift+K` format, `F10`, `Del`).
+  - Persistence via `SettingsRepository` JSON `shortcutOverrides` (empty omitted, tolerant parse, corrupt → defaults).
+  - `VaultController.setShortcutOverride(ShortcutAction, SingleActivator?)` + `resetAllShortcuts()` + `shortcutFor()` (`lib/logic/vault_controller.dart`); live rebuild via `notifyListeners`, `Shell`'s `Shortcuts` inside `ListenableBuilder` on `VaultController` uses `sheafShortcuts(controller.settings)` (`lib/ui/shell/shortcuts.dart:118` `sheafShortcuts([AppSettings])` settings-driven, canonical `Ctrl+=`/`Ctrl+-` etc).
+  - `EditorPane` (`lib/ui/editor/editor_pane.dart:267`) `_editShortcuts` settings-driven for `openFind` `Ctrl+F`, `selectWord` `Ctrl+D`, `copySelection` `Ctrl+Shift+C`, `pasteSelection` `Ctrl+Shift+V`, `continueList` `Enter` (+ `NumpadEnter` alias), find bar `findNext` `Enter`, `findPrev` `Shift+Enter`, `closeFind` `Esc`; preview `cycleEditorMode` `Ctrl+Shift+M` also settings-driven; formatting block stays hard-coded.
+  - `SettingsDialog` (`lib/ui/dialogs/settings_dialog.dart:27`) Keyboard Shortcuts section after Vault: `Divider` + `_SectionLabel` + `Column` of `_ShortcutRow` (label, monospace `serializeActivator`, Edit/Reset), `Reset all`; recorder `_ShortcutRecorderDialog` captures next `KeyDownEvent` via `Focus.onKeyEvent` + `HardwareKeyboard`, ignores pure modifiers, conflict checks against other actions, `reservedFormattingLabels` (`Ctrl+B/I/U`) and `Ctrl+C/V/X`, shows error and disables Save.
+  - Acceptance: Settings lists customizable actions (no formatting), Edit → recorder shows `Ctrl+Shift+K` → Save calls `setShortcutOverride`, Reset restores default, `Ctrl+B` blocked as reserved, restart persists.
+  - Verify: `flutter analyze` clean; `test/models/settings_test.dart` round-trip + missing/corrupt tolerance, `test/logic/shortcut_serializer_test.dart` round-trip `Ctrl+Shift+K`/`F10`/`Del`/invalid, `test/ui/dialogs/settings_dialog_test.dart` widget recorder/conflict, manual `flutter run -d linux` change `Create note` `Ctrl+N` → `Ctrl+Shift+N` works and persists, formatting `Ctrl+B/I/U` still wrap/unwrap.
+  - Files: `lib/models/settings.dart`, `lib/models/shortcut_settings.dart` (new), `lib/logic/shortcut_serializer.dart` (new), `lib/logic/vault_controller.dart`, `lib/ui/shell/shortcuts.dart`, `lib/ui/shell/shell.dart`, `lib/ui/editor/editor_pane.dart`, `lib/ui/dialogs/settings_dialog.dart`, tests.
+  - Scope: M
+
 ## Critical files & anchors
 
 - `lib/logic/formatting.dart:47-314` — wordBoundary, toggleWrap, _enclosingSpan (italic `*` vs `**` vs `<u>`). Word-aware+combinable core.
@@ -159,14 +171,17 @@ Three thrusts: (1) correctness & perf hardening surfaced by audit (word-aware it
 - `lib/ui/editor/editor_pane.dart:175-400` — `_applyFormat`, `_handleEnter`, find listeners, focus intent, action bar integration.
 - `lib/ui/editor/highlighting_controller.dart:16-130` — `buildTextSpan` parse memo, marker hide/show via `selection` touch.
 - `lib/logic/vault_controller.dart:14-322` — fan-out to `List<VaultRepository>`, watcher debounce, refresh gen guard.
-
+- `lib/models/settings.dart:5` — `shortcutOverrides` map, `copyWith`/`toJson`/`fromJson`/`==` tolerant.
+- `lib/models/shortcut_settings.dart` — `ShortcutAction` (21 values, formatting excluded), `activatorFor`, `reservedFormattingLabels`.
+- `lib/logic/shortcut_serializer.dart` — `serializeActivator`/`tryParseActivator` (`Ctrl+Shift+K`, `F10`, `Del`).
+- `lib/ui/shell/shortcuts.dart:118` — `sheafShortcuts([AppSettings])` settings-driven.
+- `lib/ui/dialogs/settings_dialog.dart:27` — Keyboard Shortcuts section, `_ShortcutRow`, `_ShortcutRecorderDialog` conflict handling.
 ## Verification
 
 - `flutter analyze` clean after each phase.
-- `flutter test` green; new pure-logic suites: `formatting_test.dart` (unicode, combinable, gap), `list_formatting_test.dart`, `link_formatting_test.dart`, `list_continuation_test.dart` expanded; `vault_controller_multidir_test.dart`.
-- Manual smoke: `flutter run -d linux` — (a) `café naïve` italic toggle not split, (b) `Ctrl+B` → `Ctrl+I` → `***word***` → unwrap cycle, (c) middle-of-doc list `Enter` continues vs blank-line exit, (d) open Find, edit before match, highlight tracks, (e) add second vault in Settings, notes merge, image drop lands in correct `attachments/`, (f) action bar `•`/`1.`/`Link`/`Image` and right-click menu mirror them, (g) 2000-note vault scroll no jank, (h) traversal image `![](../../../etc/passwd)` shows placeholder.
+- `flutter test` green; new pure-logic suites: `formatting_test.dart` (unicode, combinable, gap), `list_formatting_test.dart`, `link_formatting_test.dart`, `list_continuation_test.dart` expanded; `vault_controller_multidir_test.dart`; plus `shortcut_serializer_test.dart`, `settings` shortcut round-trip, `settings_dialog` recorder/conflict widget.
+- Manual smoke: `flutter run -d linux` — (a) `café naïve` italic toggle not split, (b) `Ctrl+B` → `Ctrl+I` → `***word***` → unwrap cycle, (c) middle-of-doc list `Enter` continues vs blank-line exit, (d) open Find, edit before match, highlight tracks, (e) add second vault in Settings, notes merge, image drop lands in correct `attachments/`, (f) action bar `•`/`1.`/`Link`/`Image` and right-click menu mirror them, (g) 2000-note vault scroll no jank, (h) traversal image `![](../../../etc/passwd)` shows placeholder, (i) Settings → Keyboard Shortcuts → change `Create note` `Ctrl+N` → `Ctrl+Shift+N` → `Ctrl+Shift+N` creates note, old `Ctrl+N` no longer does, `F3` for find, `Ctrl+B` blocked as reserved, restart persists.
 - Perf: `flutter test --coverage` data+logic ≥80%; frame time on i3-7020U typing 60 fps (DevTools performance overlay).
-
 ## Assumptions & contingencies
 
 - `Ctrl+K` clash (palette vs link): editor-scoped `Ctrl+K` wins when editor has focus; palette uses same binding at shell scope but editor route consumes first. If QA finds confusion, fallback is to move palette to `Ctrl+Shift+K` — implementer picks editor-wins default and records in code comment.

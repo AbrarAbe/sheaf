@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/shortcut_serializer.dart';
 import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/models/note.dart';
 import 'package:sheaf/models/settings.dart';
+import 'package:sheaf/models/shortcut_settings.dart';
 
 /// Records mutations without touching disks — lets widget tests verify that
 /// UI wiring calls the right controller methods despite the FakeAsync zone.
@@ -38,6 +41,8 @@ class SpyVaultController extends VaultController {
   ThemeSetting theme = ThemeSetting.system;
   @override
   String vaultPath = '/old/vault';
+  Map<String, String> shortcutOverrides = {};
+  final shortcutCalls = <String>[];
 
   @override
   List<Note> get notes => List.unmodifiable(fakeNotes);
@@ -86,6 +91,7 @@ class SpyVaultController extends VaultController {
     editorFontSize: editorFontSize,
     zoomFactor: zoom,
     showWindowControls: showWindowControls,
+    shortcutOverrides: Map.unmodifiable(shortcutOverrides),
   );
 
   @override
@@ -114,6 +120,27 @@ class SpyVaultController extends VaultController {
   Future<void> setShowWindowControls(bool value) async {
     windowControlToggles.add(value);
     showWindowControls = value;
+  }
+
+  @override
+  Future<void> setShortcutOverride(
+    ShortcutAction action,
+    SingleActivator? activator,
+  ) async {
+    final serialized = activator == null ? null : serializeActivator(activator);
+    shortcutCalls.add('${action.name}:${serialized ?? "reset"}');
+    if (serialized == null) {
+      shortcutOverrides.remove(action.name);
+    } else {
+      shortcutOverrides[action.name] = serialized;
+    }
+    notifyListeners();
+  }
+
+  @override
+  Future<void> resetAllShortcuts() async {
+    shortcutOverrides.clear();
+    notifyListeners();
   }
 
   @override

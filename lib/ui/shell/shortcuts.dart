@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../models/settings.dart';
+import '../../models/shortcut_settings.dart';
 import '../../models/note.dart';
 
 /// Intent for creating a new note (`Ctrl+N`).
@@ -88,17 +89,27 @@ Map<Type, Action<Intent>> sheafActions({
   required VoidCallback onOpenPalette,
 }) {
   return {
-    CreateNoteIntent: CallbackAction<CreateNoteIntent>(onInvoke: (intent) => onCreateNote()),
+    CreateNoteIntent: CallbackAction<CreateNoteIntent>(
+      onInvoke: (intent) => onCreateNote(),
+    ),
     ToggleSidebarIntent: CallbackAction<ToggleSidebarIntent>(
       onInvoke: (intent) => onToggleSidebar(),
     ),
-    CycleThemeIntent: CallbackAction<CycleThemeIntent>(onInvoke: (intent) => onCycleTheme()),
+    CycleThemeIntent: CallbackAction<CycleThemeIntent>(
+      onInvoke: (intent) => onCycleTheme(),
+    ),
     DeleteNoteIntent: CallbackAction<DeleteNoteIntent>(
       onInvoke: (intent) => onDeleteSelectedNote(),
     ),
-    ZoomInIntent: CallbackAction<ZoomInIntent>(onInvoke: (intent) => onZoomIn()),
-    ZoomOutIntent: CallbackAction<ZoomOutIntent>(onInvoke: (intent) => onZoomOut()),
-    ZoomResetIntent: CallbackAction<ZoomResetIntent>(onInvoke: (intent) => onZoomReset()),
+    ZoomInIntent: CallbackAction<ZoomInIntent>(
+      onInvoke: (intent) => onZoomIn(),
+    ),
+    ZoomOutIntent: CallbackAction<ZoomOutIntent>(
+      onInvoke: (intent) => onZoomOut(),
+    ),
+    ZoomResetIntent: CallbackAction<ZoomResetIntent>(
+      onInvoke: (intent) => onZoomReset(),
+    ),
     CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
       onInvoke: (intent) => onCycleEditorMode(),
     ),
@@ -111,36 +122,30 @@ Map<Type, Action<Intent>> sheafActions({
     ToggleFullscreenIntent: CallbackAction<ToggleFullscreenIntent>(
       onInvoke: (intent) => onToggleFullscreen(),
     ),
-    OpenPaletteIntent: CallbackAction<OpenPaletteIntent>(onInvoke: (intent) => onOpenPalette()),
+    OpenPaletteIntent: CallbackAction<OpenPaletteIntent>(
+      onInvoke: (intent) => onOpenPalette(),
+    ),
   };
 }
 
-Map<ShortcutActivator, Intent> sheafShortcuts() => {
-  const SingleActivator(LogicalKeyboardKey.keyN, control: true): const CreateNoteIntent(),
-  const SingleActivator(LogicalKeyboardKey.backslash, control: true): const ToggleSidebarIntent(),
-  const SingleActivator(LogicalKeyboardKey.keyL, control: true, shift: true):
-      const CycleThemeIntent(),
-  // Del deletes the SELECTED NOTE — but never while an editor holds focus;
-  // the action guards on focus context so Del keeps its text-editing meaning
-  // inside fields (feedback F7).
-  const SingleActivator(LogicalKeyboardKey.delete): const DeleteNoteIntent(),
-  // Ctrl+= and Ctrl++ (shifted plus) and numpad add all zoom in.
-  const SingleActivator(LogicalKeyboardKey.equal, control: true): const ZoomInIntent(),
-  const SingleActivator(LogicalKeyboardKey.equal, control: true, shift: true): const ZoomInIntent(),
-  const SingleActivator(LogicalKeyboardKey.add, control: true): const ZoomInIntent(),
-  const SingleActivator(LogicalKeyboardKey.minus, control: true): const ZoomOutIntent(),
-  const SingleActivator(LogicalKeyboardKey.numpadSubtract, control: true): const ZoomOutIntent(),
-  const SingleActivator(LogicalKeyboardKey.digit0, control: true): const ZoomResetIntent(),
-  const SingleActivator(LogicalKeyboardKey.keyM, control: true, shift: true):
-      const CycleEditorModeIntent(),
-  const SingleActivator(LogicalKeyboardKey.tab, control: true): const CycleNoteIntent(
-    forward: true,
-  ),
-  const SingleActivator(LogicalKeyboardKey.tab, control: true, shift: true): const CycleNoteIntent(
-    forward: false,
-  ),
-  const SingleActivator(LogicalKeyboardKey.f10): const ToggleFocusModeIntent(),
-  const SingleActivator(LogicalKeyboardKey.f11): const ToggleFullscreenIntent(),
-  // Quick-switcher (feedback F12).
-  const SingleActivator(LogicalKeyboardKey.keyK, control: true): const OpenPaletteIntent(),
-};
+Map<ShortcutActivator, Intent> sheafShortcuts([
+  AppSettings settings = const AppSettings(),
+]) {
+  SingleActivator a(ShortcutAction action) =>
+      activatorFor(action, settings.shortcutOverrides);
+  return {
+    a(ShortcutAction.createNote): const CreateNoteIntent(),
+    a(ShortcutAction.toggleSidebar): const ToggleSidebarIntent(),
+    a(ShortcutAction.cycleTheme): const CycleThemeIntent(),
+    a(ShortcutAction.deleteNote): const DeleteNoteIntent(),
+    a(ShortcutAction.zoomIn): const ZoomInIntent(),
+    a(ShortcutAction.zoomOut): const ZoomOutIntent(),
+    a(ShortcutAction.zoomReset): const ZoomResetIntent(),
+    a(ShortcutAction.cycleEditorMode): const CycleEditorModeIntent(),
+    a(ShortcutAction.cycleNoteNext): const CycleNoteIntent(forward: true),
+    a(ShortcutAction.cycleNotePrev): const CycleNoteIntent(forward: false),
+    a(ShortcutAction.toggleFocusMode): const ToggleFocusModeIntent(),
+    a(ShortcutAction.toggleFullscreen): const ToggleFullscreenIntent(),
+    a(ShortcutAction.openPalette): const OpenPaletteIntent(),
+  };
+}

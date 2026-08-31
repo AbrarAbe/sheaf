@@ -15,6 +15,7 @@ class AppSettings {
     this.sidebarFull = false,
     this.sidebarStack = false,
     this.showWindowControls = true,
+    this.shortcutOverrides = const {},
   });
 
   /// Absolute path of the chosen vault folder, or null until one is picked.
@@ -54,6 +55,11 @@ class AppSettings {
   /// (v0.3). Some setups keep the compositor title bar and want them gone.
   final bool showWindowControls;
 
+  /// Customizable shortcut overrides: action name → serialized SingleActivator.
+  /// Empty means all defaults apply. Stored as Map<String,String> to keep this
+  /// file Flutter-free; parsing lives in shortcut_serializer.dart.
+  final Map<String, String> shortcutOverrides;
+
   /// Note: `??` semantics mean nulls cannot be written through [copyWith].
   AppSettings copyWith({
     String? vaultPath,
@@ -67,6 +73,7 @@ class AppSettings {
     bool? sidebarFull,
     bool? sidebarStack,
     bool? showWindowControls,
+    Map<String, String>? shortcutOverrides,
   }) => AppSettings(
     vaultPath: vaultPath ?? this.vaultPath,
     vaultPaths: vaultPaths ?? this.vaultPaths,
@@ -79,6 +86,7 @@ class AppSettings {
     sidebarFull: sidebarFull ?? this.sidebarFull,
     sidebarStack: sidebarStack ?? this.sidebarStack,
     showWindowControls: showWindowControls ?? this.showWindowControls,
+    shortcutOverrides: shortcutOverrides ?? this.shortcutOverrides,
   );
 
   Map<String, Object?> toJson() => {
@@ -93,8 +101,8 @@ class AppSettings {
     'sidebarFull': sidebarFull,
     'sidebarStack': sidebarStack,
     'showWindowControls': showWindowControls,
+    if (shortcutOverrides.isNotEmpty) 'shortcutOverrides': shortcutOverrides,
   };
-
   factory AppSettings.fromJson(Map<String, Object?> json) {
     List<String>? vps;
     final rawVps = json['vaultPaths'];
@@ -112,6 +120,15 @@ class AppSettings {
       // effectiveVaultPaths will still return [legacy].
       vps = null;
     }
+    Map<String, String> overrides = const {};
+    final rawOverrides = json['shortcutOverrides'];
+    if (rawOverrides is Map) {
+      overrides = {
+        for (final e in rawOverrides.entries)
+          if (e.key is String && e.value is String)
+            e.key as String: e.value as String,
+      };
+    }
     return AppSettings(
       vaultPath: legacy,
       vaultPaths: vps,
@@ -124,9 +141,9 @@ class AppSettings {
       sidebarFull: json['sidebarFull'] as bool? ?? false,
       sidebarStack: json['sidebarStack'] as bool? ?? false,
       showWindowControls: json['showWindowControls'] as bool? ?? true,
+      shortcutOverrides: overrides,
     );
   }
-
   @override
   bool operator ==(Object other) =>
       other is AppSettings &&
@@ -140,7 +157,8 @@ class AppSettings {
       other.sidebarExpanded == sidebarExpanded &&
       other.sidebarFull == sidebarFull &&
       other.sidebarStack == sidebarStack &&
-      other.showWindowControls == showWindowControls;
+      other.showWindowControls == showWindowControls &&
+      _mapEq(other.shortcutOverrides, shortcutOverrides);
 
   @override
   int get hashCode => Object.hash(
@@ -155,7 +173,19 @@ class AppSettings {
     sidebarFull,
     sidebarStack,
     showWindowControls,
+    Object.hashAllUnordered(
+      shortcutOverrides.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
   );
+}
+
+bool _mapEq(Map<String, String> a, Map<String, String> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (final e in a.entries) {
+    if (b[e.key] != e.value) return false;
+  }
+  return true;
 }
 
 bool _listEq(List<String>? a, List<String>? b) {

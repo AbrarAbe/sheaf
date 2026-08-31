@@ -274,16 +274,19 @@ class _ShellState extends State<Shell> {
               );
             }
 
-            return Shortcuts(
-              shortcuts: sheafShortcuts(),
-              child: Actions(
-                actions: actions,
-                child: FocusScope(
-                  autofocus: true,
-                  child: Focus(
-                    focusNode: _shellFocus,
+            return ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) => Shortcuts(
+                shortcuts: sheafShortcuts(controller.settings),
+                child: Actions(
+                  actions: actions,
+                  child: FocusScope(
                     autofocus: true,
-                    child: content,
+                    child: Focus(
+                      focusNode: _shellFocus,
+                      autofocus: true,
+                      child: content,
+                    ),
                   ),
                 ),
               ),
@@ -364,6 +367,7 @@ class _ShellState extends State<Shell> {
       controller: _editor,
       baseFontSize: s.editorFontSize,
       focusMode: focusMode,
+      settings: s,
     );
   }
 
@@ -808,7 +812,12 @@ class _StackShell extends StatelessWidget {
                   ],
                 ),
               ),
-              Expanded(child: EditorPane(controller: editor)),
+              Expanded(
+                child: EditorPane(
+                  controller: editor,
+                  settings: controller.settings,
+                ),
+              ),
             ],
           );
         }

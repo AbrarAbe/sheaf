@@ -29,7 +29,11 @@ void main() {
           builder: (context) => Scaffold(
             body: Center(
               child: FilledButton(
-                onPressed: () => showSettingsDialog(context, controller, pickFolder: pickFolder),
+                onPressed: () => showSettingsDialog(
+                  context,
+                  controller,
+                  pickFolder: pickFolder,
+                ),
                 child: const Text('open'),
               ),
             ),
@@ -61,7 +65,9 @@ void main() {
     expect(controller.themes.last, ThemeSetting.light);
   });
 
-  testWidgets('world picker lists the launch set and persists selection', (tester) async {
+  testWidgets('world picker lists the launch set and persists selection', (
+    tester,
+  ) async {
     final controller = await pumpSettings(tester);
 
     expect(find.text('Quire'), findsOneWidget);
@@ -76,12 +82,17 @@ void main() {
   });
 
   group('type settings (story 16 / task 14)', () {
-    testWidgets('type size slider persists the editor base size', (tester) async {
+    testWidgets('type size slider persists the editor base size', (
+      tester,
+    ) async {
       final controller = await pumpSettings(tester);
       expect(controller.settings.editorFontSize, 16.0);
 
       // Drag the slider right; any change lands inside the documented range.
-      await tester.drag(find.byKey(const Key('type-size-slider')), const Offset(60, 0));
+      await tester.drag(
+        find.byKey(const Key('type-size-slider')),
+        const Offset(60, 0),
+      );
       await tester.pump();
 
       final size = controller.settings.editorFontSize;
@@ -96,7 +107,7 @@ void main() {
       await tester.pump();
       expect(controller.settings.zoomFactor, closeTo(1.1, 1e-9));
 
-      await tester.tap(find.text('Reset'));
+      await tester.tap(find.byKey(const Key('zoom-reset')));
       await tester.pump();
       expect(controller.settings.zoomFactor, 1.0);
     });
@@ -119,13 +130,18 @@ void main() {
     expect(controller.settings.showWindowControls, isFalse);
   });
 
-  testWidgets('Change vault delegates to the controller with picked path', (tester) async {
+  testWidgets('Change vault delegates to the controller with picked path', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final controller = await pumpSettings(tester, pickFolder: () async => '/new/vault');
+    final controller = await pumpSettings(
+      tester,
+      pickFolder: () async => '/new/vault',
+    );
 
     await tester.tap(find.text('Change vault…'));
     await tester.pump();
