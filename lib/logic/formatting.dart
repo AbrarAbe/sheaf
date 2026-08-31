@@ -150,8 +150,10 @@ FormatEdit _toggleAroundSelection(
   // A collapsed caret parks back on its original character (origCaret shifts
   // with the open marker); a real selection keeps the inner text highlighted
   // so a second press toggles the formatting back off (feedback F28).
+  // When we expanded to an enclosing underline, caret is inside that span,
+  // so it shifts by open.length only.
   final caret = wasCollapsed
-      ? origCaret + open.length + (wrapStart - start)
+      ? origCaret + open.length
       : wrapStop + open.length + end.length;
   return FormatEdit(
     wrapped,
@@ -243,6 +245,12 @@ FormatEdit? _enclosingSpan(
       if (text[i] != '*') continue;
       if (i + 1 < text.length &&
           (text[i + 1].trim().isEmpty || text[i + 1] == '*')) {
+        // For "***", allow the third star as italic opener even though next is '*'
+        // is checked above; but we need to allow i=2 where next is 'w' not '*',
+        // so this check is fine to keep for i where next is '*', except for
+        // the case where current is the third star after "**" (i>1 && text[i-2]=='*' && text[i-1]=='*')
+        // then next is 'w' not '*', so not triggered. So keep as is.
+        // Actually for i=0 in "***", next is '*', should skip, so continue.
         continue;
       }
       if ((i == 0 || text[i - 1] == '\n') &&
@@ -250,7 +258,15 @@ FormatEdit? _enclosingSpan(
           text[i + 1] == ' ') {
         continue;
       }
-      if (i > 0 && text[i - 1] == '*') continue;
+      if (i > 0 && text[i - 1] == '*') {
+        // Allow italic start that follows a bold "**" (e.g., the third '*' in "***word***")
+        // where preceding two chars are "**" and next char is not '*'.
+        final isThirdStarAfterBold =
+            i > 1 &&
+            text[i - 2] == '*' &&
+            (i + 1 >= text.length || text[i + 1] != '*');
+        if (!isThirdStarAfterBold) continue;
+      }
       var j = i + 1;
       while (j < text.length && text[j] != '*') {
         if (text[j] == '\n') break;
