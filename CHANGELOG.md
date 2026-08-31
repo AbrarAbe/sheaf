@@ -2,7 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.3.0] - 2026-08-31
+
+### Added
+
+- Add README sync to linux release skill and update readme for v0.2
+- Add v0.3 polish & multi-directory plan
+- Support multi-directory vaultPaths with migration
+- Add list and link/image toggle logic
+- Add keyboard shortcut customization with responsive layout
+
+### Changed
+
+- Use curl and ~/.local/share install location for Linux tarball
+- Triangulate git history for README sync; add push confirmation gate
+- Make word-aware unicode and allow combinable styles
+- Center focus mode with wider column
+- Center title in focus mode
+- Mark v0.3 tasks complete
+
+### Fixed
+
+- Continue at line end not text end, handle selection and clamp overflow
+- Recompute matches on body edit without closing bar
+- Preserve single-vault equality for round-trip
+- Canonical nesting for bold/italic/underline combine
+- Stop infinite italic wrap in bold and caret drift in underline
+- Render combined *** and nested <u> correctly
+
+## [0.2.0] - 2026-08-29
 
 ### Changed
 
@@ -46,6 +74,7 @@ All notable changes to this project will be documented in this file.
 - Hide image picker button, defer feature
 - Quire context menu for the note body
 - Docs(agents): update GitNexus metadata from taker to sheaf
+- V0.2.0
 
 ### Fixed
 
@@ -63,6 +92,7 @@ All notable changes to this project will be documented in this file.
 - Preserve caret/selection on format toggle, anchor preview left
 - Enable formatting shortcuts in Markdown mode
 - Sort listNotes newest-first to restore pinned order
+- Package tarball with top-level dir so lib stays beside binary
 
 ### Removed
 
@@ -133,6 +163,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
-[unreleased]: https://github.com/AbrarAbe/sheaf/compare/v0.1.0..HEAD
+[0.3.0]: https://github.com/AbrarAbe/sheaf/compare/v0.2.0..v0.3.0
+[0.2.0]: https://github.com/AbrarAbe/sheaf/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/AbrarAbe/sheaf/tree/v0.1.0
 

@@ -1,7 +1,7 @@
 name: sheaf
 description: "A local-first Markdown notes desk for Linux with plain-file vaults, live preview, tags, trash restore, and keyboard-first navigation."
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.3.0+1
 
 environment:
   sdk: ^3.14.0-95.2.beta

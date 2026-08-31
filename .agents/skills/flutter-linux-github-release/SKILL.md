@@ -35,8 +35,8 @@ everything to a GitHub Release.
 1. Quality gates green, per project definition of done:
    - `flutter analyze` — clean
    - `flutter test` — green
-2. Bump `version:` in `pubspec.yaml` (e.g. `0.1.0+1` → `0.1.1+2`: increment
-   semver, always advance the build number). The version for the next tag comes
+2. Bump `version:` in `pubspec.yaml` (e.g. `0.2.0+1` → `0.3.0+1`: increment
+   semver, always set build suffix to `+1` — do not increment it). The version for the next tag comes
    from the user (explicit `vX.Y.Z`) **or** from commit history via
    `git-cliff --bump` (see step 3).
 3. Regenerate the changelog from Conventional Commits **with the tag** so
@@ -96,7 +96,7 @@ default branch. The tag `vX.Y.Z` is the version git-cliff uses in CI
 | "Just a tag; tests already passed on main" | Tags can point anywhere. CI gates are cheap insurance against shipping an unmerged or broken ref. |
 | "Skip regenerating the changelog" | Release notes are rendered from git-cliff output; a stale `CHANGELOG.md` publishes wrong notes verbatim. |
 | "Bare `git cliff -o CHANGELOG.md` is fine" | Without `--tag vX.Y.Z` or `--bump`, the new commits stay under `[Unreleased]` — CI publishes notes for `--current` that don't match the changelog you committed. |
-| "The build number doesn't matter" | It disambiguates rebuilds of the same semver. Always advance it. |
+| "The build number doesn't matter" | Build is fixed at `+1` for all releases — do not increment it. |
 | "Fix the red run later" | A failed tag run leaves a broken or empty public release page. Fix and re-tag promptly. |
 
 ## Red Flags
