@@ -64,8 +64,9 @@ FormatEdit toggleLink(
       final innerStart = m.start + prefix.length;
       final innerEnd = m.start + prefix.length + m.group(1)!.length;
       if (start <= innerEnd && stop >= innerStart && m.group(1)!.isNotEmpty) {
-        if (best == null || m.group(1)!.length < best.group(1)!.length)
+        if (best == null || m.group(1)!.length < best.group(1)!.length) {
           best = m;
+        }
       }
     }
     if (best != null) {
@@ -75,8 +76,9 @@ FormatEdit toggleLink(
       int map(int o) {
         if (o <= b.start) return o;
         if (o < b.start + prefix.length) return b.start;
-        if (o <= b.start + prefix.length + inner.length)
+        if (o <= b.start + prefix.length + inner.length) {
           return o - prefix.length;
+        }
         return o -
             prefix.length -
             mid.length -
@@ -133,8 +135,7 @@ FormatEdit toggleLink(
       wStart + prefix.length + word.length,
     );
   }
-  // Empty caret: insert placeholder link with word placeholder.
-  final placeholder = isImage ? '![alt]($u)' : '[](https://)';
+  // Empty caret: insert placeholder link.
   // For image with word not found, insert empty image markup.
   final insert = isImage ? '![]($u)' : '[]($u)';
   final at = start;

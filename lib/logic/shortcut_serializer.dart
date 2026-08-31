@@ -75,8 +75,9 @@ LogicalKeyboardKey? _stringToKey(String token) {
   final norm = aliases[lower] ?? lower;
   for (final entry in _keyToLabel.entries) {
     if (entry.value.toLowerCase() == norm) return entry.key;
-    if (entry.value.length == 1 && entry.value.toLowerCase() == norm)
+    if (entry.value.length == 1 && entry.value.toLowerCase() == norm) {
       return entry.key;
+    }
   }
   if (token.length == 1) {
     final upper = token.toUpperCase();

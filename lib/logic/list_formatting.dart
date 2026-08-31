@@ -25,10 +25,11 @@ FormatEdit toggleList(String text, int selStart, int selEnd, ListKind kind) {
   // If collapsed and line is empty, just insert marker.
   if (start == stop && text.substring(lineStart, effectiveEnd).trim().isEmpty) {
     final marker = _markerFor(kind, 1);
+    // ignore: unused_local_variable
     final indent = text.substring(lineStart, start);
     final before = text.substring(0, start);
     final after = text.substring(stop);
-    final inserted = '$marker';
+    final inserted = marker;
     // If line empty, replace whole line with marker
     if (lineStart == 0 && effectiveEnd == text.length && text.trim().isEmpty) {
       return FormatEdit(marker, marker.length, marker.length, marker.length);

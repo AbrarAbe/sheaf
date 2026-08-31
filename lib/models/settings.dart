@@ -55,8 +55,8 @@ class AppSettings {
   /// (v0.3). Some setups keep the compositor title bar and want them gone.
   final bool showWindowControls;
 
-  /// Customizable shortcut overrides: action name → serialized SingleActivator.
-  /// Empty means all defaults apply. Stored as Map<String,String> to keep this
+  /// Customizable shortcut overrides: action name to serialized `SingleActivator`.
+  /// Empty means all defaults apply. Stored as `Map<String,String>` to keep this
   /// file Flutter-free; parsing lives in shortcut_serializer.dart.
   final Map<String, String> shortcutOverrides;
 
@@ -192,7 +192,9 @@ bool _listEq(List<String>? a, List<String>? b) {
   if (identical(a, b)) return true;
   if (a == null || b == null) return a == b;
   if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) if (a[i] != b[i]) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
   return true;
 }
 

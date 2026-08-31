@@ -57,8 +57,9 @@ class HighlightingController extends TextEditingController {
         touches(start, end) ? _dim(base) : _hidden(base);
 
     void plain(int start, int end) {
-      if (end > start)
+      if (end > start) {
         children.add(TextSpan(text: text.substring(start, end), style: base));
+      }
     }
 
     var lineStart = 0;
@@ -128,8 +129,9 @@ class HighlightingController extends TextEditingController {
     final region = text.substring(from, to);
     var cursor = 0;
     for (final m in _inline.allMatches(region)) {
-      if (m.start < cursor)
+      if (m.start < cursor) {
         continue; // already consumed by previous longer match
+      }
       if (m.start > cursor) {
         children.add(
           TextSpan(text: region.substring(cursor, m.start), style: base),
@@ -200,15 +202,17 @@ class HighlightingController extends TextEditingController {
   );
 
   TextStyle _innerStyle(TextStyle base, RegExpMatch m) {
-    if (m[1] != null)
+    if (m[1] != null) {
       return base.copyWith(
         fontWeight: FontWeight.w700,
         fontStyle: FontStyle.italic,
       );
+    }
     if (m[2] != null) return base.copyWith(fontWeight: FontWeight.w700);
     if (m[3] != null) return base.copyWith(fontStyle: FontStyle.italic);
-    if (m[4] != null)
+    if (m[4] != null) {
       return base.copyWith(decoration: TextDecoration.underline);
+    }
     // Inline code: engine-resolved monospace; no runtime font loading.
     return base.copyWith(
       fontFamily: 'monospace',
