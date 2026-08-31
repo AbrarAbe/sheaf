@@ -44,6 +44,10 @@ enum FormatKind {
 /// - Non-empty plain selection → wrap it; selection covers the inner text.
 /// - Collapsed caret between adjacent markers → remove them.
 /// - Collapsed caret elsewhere → insert an empty pair; caret lands inside.
+// Unicode word char — letters/digits from any script + underscore.
+// Dart RegExp \p{L}/\p{N} requires unicode:true.
+final RegExp _wordChar = RegExp(r'[\p{L}\p{N}_]', unicode: true);
+
 FormatEdit toggleWrap({
   required String text,
   required int selStart,
@@ -52,8 +56,10 @@ FormatEdit toggleWrap({
   String? close,
 }) {
   final end = close ?? open;
-  final start = selStart.clamp(0, text.length);
-  final stop = selEnd.clamp(start, text.length);
+  final a = selStart.clamp(0, text.length);
+  final b = selEnd.clamp(0, text.length);
+  final start = a <= b ? a : b;
+  final stop = a <= b ? b : a;
 
   if (stop > start) {
     return _toggleAroundSelection(
@@ -71,7 +77,7 @@ FormatEdit toggleWrap({
   // remembered so the parked caret lands on the same character afterwards.
   final origCaret = start;
   final (wordStart, wordEnd) = wordBoundary(text, start);
-  if (wordEnd > wordStart && RegExp(r'\w').hasMatch(text[wordStart])) {
+  if (wordEnd > wordStart && _wordChar.hasMatch(text[wordStart])) {
     return _toggleAroundSelection(
       text,
       wordStart,
@@ -98,13 +104,19 @@ FormatEdit _toggleAroundSelection(
   if (selected.startsWith(open) &&
       selected.endsWith(end) &&
       selected.length >= open.length + end.length) {
-    final innerLength = selected.length - open.length - end.length;
-    final unwrapped = text.replaceRange(
-      start,
-      stop,
-      selected.substring(open.length, selected.length - end.length),
-    );
-    return FormatEdit(unwrapped, start, start + innerLength, start + innerLength);
+    final inner = selected.substring(open.length, selected.length - end.length);
+    if (inner.trim().isEmpty) {
+      // Don't unwrap whitespace-only inner — treat as plain wrap attempt
+      // to avoid "****" -> "" collapse.
+    } else {
+      final unwrapped = text.replaceRange(start, stop, inner);
+      return FormatEdit(
+        unwrapped,
+        start,
+        start + inner.length,
+        start + inner.length,
+      );
+    }
   }
 
   // Selection sits (even partially) inside an existing span → unwrap it.
@@ -118,11 +130,14 @@ FormatEdit _toggleAroundSelection(
   );
   if (enclosing != null) return enclosing;
 
-  final wrapped = '${text.substring(0, start)}$open$selected$end${text.substring(stop)}';
+  final wrapped =
+      '${text.substring(0, start)}$open$selected$end${text.substring(stop)}';
   // A collapsed caret parks back on its original character (origCaret shifts
   // with the open marker); a real selection keeps the inner text highlighted
   // so a second press toggles the formatting back off (feedback F28).
-  final caret = wasCollapsed ? origCaret + open.length : stop + open.length + end.length;
+  final caret = wasCollapsed
+      ? origCaret + open.length
+      : stop + open.length + end.length;
   return FormatEdit(wrapped, start + open.length, stop + open.length, caret);
 }
 
@@ -131,7 +146,9 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
   final after = text.substring(caret);
   if (before.endsWith(open) && after.startsWith(end)) {
     // Empty pair around the caret: remove both markers.
-    final removed = before.substring(0, before.length - open.length) + after.substring(end.length);
+    final removed =
+        before.substring(0, before.length - open.length) +
+        after.substring(end.length);
     final at = caret - open.length;
     return FormatEdit(removed, at, at, at);
   }
@@ -144,22 +161,28 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
   // before the opener): splicing an empty pair here would nest markers and
   // render as the wrong style (`***word***` reads bold). Toggle the touched
   // span off instead (feedback F25).
-  final touched = _enclosingSpan(text, caret, caret, open, end, touchingOnly: true);
+  final touched = _enclosingSpan(
+    text,
+    caret,
+    caret,
+    open,
+    end,
+    touchingOnly: true,
+  );
   if (touched != null) return touched;
 
   final inserted = '$before$open$end$after';
-  return FormatEdit(inserted, caret + open.length, caret + open.length, caret + open.length);
+  return FormatEdit(
+    inserted,
+    caret + open.length,
+    caret + open.length,
+    caret + open.length,
+  );
 }
 
 /// Unwraps the `<open>…<end>` span best matching the given range, remapping
 /// the selection into unwrapped coordinates. Null when no span qualifies.
 ///
-/// Default qualification: the range overlaps or even just touches the inner
-/// region — which subsumes selections covering the whole span, so marker-
-/// inclusive toggles unwrap instead of silently nesting (F11/F20).
-///
-/// With [touchingOnly] (collapsed-caret fallback), a span qualifies when the
-/// caret sits anywhere within its full marker-to-marker bounds.
 FormatEdit? _enclosingSpan(
   String text,
   int start,
@@ -196,25 +219,39 @@ FormatEdit? _enclosingSpan(
       if (j >= text.length || text[j] != '*') continue;
       var hasNewline = false;
       for (var k = i + 1; k < j; k++) {
-        if (text[k] == '\n') { hasNewline = true; break; }
-        if (text[k] == '*') { hasNewline = true; break; }
+        if (text[k] == '\n') {
+          hasNewline = true;
+          break;
+        }
+        if (text[k] == '*') {
+          hasNewline = true;
+          break;
+        }
       }
       if (hasNewline) continue;
       final inner = text.substring(i + 1, j);
       if (inner.isEmpty || inner.trim().isEmpty) continue;
-      if (inner.contains('\n') || inner.contains('*')) continue;
+      if (inner.contains('\n')) continue;
+      // Allow "**" (bold) inside italic for combinable styles, but reject
+      // lone "*" which would break the simple single-star scan.
+      // Lone star = "*" not part of "**".
+      if (RegExp(r'(?<!\*)\*(?!\*)').hasMatch(inner)) continue;
       final mStart = i;
       final mEnd = j + 1;
       final innerStart = i + 1;
       final innerEnd = j;
       final bool qualifies;
       if (touchingOnly) {
-        qualifies = start >= mStart && stop <= mEnd;
+        // Caret strictly inside marker bounds [mStart, mEnd), not at mEnd
+        // which is the gap between spans. Prevents "*a* *b*" caret at 3
+        // unwrapping first span. Exception: caret at text end after closer
+        // (e.g. "<u>go</u>" at 9) should still unwrap.
+        final atEnd = start == text.length && start == mEnd;
+        qualifies = start == stop && (start >= mStart && start < mEnd || atEnd);
       } else {
         qualifies = start <= innerEnd && stop >= innerStart;
       }
-      if (qualifies &&
-          (bestInner == null || inner.length < bestInner.length)) {
+      if (qualifies && (bestInner == null || inner.length < bestInner.length)) {
         bestStart = mStart;
         bestEnd = mEnd;
         bestInner = inner;
@@ -237,9 +274,14 @@ FormatEdit? _enclosingSpan(
       if (o < spanEnd) return innerEnd - open.length;
       return o - open.length - end.length;
     }
+
     final caret = map(origCaret ?? stop).clamp(0, unwrapped.length);
     return FormatEdit(
-        unwrapped, map(start).clamp(0, unwrapped.length), caret, caret);
+      unwrapped,
+      map(start).clamp(0, unwrapped.length),
+      caret,
+      caret,
+    );
   }
   final pattern = RegExp('${RegExp.escape(open)}(.*?)${RegExp.escape(end)}');
   Match? best;
@@ -250,7 +292,8 @@ FormatEdit? _enclosingSpan(
     final innerEnd = innerStart + inner.length;
     final bool qualifies;
     if (touchingOnly) {
-      qualifies = start >= m.start && stop <= m.end;
+      final atEnd = start == text.length && start == m.end;
+      qualifies = start == stop && (start >= m.start && start < m.end || atEnd);
     } else {
       qualifies = start <= innerEnd && stop >= innerStart;
     }
@@ -279,9 +322,13 @@ FormatEdit? _enclosingSpan(
   }
 
   final caret = map(origCaret ?? stop).clamp(0, unwrapped.length);
-  return FormatEdit(unwrapped, map(start).clamp(0, unwrapped.length), caret, caret);
+  return FormatEdit(
+    unwrapped,
+    map(start).clamp(0, unwrapped.length),
+    caret,
+    caret,
+  );
 }
-
 
 /// VS Code-style select-word bounds around [offset] (spec story 11, F6).
 ///
@@ -292,7 +339,8 @@ FormatEdit? _enclosingSpan(
   if (text.isEmpty) return (0, 0);
   var at = offset.clamp(0, text.length);
 
-  bool isWord(int i) => i >= 0 && i < text.length && RegExp(r'\w').hasMatch(text[i]);
+  bool isWord(int i) =>
+      i >= 0 && i < text.length && _wordChar.hasMatch(text[i]);
   int classOf(int i) {
     if (isWord(i)) return 0;
     return text[i].trim().isEmpty ? 1 : 2;
