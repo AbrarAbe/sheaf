@@ -130,15 +130,35 @@ FormatEdit _toggleAroundSelection(
   );
   if (enclosing != null) return enclosing;
 
+  // For combinable styles: bold/italic (*, **) should wrap *outside* existing
+  // underline <u> so that **<u>word</u>** is canonical (bold outer). Detect if
+  // selection is strictly inside an underline span and expand to its bounds.
+  var wrapStart = start;
+  var wrapStop = stop;
+  var wrapSelected = selected;
+  if ((open == '*' && end == '*') || (open == '**' && end == '**')) {
+    final underlineSpan = _findEnclosingUnderline(text, start, stop);
+    if (underlineSpan != null) {
+      wrapStart = underlineSpan.start;
+      wrapStop = underlineSpan.end;
+      wrapSelected = text.substring(wrapStart, wrapStop);
+    }
+  }
+
   final wrapped =
-      '${text.substring(0, start)}$open$selected$end${text.substring(stop)}';
+      '${text.substring(0, wrapStart)}$open$wrapSelected$end${text.substring(wrapStop)}';
   // A collapsed caret parks back on its original character (origCaret shifts
   // with the open marker); a real selection keeps the inner text highlighted
   // so a second press toggles the formatting back off (feedback F28).
   final caret = wasCollapsed
-      ? origCaret + open.length
-      : stop + open.length + end.length;
-  return FormatEdit(wrapped, start + open.length, stop + open.length, caret);
+      ? origCaret + open.length + (wrapStart - start)
+      : wrapStop + open.length + end.length;
+  return FormatEdit(
+    wrapped,
+    wrapStart + open.length,
+    wrapStop + open.length,
+    caret,
+  );
 }
 
 FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
@@ -178,6 +198,26 @@ FormatEdit _toggleAtCaret(String text, int caret, String open, String end) {
     caret + open.length,
     caret + open.length,
   );
+}
+
+/// Finds the smallest <u>...</u> span that strictly encloses [start]/[stop]
+/// (selection inside its inner text). Used to make bold/italic wrap outside
+/// underline so that **<u>word</u>** is canonical regardless of order.
+RegExpMatch? _findEnclosingUnderline(String text, int start, int stop) {
+  final pattern = RegExp('<u>(.*?)</u>');
+  RegExpMatch? best;
+  for (final m in pattern.allMatches(text)) {
+    final innerStart = m.start + 3; // '<u>'.length
+    final innerEnd = m.end - 4; // '</u>'.length
+    if (start >= innerStart && stop <= innerEnd && start < stop) {
+      // Strictly inside inner, not covering markers
+      if (best == null || m.group(1)!.length < best.group(1)!.length) best = m;
+    } else if (start == stop && start > m.start && stop < m.end) {
+      // Collapsed caret inside underline span
+      if (best == null || m.group(1)!.length < best.group(1)!.length) best = m;
+    }
+  }
+  return best;
 }
 
 /// Unwraps the `<open>…<end>` span best matching the given range, remapping
