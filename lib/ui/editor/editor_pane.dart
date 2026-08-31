@@ -553,52 +553,102 @@ class _EditorState extends State<_Editor> {
                 ),
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _title,
-                    focusNode: _titleFocus,
-                    style: safeBricolage(
-                      TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        height: 30 / 24,
-                        letterSpacing: -0.3,
-                        color: theme.colorScheme.onSurface,
+            child: widget.focusMode
+                ? Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 740),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _title,
+                              focusNode: _titleFocus,
+                              style: safeBricolage(
+                                TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  height: 30 / 24,
+                                  letterSpacing: -0.3,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Title',
+                                hintStyle: safeBricolage(
+                                  TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w600,
+                                    color: quire.textTertiary,
+                                  ),
+                                ),
+                                filled: false,
+                                border: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                                isDense: true,
+                              ),
+                              onSubmitted: _commitRename,
+                              onEditingComplete: () =>
+                                  _commitRename(_title.text),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
+                          _ModeSwitch(
+                            mode: controller.mode,
+                            onSelected: controller.setMode,
+                          ),
+                        ],
                       ),
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Title',
-                      hintStyle: safeBricolage(
-                        TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: quire.textTertiary,
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _title,
+                          focusNode: _titleFocus,
+                          style: safeBricolage(
+                            TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              height: 30 / 24,
+                              letterSpacing: -0.3,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Title',
+                            hintStyle: safeBricolage(
+                              TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                color: quire.textTertiary,
+                              ),
+                            ),
+                            filled: false,
+                            border: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                            isDense: true,
+                          ),
+                          onSubmitted: _commitRename,
+                          onEditingComplete: () => _commitRename(_title.text),
                         ),
                       ),
-                      filled: false,
-                      border: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      isDense: true,
-                    ),
-                    onSubmitted: _commitRename,
-                    onEditingComplete: () => _commitRename(_title.text),
+                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
+                      _ModeSwitch(
+                        mode: controller.mode,
+                        onSelected: controller.setMode,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                // Image insert button hidden (round 6): picker flow wasn't
-                // ready; drag-and-drop import remains. Deferred in plan.
-                const SizedBox(width: 8),
-                _ModeSwitch(
-                  mode: controller.mode,
-                  onSelected: controller.setMode,
-                ),
-              ],
-            ),
           ),
           // Find bar (story 14)
           if (_findOpen && _findCtrl != null)
