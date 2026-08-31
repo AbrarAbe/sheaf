@@ -30,6 +30,7 @@ class EditorPane extends StatelessWidget {
     required this.controller,
     this.importImage,
     this.baseFontSize,
+    this.focusMode = false,
   });
 
   /// Null while no vault is open; renders the placeholder.
@@ -41,6 +42,9 @@ class EditorPane extends StatelessWidget {
 
   /// Editor body base size from settings (story 16); null = 16.
   final double? baseFontSize;
+
+  /// When true, the body column is centered and slightly wider (focus mode).
+  final bool focusMode;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,7 @@ class EditorPane extends StatelessWidget {
           controller: editor,
           importImage: importImage,
           baseFontSize: baseFontSize,
+          focusMode: focusMode,
         );
       },
     );
@@ -162,11 +167,13 @@ class _Editor extends StatefulWidget {
     required this.controller,
     this.importImage,
     this.baseFontSize,
+    this.focusMode = false,
   });
 
   final EditorController controller;
   final Future<String> Function(File file)? importImage;
   final double? baseFontSize;
+  final bool focusMode;
 
   @override
   State<_Editor> createState() => _EditorState();
@@ -656,9 +663,13 @@ class _EditorState extends State<_Editor> {
               // pane. The 680px column is now anchored to the left gutter
               // instead of hovering in the middle of a wide window.
               child: Align(
-                alignment: Alignment.topLeft,
+                alignment: widget.focusMode
+                    ? Alignment.topCenter
+                    : Alignment.topLeft,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 680),
+                  constraints: BoxConstraints(
+                    maxWidth: widget.focusMode ? 740 : 680,
+                  ),
                   child: switch (controller.mode) {
                     EditorMode.preview => Focus(
                       focusNode: _previewFocus,
