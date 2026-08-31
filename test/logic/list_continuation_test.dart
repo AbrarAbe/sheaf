@@ -45,11 +45,14 @@ void main() {
       expect(r.selStart, 0);
     });
 
-    test('empty nested item keeps the indentation', () {
-      final r = cont('  - ')!;
-      expect(r.text, '  ');
-      expect(r.selStart, 2);
-    });
+    test(
+      'empty nested item removes marker and indent (no whitespace line)',
+      () {
+        final r = cont('  - ')!;
+        expect(r.text, '');
+        expect(r.selStart, 0);
+      },
+    );
   });
 
   group('non-list lines', () {

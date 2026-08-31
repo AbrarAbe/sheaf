@@ -330,16 +330,24 @@ class _EditorState extends State<_Editor> {
   /// plain newline is inserted so normal typing is unaffected.
   void _handleEnter() {
     final selection = _body.selection;
-    var caret = selection.isValid ? selection.baseOffset : -1;
-    if (caret < 0 || caret > _body.text.length) caret = _body.text.length;
-
-    final result = continueList(text: _body.text, caret: caret);
+    if (!selection.isValid) return;
+    final start = selection.start.clamp(0, _body.text.length);
+    final end = selection.end.clamp(0, _body.text.length);
+    final result = continueList(text: _body.text, selStart: start, selEnd: end);
     if (result != null) {
       _body.value = TextEditingValue(
         text: result.text,
         selection: TextSelection.collapsed(offset: result.selStart),
       );
+    } else if (start != end) {
+      // Selection non-collapsed but not a list: replace with plain newline.
+      final replaced = _body.text.replaceRange(start, end, '\n');
+      _body.value = TextEditingValue(
+        text: replaced,
+        selection: TextSelection.collapsed(offset: start + 1),
+      );
     } else {
+      final caret = start;
       _body.value = TextEditingValue(
         text: _body.text.replaceRange(caret, caret, '\n'),
         selection: TextSelection.collapsed(offset: caret + 1),
