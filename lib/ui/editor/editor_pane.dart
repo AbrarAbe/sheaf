@@ -369,14 +369,30 @@ class _EditorState extends State<_Editor> {
     _findCtrl?.dispose();
     _findCtrl = TextEditingController(text: prefill);
     setState(() => _findOpen = true);
+    _body.addListener(_recomputeFind);
     _runFind(prefill);
   }
 
   void _closeFind() {
+    _body.removeListener(_recomputeFind);
     _findCtrl?.dispose();
     _findCtrl = null;
     setState(() => _findOpen = false);
     _bodyFocus.requestFocus();
+  }
+
+  void _recomputeFind() {
+    if (!_findOpen || _lastQuery.isEmpty) return;
+    final newMatches = matchOffsets(_body.text, _lastQuery);
+    // Preserve index clamped.
+    if (newMatches.isEmpty) {
+      _matches = [];
+      _matchIndex = -1;
+    } else {
+      _matches = newMatches;
+      _matchIndex = _matchIndex.clamp(0, _matches.length - 1);
+    }
+    if (mounted) setState(() {});
   }
 
   void _runFind(String query) {
@@ -440,6 +456,7 @@ class _EditorState extends State<_Editor> {
     widget.controller.removeListener(_syncFromController);
     _bodyFocus.removeListener(_onBodyFocusChange);
     _titleFocus.removeListener(_onTitleFocusChange);
+    _body.removeListener(_recomputeFind);
     _body.dispose();
     _title.dispose();
     _bodyFocus.dispose();
