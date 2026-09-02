@@ -474,7 +474,7 @@ class _HeaderBar extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        'T',
+                        'S',
                         style: GoogleFonts.bricolageGrotesque(
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
