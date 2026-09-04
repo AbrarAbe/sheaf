@@ -11,7 +11,7 @@ Three thrusts: (1) correctness & perf hardening surfaced by audit (word-aware it
 - **Word definition = Unicode-aware** — `\w` (ASCII `[A-Za-z0-9_]`) is retired. Word = maximal run of `\p{L}\p{N}_` (letters+numbers from any script) via `RegExp(r'[\p{L}\p{N}_]+', unicode:true)` or `characters` package. Fixes `café naïve 中文` splitting and surrogate-pair emoji. (replaces `lib/logic/formatting.dart:74,295`)
 - **Combinable formatting = stacking markers, not toggle-one-style** — `toggleWrap` gains no new concept; instead the engine guarantees that `*`, `**`, `<u>` are orthogonal and `***`/`**<u>` nest predictably. Rule: unwrap only the requested marker's smallest qualifying span; wrapping nests. Enables `Ctrl+B` then `Ctrl+I` → `***word***`. (no new storage)
 - **Multi-directory = `List<String> vaultPaths` replacing `String vaultPath`** — `AppSettings.vaultPaths` (primary = index 0), `VaultController` holds `List<VaultRepository>`, operations fan-out but `selectedFolder` is scoped to `(vaultIndex, relPath)`. `.sheaf/meta.json` per vault (no cross-vault pin file). `watcher` fans out per vault. Single-vault JSON migrates via `fromJson` tolerant read.
-- **Action bar = `EditorActionBar` widget** owned by `EditorPane` header, emitting `FormatKind`/`ListKind`/`LinkKind` intents; context menu mirrors same intents via `quireMenu`. No new dependency.
+- **Action bar = `EditorActionBar` widget** — deferred (was `EditorActionBar`/`ListKind`/`LinkKind` via `quireMenu`); list continuation (Task 3) is the shipped behavior. No new dependency.
 - **Rebuild scoping** — `VaultController` stays as source of truth but UI subscribes via `Selector`/`ValueListenable` per slice (notes vs folders vs tagCounts) or splits into `notesListenable/folderListenable`. Prevents per-keystroke full-shell rebuild.
 - **Preview image I/O async** — `_image` becomes async-aware: `FutureBuilder` + `FileImage` with `cacheWidth`, `errorBuilder`, traversal guard (`p.normalize` + `isWithin`). No sync `existsSync()` in `build`.
 
@@ -122,26 +122,9 @@ Three thrusts: (1) correctness & perf hardening surfaced by audit (word-aware it
   - Files: `lib/ui/sidebar/sidebar.dart`, `lib/ui/shell/command_palette.dart`, `lib/ui/editor/editor_pane.dart`, `lib/ui/dialogs/settings_dialog.dart`.
   - Scope: M
 
-### Phase 4 — Editor chrome: lists, links, images
+### Phase 4 — Editor chrome: lists, links, images (deferred)
 
-- [x] **Task 11: List formatting (action bar + context menu)**
-  New `ListKind {bullet, bulletStar, numbered, task}` + `lib/logic/list_formatting.dart` (pure) with `toggleList(text, selStart, selEnd, kind)` — line-wise prefix/suffix toggling via `TextSelection` lines: already same kind → unwrap, else set/convert; blank selection at caret → insert marker via `continueList` path.
-  - `EditorActionBar` (top of `EditorPane`, spec story 18 analog): buttons `•`, `1.`, `☐` with active state (uses `selection` line inspection). Shortcuts: same intents.
-  - Context menu: `quireMenu` adds `Format → List` submenu with same kinds, shortcuts shown monospaced.
-  - Unwrap preserves indentation; ordered renumbers on toggle (sequential from first selected line).
-  - Acceptance: select 3 lines → `•` prefixes each with `"- "`; again removes; numbered lines increment `1. 2. 3.`; action bar highlights when caret inside list.
-  - Verify: `flutter test test/logic/list_formatting_test.dart` (wrap/unwrap/convert, indent, numbered seq), widget test bar+menu drive selection.
-  - Files: `lib/logic/list_formatting.dart` (new), `lib/ui/editor/editor_pane.dart`, `lib/ui/editor/action_bar.dart` (new), `lib/ui/common/context_menus.dart`, tests.
-  - Scope: M
-
-- [x] **Task 12: Link & image formatting (action bar + menu + shortcuts)**
-  New `LinkKind.link` / `LinkKind.image` via `lib/logic/link_formatting.dart` (pure): `toggleLink(text, selStart, selEnd, kind, {url})` — collapsed word-aware selection → `[word](url)` or `![word](url)` (image alt), non-collapsed selection → wrap selection as `[sel](url)` (prompt for URL via inline bar if `url` absent); already wrapped → unwrap to inner text. URL prompt uses existing `CommandPalette` pattern: small overlay `LinkBar`.
-  - Action bar buttons `Link` / `Image`; shortcuts `Ctrl+K` (link) conflicts with palette → palette moves to `Ctrl+Shift+K` or link uses `Ctrl+K` scoped to editor focus (editor-scoped binding wins when `_bodyFocus` hasFocus, shell palette otherwise) — document choice in code comment.
-  - MarkdownPreview already renders images with width `|400`; link formatting ensures vault-relative paths via `p.relative`.
-  - Acceptance: collapsed on `word` + `Ctrl+K` + type `https://x` → `[word](https://x)`; select `word` + Image → `![word](attachments/…)` via `VaultRepository.importAttachment` then insert; second toggle unwraps.
-  - Verify: `flutter test test/logic/link_formatting_test.dart`, widget test link bar end-to-end.
-  - Files: `lib/logic/link_formatting.dart` (new), `lib/ui/editor/editor_pane.dart`, `lib/ui/editor/action_bar.dart`, `lib/ui/editor/link_bar.dart` (new), `lib/data/vault_repository.dart` (reuse `importAttachment`), tests.
-  - Scope: M
+> List action bar deferred — list continuation (Task 3) is the shipped list behavior. `ListKind`/`EditorActionBar`/`LinkBar` remain deferred; `lib/logic/list_formatting.dart` and `lib/logic/link_formatting.dart` were untested and unreferenced and have been removed.
 
 ### Phase 5 — Cleanup & hardening
 
