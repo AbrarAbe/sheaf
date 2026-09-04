@@ -417,13 +417,23 @@ class _EditorState extends State<_Editor> {
   }
 
   void _focusTag(String tag) {
-    final vc = widget.vaultController;
-    if (vc == null) return;
-    if (vc.selectedTag == tag) {
-      vc.selectTag(null);
-    } else {
-      vc.selectTag(tag);
+    final needle = '#$tag';
+    final body = _body.text;
+    // Find first occurrence, prefer word boundary.
+    var idx = body.indexOf(needle);
+    if (idx == -1) {
+      // Fallback: case-insensitive search for tag without #
+      idx = body.toLowerCase().indexOf(needle.toLowerCase());
     }
+    if (idx == -1) return;
+    // Expand to include trailing word chars if tag is followed by more word chars? Keep exact.
+    final end = idx + needle.length;
+    _body.value = TextEditingValue(
+      text: body,
+      selection: TextSelection(baseOffset: idx, extentOffset: end),
+    );
+    _bodyFocus.requestFocus();
+    // Ensure the selection is visible (TextField auto-scrolls to selection).
   }
 
   Future<void> _load() async {
