@@ -189,6 +189,32 @@ class _EditorState extends State<_Editor> {
   Map<ShortcutActivator, Intent> _editShortcuts() {
     final overrides = widget.settings?.shortcutOverrides ?? const {};
     SingleActivator a(ShortcutAction action) => activatorFor(action, overrides);
+    // When find bar is open, Enter navigates matches, not list continuation.
+    if (_findOpen) {
+      return {
+        const SingleActivator(LogicalKeyboardKey.enter): const FindNextIntent(),
+        const SingleActivator(LogicalKeyboardKey.numpadEnter):
+            const FindNextIntent(),
+        const SingleActivator(LogicalKeyboardKey.enter, shift: true):
+            const FindPrevIntent(),
+        const SingleActivator(LogicalKeyboardKey.escape):
+            const CloseFindIntent(),
+        a(ShortcutAction.openFind): const OpenFindIntent(),
+        a(ShortcutAction.selectWord): const SelectWordIntent(),
+        a(ShortcutAction.copySelection): CopySelectionTextIntent.copy,
+        a(ShortcutAction.pasteSelection): const PasteTextIntent(
+          SelectionChangedCause.keyboard,
+        ),
+        if (widget.controller.mode != EditorMode.preview) ...{
+          const SingleActivator(LogicalKeyboardKey.keyB, control: true):
+              const FormatIntent(FormatKind.bold),
+          const SingleActivator(LogicalKeyboardKey.keyI, control: true):
+              const FormatIntent(FormatKind.italic),
+          const SingleActivator(LogicalKeyboardKey.keyU, control: true):
+              const FormatIntent(FormatKind.underline),
+        },
+      };
+    }
     return {
       a(ShortcutAction.continueList): const ContinueListIntent(),
       const SingleActivator(LogicalKeyboardKey.numpadEnter):
@@ -343,6 +369,7 @@ class _EditorState extends State<_Editor> {
     if (_matches.isEmpty) return;
     _matchIndex = (_matchIndex + step) % _matches.length;
     _jumpToCurrentMatch();
+    _bodyFocus.requestFocus();
     if (mounted) setState(() {});
   }
 
@@ -698,6 +725,24 @@ class _EditorState extends State<_Editor> {
                           ),
                           SelectWordIntent: CallbackAction<SelectWordIntent>(
                             onInvoke: (intent) => _selectWord(),
+                          ),
+                          FindNextIntent: CallbackAction<FindNextIntent>(
+                            onInvoke: (intent) {
+                              _nextMatch();
+                              return null;
+                            },
+                          ),
+                          FindPrevIntent: CallbackAction<FindPrevIntent>(
+                            onInvoke: (intent) {
+                              _prevMatch();
+                              return null;
+                            },
+                          ),
+                          CloseFindIntent: CallbackAction<CloseFindIntent>(
+                            onInvoke: (intent) {
+                              _closeFind();
+                              return null;
+                            },
                           ),
                         },
                         child: DropTarget(
