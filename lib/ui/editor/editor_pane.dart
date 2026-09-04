@@ -801,7 +801,7 @@ class _EditorState extends State<_Editor> {
                                 return const SizedBox.shrink();
                               },
                               maxLines: null,
-                              expands: true,
+                              expands: false,
                               textAlignVertical: TextAlignVertical.top,
                               keyboardType: TextInputType.multiline,
                               style: _bodyStyle(theme),
