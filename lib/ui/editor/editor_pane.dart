@@ -20,12 +20,12 @@ import '../shell/shortcuts.dart';
 import 'edit_menu.dart';
 import 'highlighting_controller.dart';
 import 'intents.dart';
-import 'markdown_preview.dart';
 import 'widgets/find_bar.dart';
 import 'widgets/mode_switch.dart';
 import 'widgets/placeholder.dart';
 import 'widgets/status_footer.dart';
-
+import 'widgets/tag_chip_bar.dart';
+import 'markdown_preview.dart';
 export 'intents.dart';
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
@@ -401,6 +401,22 @@ class _EditorState extends State<_Editor> {
     );
   }
 
+  void _insertTag(String tag) {
+    final insert = '#$tag ';
+    final text = _body.text;
+    final sel = _body.selection;
+    final offset = sel.isValid
+        ? sel.baseOffset.clamp(0, text.length)
+        : text.length;
+    final newText = text.replaceRange(offset, offset, insert);
+    _body.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: offset + insert.length),
+    );
+    widget.controller.updateBody(newText);
+    _bodyFocus.requestFocus();
+  }
+
   Future<void> _load() async {
     final note = widget.controller.current;
     if (note == null || note.path == _loadedPath) return;
@@ -614,49 +630,7 @@ class _EditorState extends State<_Editor> {
               onClose: _closeFind,
               settings: widget.settings,
             ),
-          // Tag chips: highlighter washes
-          if (tags.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLowest,
-                border: Border(
-                  bottom: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withValues(
-                      alpha: 0.3,
-                    ),
-                  ),
-                ),
-              ),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final tag in tags)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '#$tag',
-                        style: safeHanken(
-                          TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                            height: 16 / 12.5,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          TagChipBar(tags: tags, onTap: _insertTag),
           // Body
           Expanded(
             child: Padding(
