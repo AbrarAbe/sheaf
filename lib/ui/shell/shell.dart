@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../logic/editor_controller.dart';
@@ -7,7 +6,6 @@ import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/note.dart';
 import '../../models/settings.dart';
-import '../../theme/quire_colors.dart';
 import '../common/corner_toast.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
@@ -18,6 +16,8 @@ import 'command_palette.dart';
 import 'drag_divider.dart';
 import 'pane_widths.dart';
 import 'shortcuts.dart';
+import 'widgets/header_bar.dart';
+import 'widgets/stack_shell.dart';
 import 'window_controls.dart';
 
 /// The desktop shell: sidebar | note list | editor, folding through the three
@@ -168,21 +168,16 @@ class _ShellState extends State<Shell> {
                 if (_focusInsideEditable()) {
                   final editCtx = FocusManager.instance.primaryFocus?.context;
                   if (editCtx != null && editCtx.mounted) {
-                    Actions.invoke(
-                      editCtx,
-                      const DeleteCharacterIntent(forward: true),
-                    );
+                    Actions.invoke(editCtx, const DeleteCharacterIntent(forward: true));
                   }
                   return;
                 }
                 _deleteSelectedWithUndo(context);
               },
-              onZoomIn: () => controller.setZoom(
-                stepZoom(controller.settings.zoomFactor, up: true),
-              ),
-              onZoomOut: () => controller.setZoom(
-                stepZoom(controller.settings.zoomFactor, up: false),
-              ),
+              onZoomIn: () =>
+                  controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
+              onZoomOut: () =>
+                  controller.setZoom(stepZoom(controller.settings.zoomFactor, up: false)),
               onZoomReset: () => controller.setZoom(1.0),
               onCycleEditorMode: () => _editor?.cycleMode(),
               onCycleNote: _cycleNote,
@@ -201,17 +196,15 @@ class _ShellState extends State<Shell> {
                           Sidebar(
                             controller: controller,
                             width: widths.sidebar,
-                            onTrashTapped: () =>
-                                showTrashDialog(context, controller),
-                            onSettingsTapped: () =>
-                                showSettingsDialog(context, controller),
+                            onTrashTapped: () => showTrashDialog(context, controller),
+                            onSettingsTapped: () => showSettingsDialog(context, controller),
                           ),
                           DragDivider(onDrag: (dx) => widths.sidebar += dx),
                         ],
                         Expanded(child: _listAndEditor(controller, widths)),
                       ],
                     ),
-                    WindowTier.stack => _StackShell(
+                    WindowTier.stack => StackShell(
                       controller: controller,
                       editor: _editor,
                       onCreateNote: _createNote,
@@ -220,15 +213,14 @@ class _ShellState extends State<Shell> {
 
             Widget content = Column(
               children: [
-                _HeaderBar(
+                HeaderBar(
                   controller: controller,
                   tier: tier,
                   sidebarVisible: sidebarVisible && !_focusMode,
                   focusMode: _focusMode,
                   onToggleSidebar: () => widths.toggleSidebarFor(tier),
                   onToggleFocusMode: _toggleFocusMode,
-                  windowControls:
-                      widget._windowControls ?? const WindowManagerControls(),
+                  windowControls: widget._windowControls ?? const WindowManagerControls(),
                   showWindowControls: controller.settings.showWindowControls,
                   onOpenPalette: () => showCommandPalette(context, controller),
                 ),
@@ -247,13 +239,8 @@ class _ShellState extends State<Shell> {
                         Expanded(
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
-                            onTap: () => widths.setSidebarVisible(
-                              WindowTier.stack,
-                              false,
-                            ),
-                            child: ColoredBox(
-                              color: Colors.black.withValues(alpha: 0.38),
-                            ),
+                            onTap: () => widths.setSidebarVisible(WindowTier.stack, false),
+                            child: ColoredBox(color: Colors.black.withValues(alpha: 0.38)),
                           ),
                         ),
                         Sidebar(
@@ -262,10 +249,8 @@ class _ShellState extends State<Shell> {
                             PaneWidths.sidebarMin,
                             PaneWidths.sidebarMax,
                           ),
-                          onTrashTapped: () =>
-                              showTrashDialog(context, controller),
-                          onSettingsTapped: () =>
-                              showSettingsDialog(context, controller),
+                          onTrashTapped: () => showTrashDialog(context, controller),
+                          onSettingsTapped: () => showSettingsDialog(context, controller),
                         ),
                       ],
                     ),
@@ -282,11 +267,7 @@ class _ShellState extends State<Shell> {
                   actions: actions,
                   child: FocusScope(
                     autofocus: true,
-                    child: Focus(
-                      focusNode: _shellFocus,
-                      autofocus: true,
-                      child: content,
-                    ),
+                    child: Focus(focusNode: _shellFocus, autofocus: true, child: content),
                   ),
                 ),
               ),
@@ -301,9 +282,7 @@ class _ShellState extends State<Shell> {
   Future<Note?> _createNote() async {
     final custom = widget.onCreateNote;
     final controller = widget.controller;
-    final note = await (custom != null
-        ? custom()
-        : controller.createNote(title: 'Untitled'));
+    final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
     if (note != null) controller.selectNote(note);
     return note;
   }
@@ -332,9 +311,7 @@ class _ShellState extends State<Shell> {
     if (visible.isEmpty) return;
 
     final current = controller.selectedNote;
-    final index = current == null
-        ? -1
-        : visible.indexWhere((n) => n.path == current.path);
+    final index = current == null ? -1 : visible.indexWhere((n) => n.path == current.path);
     final step = forward ? 1 : -1;
     // +visible.length keeps negative indexes (nothing selected) in range.
     final next = visible[(index + step + visible.length) % visible.length];
@@ -382,450 +359,6 @@ class _ShellState extends State<Shell> {
         DragDivider(onDrag: (dx) => widths.list += dx),
         Expanded(key: const Key('pane-editor'), child: _editorPane()),
       ],
-    );
-  }
-}
-
-class _HeaderBar extends StatelessWidget {
-  const _HeaderBar({
-    required this.controller,
-    required this.tier,
-    required this.sidebarVisible,
-    required this.focusMode,
-    required this.onToggleSidebar,
-    required this.onToggleFocusMode,
-    required this.windowControls,
-    required this.showWindowControls,
-    required this.onOpenPalette,
-  });
-  final VaultController controller;
-  final WindowTier tier;
-  final bool sidebarVisible;
-  final bool focusMode;
-  final VoidCallback onToggleSidebar;
-  final VoidCallback onToggleFocusMode;
-  final WindowControls windowControls;
-  final bool showWindowControls;
-  final VoidCallback onOpenPalette;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isLight = theme.brightness == Brightness.light;
-    // Highlighter tokens double as the window-dot palette (feedback F15).
-    final quire =
-        theme.extension<QuireColors>() ??
-        (isLight ? quireColorsLight : quireColorsDark);
-
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      // Layered header (round 6): the search pill floats dead-center so
-      // neither side's width can move it; window chrome packs tight right.
-      // expand keeps the base Row filling the bar (loose fit pinned it to
-      // the top, eating the vertical padding).
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Row(
-            children: [
-              // Sidebar visibility toggle — user-owned in every tier (task 10).
-              Tooltip(
-                message: sidebarVisible
-                    ? 'Hide sidebar  (Ctrl+\\)'
-                    : 'Show sidebar  (Ctrl+\\)',
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    key: const Key('sidebar-toggle'),
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: onToggleSidebar,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Icon(
-                        sidebarVisible
-                            ? Icons.menu_open_rounded
-                            : Icons.menu_rounded,
-                        size: 18,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Wordmark
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'S',
-                        style: GoogleFonts.bricolageGrotesque(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: theme.colorScheme.onPrimary,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Sheaf',
-                    style: GoogleFonts.bricolageGrotesque(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      letterSpacing: -0.3,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.6,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'QUIRE',
-                      style: GoogleFonts.splineSansMono(
-                        fontSize: 9,
-                        letterSpacing: 0.8,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              // Right controls. Focus mode lives here too (feedback F14):
-              // window-level chrome clusters on the right, away from navigation.
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Focus mode (task 12): editor-only surface.
-                  Tooltip(
-                    message: focusMode
-                        ? 'Exit focus mode  (F10)'
-                        : 'Focus mode  (F10)',
-                    child: Material(
-                      color: focusMode
-                          ? theme.colorScheme.primary
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
-                        key: const Key('focus-toggle'),
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: onToggleFocusMode,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            focusMode
-                                ? Icons.center_focus_weak
-                                : Icons.center_focus_strong,
-                            size: 18,
-                            color: focusMode
-                                ? theme.colorScheme.onPrimary
-                                : theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Tooltip(
-                    message: 'Cycle theme  (Ctrl+Shift+L)',
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
-                        key: const Key('theme-toggle'),
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () => controller.cycleTheme(),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            isLight
-                                ? Icons.dark_mode_outlined
-                                : Icons.light_mode_outlined,
-                            size: 18,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (showWindowControls)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _WinDot(
-                            key: const Key('win-minimize'),
-                            color: quire.hlPinBase,
-                            glyph: Icons.remove_rounded,
-                            tooltip: 'Minimize',
-                            onTap: () => windowControls.minimize(),
-                          ),
-                          _WinDot(
-                            key: const Key('win-maximize'),
-                            color: quire.hlGrowBase,
-                            glyph: Icons.crop_square_rounded,
-                            tooltip: 'Maximize',
-                            onTap: () => windowControls.toggleMaximize(),
-                          ),
-                          _WinDot(
-                            key: const Key('win-close'),
-                            color: quire.hlAlertBase,
-                            glyph: Icons.close_rounded,
-                            tooltip: 'Close',
-                            onTap: () => windowControls.close(),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          // Quick-switcher pill (feedback F12): vault-wide search entry.
-          // Hidden on stack tier where space is scarce — Ctrl+K still works.
-          if (tier != WindowTier.stack)
-            Align(
-              alignment: Alignment.center,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Material(
-                  color: theme.colorScheme.surfaceContainerLowest,
-                  shape: StadiumBorder(
-                    side: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: .7,
-                      ),
-                    ),
-                  ),
-                  child: InkWell(
-                    key: const Key('palette-pill'),
-                    customBorder: const StadiumBorder(),
-                    onTap: onOpenPalette,
-                    hoverColor: theme.colorScheme.surfaceContainerHighest,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.search,
-                            size: 16,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Search notes…',
-                            style: GoogleFonts.hankenGrotesk(
-                              fontSize: 12.5,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHigh,
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                color: theme.colorScheme.outlineVariant
-                                    .withValues(alpha: .6),
-                              ),
-                            ),
-                            child: Text(
-                              'Ctrl K',
-                              style: GoogleFonts.splineSansMono(
-                                fontSize: 10,
-                                letterSpacing: 0.4,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// One traffic-light control: a colored dot that grows slightly on hover and
-/// reveals its glyph (feedback F15). Tap area stays fixed so the gesture
-/// doesn't shift mid-press.
-class _WinDot extends StatefulWidget {
-  const _WinDot({
-    super.key,
-    required this.color,
-    required this.glyph,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final Color color;
-  final IconData glyph;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  @override
-  State<_WinDot> createState() => _WinDotState();
-}
-
-class _WinDotState extends State<_WinDot> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: widget.tooltip,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: widget.onTap,
-          child: SizedBox(
-            width: 18,
-            height: 28,
-            child: Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                curve: Curves.easeOut,
-                width: _hover ? 13 : 11,
-                height: _hover ? 13 : 11,
-                decoration: BoxDecoration(
-                  color: widget.color,
-                  shape: BoxShape.circle,
-                ),
-                child: AnimatedOpacity(
-                  opacity: _hover ? 1 : 0,
-                  duration: const Duration(milliseconds: 100),
-                  child: FittedBox(
-                    child: Icon(
-                      widget.glyph,
-                      size: 8,
-                      color: Colors.black.withValues(alpha: .55),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StackShell extends StatelessWidget {
-  const _StackShell({
-    required this.controller,
-    required this.onCreateNote,
-    required this.editor,
-  });
-
-  final VaultController controller;
-  final EditorController? editor;
-  final Future<Note?> Function() onCreateNote;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) {
-        final selected = controller.selectedNote;
-        // If a note is selected, show editor with back affordance.
-        if (selected != null && editor != null) {
-          return Column(
-            children: [
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, size: 20),
-                      tooltip: 'Back to list',
-                      onPressed: () => controller.selectNote(null),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        selected.title.isEmpty ? 'Untitled' : selected.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.hankenGrotesk(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: EditorPane(
-                  controller: editor,
-                  settings: controller.settings,
-                ),
-              ),
-            ],
-          );
-        }
-        return SizedBox(
-          key: const Key('pane-list'),
-          child: ListPane(controller: controller, onCreateNote: onCreateNote),
-        );
-      },
     );
   }
 }

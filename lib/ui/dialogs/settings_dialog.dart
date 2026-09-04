@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../../logic/shortcut_serializer.dart';
 import '../../logic/vault_controller.dart';
 import '../../logic/zoom.dart';
 import '../../models/settings.dart';
@@ -9,6 +7,8 @@ import '../../models/shortcut_settings.dart';
 import '../../theme/quire_theme.dart';
 import '../../theme/worlds.dart';
 import 'welcome_screen.dart';
+import 'widgets/section_label.dart';
+import 'widgets/shortcut_row.dart';
 
 /// App settings: theme selection and vault location.
 ///
@@ -57,7 +57,7 @@ class _SettingsDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _SectionLabel('Appearance'),
+                const SectionLabel('Appearance'),
                 const SizedBox(height: QuireSpace.xs),
                 Wrap(
                   spacing: QuireSpace.s,
@@ -180,7 +180,7 @@ class _SettingsDialog extends StatelessWidget {
                   onChanged: (value) => controller.setShowWindowControls(value),
                 ),
                 const Divider(height: QuireSpace.xl),
-                const _SectionLabel('Vault'),
+                const SectionLabel('Vault'),
                 const SizedBox(height: QuireSpace.xs),
                 Row(
                   children: [
@@ -212,7 +212,7 @@ class _SettingsDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final action in visible)
-                      _ShortcutRow(
+                      ShortcutRow(
                         action: action,
                         overrides: overrides,
                         controller: controller,
@@ -243,7 +243,7 @@ class _SettingsDialog extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const _SectionLabel('Keyboard Shortcuts'),
+                        const SectionLabel('Keyboard Shortcuts'),
                         const SizedBox(height: QuireSpace.xs),
                         Expanded(
                           child: SingleChildScrollView(child: shortcutsContent),
@@ -262,7 +262,7 @@ class _SettingsDialog extends StatelessWidget {
                 children: [
                   appearanceVault,
                   const Divider(height: QuireSpace.xl),
-                  const _SectionLabel('Keyboard Shortcuts'),
+                  const SectionLabel('Keyboard Shortcuts'),
                   const SizedBox(height: QuireSpace.xs),
                   shortcutsContent,
                 ],
@@ -278,208 +278,3 @@ class _SettingsDialog extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: QuireSpace.xs),
-      child: Text(
-        text.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-}
-
-class _ShortcutRow extends StatelessWidget {
-  const _ShortcutRow({
-    required this.action,
-    required this.overrides,
-    required this.controller,
-  });
-
-  final ShortcutAction action;
-  final Map<String, String> overrides;
-  final VaultController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isOverridden = overrides.containsKey(action.name);
-    final activator = activatorFor(action, overrides);
-    final label = serializeActivator(activator);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              action.label,
-              style: theme.textTheme.bodySmall,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 10,
-                  color: isOverridden ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          TextButton(
-            key: Key('edit-${action.name}'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: const Size(0, 28),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => _ShortcutRecorderDialog(action: action, controller: controller),
-            ),
-            child: const Text('Edit', style: TextStyle(fontSize: 12)),
-          ),
-          TextButton(
-            key: Key('reset-${action.name}'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: const Size(0, 28),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            onPressed: isOverridden ? () => controller.setShortcutOverride(action, null) : null,
-            child: const Text('Reset', style: TextStyle(fontSize: 12)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShortcutRecorderDialog extends StatefulWidget {
-  const _ShortcutRecorderDialog({required this.action, required this.controller});
-  final ShortcutAction action;
-  final VaultController controller;
-  @override
-  State<_ShortcutRecorderDialog> createState() => _ShortcutRecorderDialogState();
-}
-
-class _ShortcutRecorderDialogState extends State<_ShortcutRecorderDialog> {
-  SingleActivator? _captured;
-  String? _error;
-
-  bool _isModifier(LogicalKeyboardKey key) => {
-        LogicalKeyboardKey.controlLeft,
-        LogicalKeyboardKey.controlRight,
-        LogicalKeyboardKey.shiftLeft,
-        LogicalKeyboardKey.shiftRight,
-        LogicalKeyboardKey.altLeft,
-        LogicalKeyboardKey.altRight,
-        LogicalKeyboardKey.metaLeft,
-        LogicalKeyboardKey.metaRight,
-      }.contains(key);
-
-  void _handleKey(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
-    final key = event.logicalKey;
-    if (_isModifier(key)) return;
-    final control = HardwareKeyboard.instance.isControlPressed;
-    final shift = HardwareKeyboard.instance.isShiftPressed;
-    final alt = HardwareKeyboard.instance.isAltPressed;
-    final meta = HardwareKeyboard.instance.isMetaPressed;
-    final activator = SingleActivator(key, control: control, shift: shift, alt: alt, meta: meta);
-    final label = serializeActivator(activator);
-    String? error;
-    if (reservedFormattingLabels.contains(label)) {
-      error = 'Reserved for formatting';
-    } else if (const {'Ctrl+C', 'Ctrl+V', 'Ctrl+X'}.contains(label)) {
-      error = 'Reserved system shortcut';
-    } else {
-      final overrides = widget.controller.settings.shortcutOverrides;
-      for (final other in ShortcutAction.values) {
-        if (other == widget.action) continue;
-        if (other == ShortcutAction.continueList) continue;
-        final otherAct = activatorFor(other, overrides);
-        if (serializeActivator(otherAct) == label) {
-          error = 'Already used by ${other.label}';
-          break;
-        }
-      }
-    }
-    setState(() {
-      _captured = activator;
-      _error = error;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentLabel = serializeActivator(activatorFor(widget.action, widget.controller.settings.shortcutOverrides));
-    final capturedLabel = _captured == null ? 'Press new shortcut…' : serializeActivator(_captured!);
-    return AlertDialog(
-      title: Text('Edit ${widget.action.label}'),
-      content: Focus(
-        autofocus: true,
-        onKeyEvent: (node, event) {
-          _handleKey(event);
-          return KeyEventResult.handled;
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Current: $currentLabel', style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: _error != null ? Colors.red : Colors.transparent),
-              ),
-              child: Text(capturedLabel, style: const TextStyle(fontFamily: 'monospace', fontSize: 14)),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 6),
-              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
-            ],
-            const SizedBox(height: 8),
-            const Text('Press keys, then Save. Single chord only.', style: TextStyle(fontSize: 11)),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: _captured == null || _error != null
-              ? null
-              : () async {
-                  await widget.controller.setShortcutOverride(widget.action, _captured);
-                  if (context.mounted) Navigator.of(context).pop();
-                },
-          child: const Text('Save'),
-        ),
-      ],
-    );
-  }
-}

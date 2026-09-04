@@ -12,7 +12,6 @@ import '../../logic/find_controller.dart';
 import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
 import '../../logic/list_continuation.dart';
-import '../../logic/search_controller.dart';
 import '../../models/settings.dart';
 import '../../models/shortcut_settings.dart';
 import '../../theme/quire_colors.dart';
@@ -20,7 +19,14 @@ import '../../theme/quire_theme.dart';
 import '../shell/shortcuts.dart';
 import 'edit_menu.dart';
 import 'highlighting_controller.dart';
+import 'intents.dart';
 import 'markdown_preview.dart';
+import 'widgets/find_bar.dart';
+import 'widgets/mode_switch.dart';
+import 'widgets/placeholder.dart';
+import 'widgets/status_footer.dart';
+
+export 'intents.dart';
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
 /// debounced autosave, and the mono status footer.
@@ -54,13 +60,13 @@ class EditorPane extends StatelessWidget {
   Widget build(BuildContext context) {
     final editor = controller;
     if (editor == null) {
-      return const _Placeholder();
+      return const EditorPlaceholder();
     }
     return ListenableBuilder(
       listenable: editor,
       builder: (context, _) {
         if (editor.current == null) {
-          return const _Placeholder();
+          return const EditorPlaceholder();
         }
         return _Editor(
           controller: editor,
@@ -70,99 +76,6 @@ class EditorPane extends StatelessWidget {
           settings: settings,
         );
       },
-    );
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      color: theme.colorScheme.surfaceContainerLowest,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  Icons.article_outlined,
-                  size: 32,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Select a note',
-                style: safeBricolage(
-                  TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Choose from the list, or create a new one.\nYour words live as plain Markdown files.',
-                textAlign: TextAlign.center,
-                style: safeHanken(
-                  TextStyle(
-                    fontSize: 13,
-                    height: 18 / 13,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.keyboard_outlined,
-                      size: 14,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Ctrl+N  ·  Ctrl+K  ·  Ctrl+Shift+L',
-                        overflow: TextOverflow.ellipsis,
-                        style: safeMono(
-                          TextStyle(
-                            fontSize: 11,
-                            letterSpacing: 0.3,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -609,7 +522,7 @@ class _EditorState extends State<_Editor> {
                           ),
                           const SizedBox(width: 12),
                           const SizedBox(width: 8),
-                          _ModeSwitch(
+                          ModeSwitch(
                             mode: controller.mode,
                             onSelected: controller.setMode,
                           ),
@@ -655,7 +568,7 @@ class _EditorState extends State<_Editor> {
                       ),
                       const SizedBox(width: 12),
                       const SizedBox(width: 8),
-                      _ModeSwitch(
+                      ModeSwitch(
                         mode: controller.mode,
                         onSelected: controller.setMode,
                       ),
@@ -664,7 +577,7 @@ class _EditorState extends State<_Editor> {
           ),
           // Find bar (story 14)
           if (_findOpen && _findCtrl != null)
-            _FindBar(
+            FindBar(
               controller: _findCtrl!,
               counter: _counterLabel,
               hasMatches: _matches.isNotEmpty,
@@ -876,340 +789,7 @@ class _EditorState extends State<_Editor> {
             ),
           ),
           // Status footer: mono
-          _StatusFooter(controller: controller, words: words),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusFooter extends StatelessWidget {
-  const _StatusFooter({required this.controller, required this.words});
-
-  final EditorController controller;
-  final int words;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final quire =
-        theme.extension<QuireColors>() ??
-        (theme.brightness == Brightness.dark
-            ? quireColorsDark
-            : quireColorsLight);
-    final mono = safeMono(
-      TextStyle(
-        fontSize: 12,
-        letterSpacing: 0.2,
-        color: theme.colorScheme.onSurfaceVariant,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
-    );
-    final status = switch (controller.status) {
-      EditorStatus.clean => '',
-      EditorStatus.dirty => 'unsaved · $words words',
-      EditorStatus.saving => 'saving… · $words words',
-      EditorStatus.saved =>
-        'saved ${clockLabel(controller.lastSavedAt ?? DateTime.now())} · $words words',
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
-        border: Border(
-          top: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.circle,
-            size: 6,
-            color: controller.status == EditorStatus.saved
-                ? quire.hlGrowBase
-                : theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(status.isEmpty ? '$words words' : status, style: mono),
-          ),
-          Text(
-            'Markdown  ·  #tag  ·  ![image|400]',
-            style: safeMono(
-              TextStyle(
-                fontSize: 11,
-                letterSpacing: 0.3,
-                color: quire.textTertiary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Ctrl+B / Ctrl+I / Ctrl+U formatting request (Normal mode only).
-class FormatIntent extends Intent {
-  const FormatIntent(this.kind);
-
-  final FormatKind kind;
-}
-
-/// Enter pressed inside an editing surface; handled as list continuation.
-class ContinueListIntent extends Intent {
-  const ContinueListIntent();
-}
-
-/// Ctrl+D — select the word at the caret.
-class SelectWordIntent extends Intent {
-  const SelectWordIntent();
-}
-
-/// Ctrl+F — open the find-in-note bar.
-class OpenFindIntent extends Intent {
-  const OpenFindIntent();
-}
-
-/// Enter in the find bar — jump to the next match.
-class FindNextIntent extends Intent {
-  const FindNextIntent();
-}
-
-/// Shift+Enter in the find bar — jump to the previous match.
-class FindPrevIntent extends Intent {
-  const FindPrevIntent();
-}
-
-/// Escape in the find bar — close it and restore editor focus.
-class CloseFindIntent extends Intent {
-  const CloseFindIntent();
-}
-
-/// Slim query bar docked under the editor header: live count, prev/next,
-/// Esc to close (spec story 14).
-class _FindBar extends StatelessWidget {
-  const _FindBar({
-    required this.controller,
-    required this.counter,
-    required this.hasMatches,
-    required this.onChanged,
-    required this.onNext,
-    required this.onPrev,
-    required this.onClose,
-    this.settings,
-  });
-
-  final TextEditingController controller;
-  final String counter;
-  final bool hasMatches;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onNext;
-  final VoidCallback onPrev;
-  final VoidCallback onClose;
-  final AppSettings? settings;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final overrides = settings?.shortcutOverrides ?? const {};
-    SingleActivator a(ShortcutAction action) => activatorFor(action, overrides);
-    return Shortcuts(
-      shortcuts: {
-        a(ShortcutAction.findNext): const FindNextIntent(),
-        const SingleActivator(LogicalKeyboardKey.numpadEnter):
-            const FindNextIntent(),
-        a(ShortcutAction.findPrev): const FindPrevIntent(),
-        a(ShortcutAction.closeFind): const CloseFindIntent(),
-      },
-      child: Actions(
-        actions: {
-          FindNextIntent: CallbackAction<FindNextIntent>(
-            onInvoke: (_) => onNext(),
-          ),
-          FindPrevIntent: CallbackAction<FindPrevIntent>(
-            onInvoke: (_) => onPrev(),
-          ),
-          CloseFindIntent: CallbackAction<CloseFindIntent>(
-            onInvoke: (_) => onClose(),
-          ),
-        },
-        child: Container(
-          key: const Key('find-bar'),
-          padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLowest,
-            border: Border(
-              bottom: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.search,
-                size: 15,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  key: const Key('find-field'),
-                  controller: controller,
-                  autofocus: true,
-                  onChanged: onChanged,
-                  style: safeHanken(
-                    TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Find in note…',
-                    hintStyle: safeHanken(
-                      TextStyle(
-                        fontSize: 13,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.7,
-                        ),
-                      ),
-                    ),
-                    filled: false,
-                    border: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                  ),
-                ),
-              ),
-              Text(
-                counter,
-                style: safeMono(
-                  TextStyle(
-                    fontSize: 11,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              IconButton(
-                key: const Key('find-prev'),
-                tooltip: 'Previous match (Shift+Enter)',
-                visualDensity: VisualDensity.compact,
-                onPressed: hasMatches ? onPrev : null,
-                icon: const Icon(Icons.keyboard_arrow_up, size: 18),
-              ),
-              IconButton(
-                key: const Key('find-next'),
-                tooltip: 'Next match (Enter)',
-                visualDensity: VisualDensity.compact,
-                onPressed: hasMatches ? onNext : null,
-                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-              ),
-              IconButton(
-                key: const Key('find-close'),
-                tooltip: 'Close (Esc)',
-                visualDensity: VisualDensity.compact,
-                onPressed: onClose,
-                icon: const Icon(Icons.close, size: 18),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Normal / Markdown / Preview segmented control (spec story 12).
-class _ModeSwitch extends StatelessWidget {
-  const _ModeSwitch({required this.mode, required this.onSelected});
-
-  final EditorMode mode;
-  final ValueChanged<EditorMode> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    Widget segment(
-      EditorMode value,
-      IconData icon,
-      String label,
-      String tooltip,
-    ) {
-      final selected = mode == value;
-      return Tooltip(
-        message: tooltip,
-        child: Material(
-          color: selected ? theme.colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(QuireRadius.s),
-          child: InkWell(
-            key: Key('mode-${value.name}'),
-            borderRadius: BorderRadius.circular(QuireRadius.s),
-            onTap: () => onSelected(value),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 15,
-                    color: selected
-                        ? theme.colorScheme.onPrimary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    label,
-                    style: safeHanken(
-                      TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: selected
-                            ? theme.colorScheme.onPrimary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.55,
-        ),
-        borderRadius: BorderRadius.circular(QuireRadius.s + 3),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          segment(
-            EditorMode.normal,
-            Icons.notes_outlined,
-            'Normal',
-            'Word-like editing (Ctrl+Shift+M)',
-          ),
-          segment(
-            EditorMode.markdown,
-            Icons.code_outlined,
-            'Markdown',
-            'Raw markdown source',
-          ),
-          segment(
-            EditorMode.preview,
-            Icons.visibility_outlined,
-            'Preview',
-            'Rendered output',
-          ),
+          StatusFooter(controller: controller, words: words),
         ],
       ),
     );

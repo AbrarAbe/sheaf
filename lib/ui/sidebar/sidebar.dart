@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/vault_repository.dart' show FolderNode;
 import '../../logic/vault_controller.dart';
-import '../../theme/quire_theme.dart';
 import '../common/context_menus.dart';
+import 'widgets/entry.dart';
+import 'widgets/folder_row.dart';
+import 'widgets/section.dart';
+import 'widgets/tag_row.dart';
+import 'widgets/text_prompt.dart';
 
 /// Quick filters, folder tree, tags, and trash — the leftmost pane.
 /// The desk drawer: quiet until touched, tint and weight do the talking.
@@ -43,7 +46,7 @@ class Sidebar extends StatelessWidget {
               // Top inset: quick filter + sort placeholder
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-                child: _Entry(
+                child: Entry(
                   label: 'All notes',
                   icon: Icons.view_quilt_outlined,
                   selected: controller.selectedFolder == null && controller.selectedTag == null,
@@ -70,12 +73,16 @@ class Sidebar extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Section(
+                        Section(
                           label: 'FOLDERS',
                           trailing: IconButton(
                             tooltip: 'New folder',
                             visualDensity: VisualDensity.compact,
-                            icon: Icon(Icons.create_new_folder_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                            icon: Icon(
+                              Icons.create_new_folder_outlined,
+                              size: 18,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                             onPressed: () => _newFolderDialog(context),
                           ),
                           child: controller.folders.isEmpty
@@ -86,34 +93,42 @@ class Sidebar extends StatelessWidget {
                                     style: GoogleFonts.hankenGrotesk(
                                       fontSize: 12,
                                       height: 16 / 12,
-                                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                                        alpha: 0.8,
+                                      ),
                                     ),
                                   ),
                                 )
-                              : Column(children: [
-                                  for (final folder in controller.folders)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 2),
-                                      child: _FolderRow(controller: controller, node: folder),
-                                    ),
-                                ]),
+                              : Column(
+                                  children: [
+                                    for (final folder in controller.folders)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 2),
+                                        child: FolderRow(controller: controller, node: folder),
+                                      ),
+                                  ],
+                                ),
                         ),
                         const SizedBox(height: 20),
                         if (tags.isNotEmpty)
-                          _Section(
+                          Section(
                             label: 'TAGS',
                             child: Column(
                               children: [
                                 for (final tag in tags)
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: 4),
-                                    child: _TagRow(controller: controller, tag: tag, count: counts[tag]!),
+                                    child: TagRow(
+                                      controller: controller,
+                                      tag: tag,
+                                      count: counts[tag]!,
+                                    ),
                                   ),
                               ],
                             ),
                           )
                         else
-                          _Section(
+                          Section(
                             label: 'TAGS',
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
@@ -138,7 +153,7 @@ class Sidebar extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _Entry(
+                      child: Entry(
                         label: 'Trash',
                         icon: Icons.delete_outline,
                         onTap: onTrashTapped ?? () {},
@@ -153,7 +168,11 @@ class Sidebar extends StatelessWidget {
                         onTap: onSettingsTapped,
                         child: Padding(
                           padding: const EdgeInsets.all(8),
-                          child: Icon(Icons.settings_outlined, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                          child: Icon(
+                            Icons.settings_outlined,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ),
@@ -168,303 +187,9 @@ class Sidebar extends StatelessWidget {
   }
 
   Future<void> _newFolderDialog(BuildContext context, {String parent = ''}) async {
-    final name = await _textPrompt(context, title: 'New folder');
+    final name = await textPrompt(context, title: 'New folder');
     if (name != null && name.trim().isNotEmpty) {
       await controller.createFolderAt(parent, name.trim());
     }
-  }
-}
-
-
-Future<String?> _textPrompt(BuildContext context, {required String title, String? initial}) {
-  final field = TextEditingController(text: initial);
-  return showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title, style: GoogleFonts.bricolageGrotesque(fontWeight: FontWeight.w600)),
-      content: TextField(
-        controller: field,
-        autofocus: true,
-        onSubmitted: (v) => Navigator.of(context).pop(v),
-        style: GoogleFonts.hankenGrotesk(fontSize: 14),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(field.text),
-          child: const Text('Save'),
-        ),
-      ],
-    ),
-  );
-}
-
-class _Section extends StatelessWidget {
-  const _Section({required this.child, this.label, this.trailing});
-
-  final Widget child;
-  final String? label;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (label != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label!,
-                    style: GoogleFonts.splineSansMono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.9,
-                      height: 16 / 11,
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-                ?trailing,
-              ],
-            ),
-          ),
-        child,
-      ],
-    );
-  }
-}
-
-class _Entry extends StatelessWidget {
-  const _Entry({required this.label, required this.onTap, this.selected = false, this.icon});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final ink = theme.colorScheme.primary;
-    return Material(
-      color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
-      borderRadius: BorderRadius.circular(QuireRadius.m),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(QuireRadius.m),
-        onTap: onTap,
-        hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.04),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-          child: Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18, color: selected ? ink : theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 13.5,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                    height: 20 / 13.5,
-                    letterSpacing: 0.1,
-                    color: selected ? theme.colorScheme.onSurface : theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FolderRow extends StatelessWidget {
-  const _FolderRow({required this.controller, required this.node});
-
-  final VaultController controller;
-  final FolderNode node;
-
-  ContextMenu<Object?> get _menu => quireMenu([
-        menuItem(
-          'New folder inside',
-          value: 'new-inside',
-          icon: Icons.create_new_folder_outlined,
-        ),
-        menuItem('Rename', value: 'rename', icon: Icons.drive_file_rename_outline),
-        menuDivider,
-        menuItem(
-          'Delete',
-          value: 'delete',
-          icon: Icons.delete_outline,
-          shortcut: deleteActivator,
-        ),
-      ]);
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = controller.selectedFolder == node.relPath;
-    return QuireContextMenuRegion(
-      menu: _menu,
-      onItemSelected: (value) async {
-        switch (value) {
-          case 'new-inside':
-            await _promptAndCreate(context);
-          case 'rename':
-            await _promptAndRename(context);
-          case 'delete':
-            await controller.deleteFolder(node.relPath);
-        }
-      },
-      child: _HoverRow(
-        selected: isSelected,
-        onTap: () => controller.selectFolder(node.relPath),
-        icon: isSelected ? Icons.folder_rounded : Icons.folder_outlined,
-        label: node.name,
-      ),
-    );
-  }
-
-  Future<void> _promptAndCreate(BuildContext context) async {
-    final name = await _textPrompt(context, title: 'New folder inside "${node.name}"');
-    if (name != null && name.trim().isNotEmpty) {
-      await controller.createFolderAt(node.relPath, name.trim());
-    }
-  }
-
-  Future<void> _promptAndRename(BuildContext context) async {
-    final name = await _textPrompt(
-      context,
-      title: 'Rename folder',
-      initial: node.name,
-    );
-    if (name != null && name.trim().isNotEmpty && name.trim() != node.name) {
-      await controller.renameFolder(node.relPath, name.trim());
-    }
-  }
-}
-
-class _HoverRow extends StatefulWidget {
-  const _HoverRow({required this.selected, required this.onTap, required this.icon, required this.label});
-  final bool selected;
-  final VoidCallback onTap;
-  final IconData icon;
-  final String label;
-
-  @override
-  State<_HoverRow> createState() => _HoverRowState();
-}
-
-class _HoverRowState extends State<_HoverRow> {
-  bool _hover = false;
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: Material(
-        color: widget.selected
-            ? theme.colorScheme.secondaryContainer
-            : _hover
-                ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
-                : Colors.transparent,
-        borderRadius: BorderRadius.circular(QuireRadius.m),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(QuireRadius.m),
-          onTap: widget.onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-            child: Row(
-              children: [
-                Icon(widget.icon, size: 18, color: widget.selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: GoogleFonts.hankenGrotesk(
-                      fontSize: 13.5,
-                      fontWeight: widget.selected ? FontWeight.w600 : FontWeight.w400,
-                      height: 20 / 13.5,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-                if (_hover && !widget.selected)
-                  Icon(Icons.more_horiz, size: 14, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TagRow extends StatelessWidget {
-  const _TagRow({required this.controller, required this.tag, required this.count});
-
-  final VaultController controller;
-  final String tag;
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final selected = controller.selectedTag == tag;
-    return Material(
-      color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
-      borderRadius: BorderRadius.circular(QuireRadius.pill),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(QuireRadius.pill),
-        onTap: () => controller.selectTag(selected ? null : tag),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 6,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '#$tag',
-                  style: GoogleFonts.hankenGrotesk(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    height: 20 / 13,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected ? theme.colorScheme.primary.withValues(alpha: 0.14) : theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '$count',
-                  style: GoogleFonts.splineSansMono(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.4,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
