@@ -1,0 +1,135 @@
+# Implementation Plan: Sheaf v0.3.1 — "paper cuts"
+
+Derived from `docs/spec.md` v0.2 + `docs/plan_v0.3.md` audit and user brief for next iteration (6 asks). Ordered by dependency; each task lands as its own Conventional Commit behind `flutter analyze` + `flutter test`. No new dependencies.
+
+## Overview
+
+Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silently dropped, find bar that moves selection but not focus, tag chips living outside the editor gutter, scrollbar that never changes cursor or animates, full-width text selection that paints the gutter, and leftover Task 11 (action bar) docs that describe code that never shipped or is untested. All slices are UI-thin; the only pure-logic work is the folder-tree rendering and selection-geometry fix.
+
+- **Nested folders — render what `FolderNode.children` already holds.** `VaultRepository.folderTree()` already builds a recursive `FolderNode(name, relPath, children)` (see `lib/data/vault_repository.dart:208-231`). The bug is in the view: `Sidebar`/`Section`/`FolderRow` only iterates the top-level list. Fix is recursive view with expand/collapse: `FolderRow` becomes `StatefulWidget` with `bool _expanded` (initial `true`), chevron `Icons.chevron_right` rotated 90° when expanded, tap chevron toggles without selecting folder; indent via `Padding(left: depth*16)` and reuse existing `HoverRow`; collapsed state hides `children` subtree. Persist `expanded` per `relPath` in memory only for v0.3.1 (no storage).
+- **Find selection & focus — single source of truth.** `EditorPane._jumpToCurrentMatch` already sets `TextSelection` (covers highlight / counter) but never ensures the editable holds focus. The bar's `TextField` steals focus on typing. Fix: after `_jumpToCurrentMatch` call ` _bodyFocus.requestFocus()` and keep `_body.selection` as the highlighted range; `FindBar.onChanged` is debounced 80 ms via existing `_recomputeFind` listener so typing does not thrash focus. `Esc` already closes via `CloseFindIntent` → `_closeFind` which restores `_bodyFocus`; next/prev buttons keep focus in the editor, not the bar.
+- **In-editor tag chip — reuse existing `extractTags` + chip style.** The chips currently live in a `Container` above the body (`editor_pane.dart:591-632`). v0.3.1 moves them into the editor column as a dedicated `TagChipBar` widget under the title row (same `Wrap` + `secondaryContainer` pill style) but *inside* the scrollable editor surface so they scroll with content and are reachable in focus mode. No new parsing; just placement + a tap callback that inserts `#tag ` at caret or filters (defer filter to later — tap copies to clipboard for now, keeps scope S).
+- **Scrollbar cursor + hover animation — theme-owned.** `ScrollbarThemeData` already exists in `quire_theme.dart:459`. Add `MouseCursor` handling via `MouseRegion` wrapping the `RawScrollbar` thumb (or `Scrollbar` with `thumbVisibility`) and animate `thumbColor` `WidgetStateProperty` with `AnimatedContainer` 150 ms ease. Cursor = `SystemMouseCursors.click` (or `grab`/`grabbing` while dragging). No new dependency; hover detection via `onHover`/`onExit` on the scrollbar track.
+- **Word-only selection — constrain the editable's hit area.** Today `EditorPane` wraps the `TextField` in `ConstrainedBox(maxWidth: 680) + Align(topLeft)` inside an `Expanded` that still lets `TextField`'s `RenderEditable` fill the row. Selection highlight therefore paints the full row width. Fix: wrap the editable in `IntrinsicWidth`-style `SizedBox` + `SelectionArea` semantics so the `EditableText`'s width equals its content; alternatively set `TextField`s `expands: false` inside a `SizedBox` constrained to content and use `SelectionContainer.disabled` around the outer padding. Verify with golden: selection rect width ≤ text width + caret.
+- **Task 11 docs — delete untested fiction.** `docs/plan_v0.3.md:127-135` describes `EditorActionBar`/`ListKind`/`list_formatting.dart`/`action_bar.dart`/`link_bar.dart` that either never shipped or have no tests. v0.3.1 removes those doc blocks and leaves the real list-continuation behavior (Task 3) as the only list story. No code delete needed if files do not exist; if they do, remove the untested widgets and keep `continueList` logic.
+## Task List
+
+### Phase 1 — Data-visible correctness
+
+- [ ] **Task 1: Nested folders render recursively with expand/collapse**
+  **Description:** Make the folder list show the full tree that `VaultRepository` already returns, indented per depth, with chevron expand/collapse.
+  **Acceptance criteria:**
+  - [ ] Creating `a/b/c` (via `createFolderAt` or on-disk) appears as `a` → `b` → `c` indented in `Sidebar`; `folderTree()` with nested dirs returns `children` matching disk layout.
+  - [ ] `FolderRow` is `StatefulWidget` with `bool _expanded = true`; chevron `Icons.chevron_right` (rotated 90° when expanded) toggles subtree without selecting folder; collapsed hides `children` `Column`; indent `left: depth*16`.
+  - [ ] Selecting any nested folder (tap row, not chevron) sets `controller.selectedFolder == relPath` and filters `visibleNotes` to that subtree; expand state is in-memory per `relPath` for v0.3.1.
+  **Verification:**
+  - [ ] `flutter test test/ui/sidebar/sidebar_test.dart` — new case: nested `a/b/c` renders 3 rows with increasing indent; tap `c` selects `a/b/c`; tap chevron on `a` collapses/hides `b/c` and expands again.
+  - [ ] `flutter test test/data/vault_repository_test.dart` — existing `folderTree` recursion still passes.
+  - [ ] Manual: `mkdir -p /tmp/vault/a/b/c && flutter run` → indented rows with chevrons, collapse/expand works.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/ui/sidebar/sidebar.dart`
+  - `lib/ui/sidebar/widgets/folder_row.dart` (now StatefulWidget)
+  - `lib/ui/sidebar/widgets/section.dart`
+  - `test/ui/sidebar/sidebar_test.dart`
+  **Estimated scope:** S (3-4 files)
+
+### Phase 2 — Editor focus & selection
+
+- [ ] **Task 2: Find selection & focus**
+  **Description:** `Ctrl+F` bar drives selection *and* focus correctly through typing, next/prev, and `Esc`.
+  **Acceptance criteria:**
+  - [ ] `_jumpToCurrentMatch` after setting `TextSelection` calls `_bodyFocus.requestFocus()`; focus stays in `_body` while navigating matches (Enter / Shift+Enter / buttons do not move focus to the bar).
+  - [ ] Typing in the bar keeps `_recomputeFind` but does not steal editor focus when `_body` had it; bar `onChanged` is debounced and does not call `requestFocus` on the bar.
+  - [ ] `Esc` (`CloseFindIntent`) closes bar, clears `_findCtrl`, and restores `_bodyFocus`; `_body.removeListener(_recomputeFind)` is always paired.
+  **Verification:**
+  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — `find in note (spec story 14)` group passes; new case: open bar, type, `Enter` moves highlight without focusing bar; `Esc` returns focus to `editor-body`.
+  - [ ] Manual: `Ctrl+F` with selection prefill, type query, `Enter`/`Shift+Enter` cycle, `Esc` → caret in editor.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/ui/editor/editor_pane.dart`
+  - `lib/ui/editor/widgets/find_bar.dart`
+  - `test/ui/editor/editor_pane_test.dart`
+  **Estimated scope:** S (2 files)
+
+- [ ] **Task 3: Word-only selection (no full-width highlight)**
+  **Description:** Restrict the editable's selection paint to the text width, not the container width.
+  **Acceptance criteria:**
+  - [ ] Drafting `TextField` inside `EditorPane` does not paint selection across the full `Expanded` row; double-click or drag selects only glyph bounds; empty gutter is not selectable.
+  - [ ] Implemented by constraining the `EditableText` width to content (e.g. `ConstrainedBox(maxWidth:680)` + `Align` + `SelectionArea` only around the text, outer `Padding` wrapped in `SelectionContainer.disabled`) — no `Container.color` bleeding into selection.
+  - [ ] Preview mode unaffected.
+  **Verification:**
+  - [ ] Widget test: create `EditorPane` with long body, `tester.drag` from gutter (outside text) does not create selection; `golden` or `RenderEditable` selection rect width < pane width.
+  - [ ] Manual: drag across gutter → no selection; drag across words → word-local highlight.
+  **Dependencies:** Task 2 (focus correctness before selection geometry)
+  **Files likely touched:**
+  - `lib/ui/editor/editor_pane.dart`
+  - `lib/ui/editor/widgets/` (if extraction)
+  **Estimated scope:** S (1-2 files)
+
+### Phase 3 — Chips & chrome
+
+- [ ] **Task 4: In-editor tag chip bar**
+  **Description:** Move tag chips from the standalone container above the body into a proper `TagChipBar` inside the editor column.
+  **Acceptance criteria:**
+  - [ ] New `lib/ui/editor/widgets/tag_chip_bar.dart` (`TagChipBar extends StatelessWidget`) renders `Wrap` of pill chips from `extractTags(bodyText)` with same `secondaryContainer` style as before; appears directly under the title/header inside the scrollable editor column (scrolls with content, visible in focus mode).
+  - [ ] Old `Container` at `editor_pane.dart:591-632` removed; `TagChipBar` replaces it; `lib/data/markdown_parser.dart:extractTags` is the only tag source (no forked regex).
+  - [ ] Tapping a chip inserts `#tag ` at the caret (or copies to clipboard — document choice); long-press shows `#tag` tooltip.
+  **Verification:**
+  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — chips render for `#a #b`, tap inserts text at caret.
+  - [ ] Manual: open note with `#urgent #proj` → chips under title, scroll with body, tap chip → text inserted.
+  **Dependencies:** None (parallel with Task 2/3)
+  **Files likely touched:**
+  - `lib/ui/editor/widgets/tag_chip_bar.dart` (new)
+  - `lib/ui/editor/editor_pane.dart`
+  - `test/ui/editor/editor_pane_test.dart`
+  **Estimated scope:** S (2-3 files)
+
+- [ ] **Task 5: Scrollbar cursor shape + hover animation**
+  **Description:** Scrollbar thumb shows correct cursor and animates on hover/drag.
+  **Acceptance criteria:**
+  - [ ] Scrollbar thumb `MouseRegion` cursor = `SystemMouseCursors.click` on hover, `SystemMouseCursors.grabbing` while dragging; track cursor = `SystemMouseCursors.basic`.
+  - [ ] Thumb color animates `thumbColor` 150 ms ease on hover/drag via `ScrollbarThemeData` or `AnimatedContainer`; inactive `alpha 0.28` → hover `alpha 0.45` → dragging `alpha 0.6`.
+  - [ ] Works in `Shell`'s scroll views and `EditorPane`'s body `SingleChildScrollView`/`ListView`; no cursor flicker on theme switch.
+  **Verification:**
+  - [ ] Widget test: hover scrollbar thumb → `MouseRegion` cursor changes; pump 150 ms → color lerp.
+  - [ ] Manual: hover scrollbar in editor/list → thumb darkens and cursor becomes hand; drag → grabbing.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/theme/quire_theme.dart`
+  - `lib/ui/editor/editor_pane.dart` (scrollbar wrapper)
+  - `lib/ui/note_list/list_pane.dart`
+  - `lib/ui/shell/shell.dart`
+  **Estimated scope:** S (3-4 files)
+
+### Phase 4 — Docs hygiene
+
+- [ ] **Task 6: Remove untested Task 11 action-bar fiction**
+  **Description:** Delete the `EditorActionBar`/`ListKind`/`link_formatting` docs that describe unshipped/untested code and keep only the real list behavior.
+  **Acceptance criteria:**
+  - [ ] `docs/plan_v0.3.md:127-144` (Task 11 & Task 12 blocks) edited: if `lib/ui/editor/action_bar.dart` / `lib/logic/list_formatting.dart` / `link_bar.dart` have no tests and are not wired, remove those Task sections and replace with a one-line note: "List action bar deferred — list continuation (Task 3) is the shipped list behavior."
+  - [ ] No code left that is both untested and unreferenced; `flutter analyze` clean, `grep -R ActionBar lib` empty after the doc cut (or file deleted).
+  - [ ] `docs/spec.md` not re-adding a spec story for the bar; deferred list lives in Spec's deferred list if needed.
+  **Verification:**
+  - [ ] `grep -R "ActionBar\|ListKind" docs/` shows only the deferral note.
+  - [ ] `flutter analyze` + `flutter test` still green.
+  **Dependencies:** Tasks 1-5 (so grep scope is final)
+  **Files likely touched:**
+  - `docs/plan_v0.3.md`
+  - `lib/ui/editor/action_bar.dart` (delete if exists)
+  - `lib/logic/list_formatting.dart` (delete if exists & untested)
+  **Estimated scope:** XS (1-2 files)
+
+### Checkpoint: v0.3.1 complete
+- [ ] `flutter analyze` clean
+- [ ] `flutter test` green (new cases: nested folders, find focus, word-only selection, tag chips, scrollbar hover)
+- [ ] Manual smoke: (a) `a/b/c` nested, (b) `Ctrl+F` focus stays in editor, (c) tag chips scroll with editor, (d) scrollbar hand cursor + fade, (e) gutter drag does not select, (f) no ActionBar fiction in docs
+
+## Risks and Mitigations
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Recursive FolderRow creates deep widget tree (>10 levels) | Med | `ListView` with fixed indent; Flutter handles 20-depth Column — add `SingleChildScrollView` only if overflow; cap recursion depth 12 in view. |
+| Word-only selection breaks triple-click line selection | Med | Keep `RenderEditable` line-select behavior; constrain only the paint area, not the gesture arena; test triple-click. |
+| Find focus fight with bar TextField | Low | Bar field uses `onChanged` only; editor focus is always restored after `_jumpToCurrentMatch`; no `autofocus` on FindBar. |
+| Tag chip insertion conflicts with autosave debounce | Low | Chip tap does `_body.value = ...` then `controller.updateBody`; autosave 1s debounce coalesces — no extra flush. |
+| Docs deletion hides real intent for future action bar | Low | Keep one-sentence deferral note with ADR link placeholder. |
