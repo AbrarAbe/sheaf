@@ -14,6 +14,7 @@ import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/editor/editor_pane.dart';
 import 'package:sheaf/ui/editor/markdown_preview.dart';
+import 'package:sheaf/ui/editor/widgets/tag_chip_bar.dart';
 
 /// Widget tests must route every real-I/O call through [real] because
 /// unwrapped awaits deadlock inside the tester's FakeAsync zone.
@@ -798,6 +799,27 @@ void main() {
       await pumpEditor(tester);
       expect(editorController.mode, EditorMode.preview);
     });
+  group('find and tag bars container like title (focus mode)', () {
+    testWidgets('find bar uses container like title in focus mode', (tester) async {
+      await openAndPump(tester);
+      expect(find.byKey(const Key('find-bar')), findsNothing);
+      final ctx = tester.element(find.byKey(const Key('editor-body')));
+      Actions.invoke(ctx, const OpenFindIntent());
+      await tester.pump();
+      expect(find.byKey(const Key('find-bar')), findsOneWidget);
+      final container = tester.widget<Container>(find.byKey(const Key('find-bar')));
+      expect(container.decoration, isA<BoxDecoration>());
+    });
+
+    testWidgets('tag bar only built when tags non-empty and uses container like title', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'T', body: 'hello #tag'), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+      expect(find.text('#tag'), findsOneWidget);
+      expect(find.byType(TagChipBar), findsOneWidget);
+    });
+  });
+
   });
 }
 
@@ -826,3 +848,5 @@ TextSelection? _bodySelection(WidgetTester tester) {
   );
   return state.widget.controller.selection;
 }
+
+

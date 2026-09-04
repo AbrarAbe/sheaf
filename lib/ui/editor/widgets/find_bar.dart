@@ -8,8 +8,8 @@ import '../intents.dart';
 
 class FindBar extends StatelessWidget {
   const FindBar({
+    super.key,
     required this.controller,
-    this.focusNode,
     required this.counter,
     required this.hasMatches,
     required this.onChanged,
@@ -17,6 +17,7 @@ class FindBar extends StatelessWidget {
     required this.onPrev,
     required this.onClose,
     this.settings,
+    this.focusNode,
     this.caseSensitive = false,
     this.onCaseSensitiveChanged,
   });
@@ -41,41 +42,19 @@ class FindBar extends StatelessWidget {
     return Shortcuts(
       shortcuts: {
         a(ShortcutAction.findNext): const FindNextIntent(),
-        const SingleActivator(LogicalKeyboardKey.numpadEnter):
-            const FindNextIntent(),
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): const FindNextIntent(),
         a(ShortcutAction.findPrev): const FindPrevIntent(),
         a(ShortcutAction.closeFind): const CloseFindIntent(),
       },
       child: Actions(
         actions: {
-          FindNextIntent: CallbackAction<FindNextIntent>(
-            onInvoke: (_) => onNext(),
-          ),
-          FindPrevIntent: CallbackAction<FindPrevIntent>(
-            onInvoke: (_) => onPrev(),
-          ),
-          CloseFindIntent: CallbackAction<CloseFindIntent>(
-            onInvoke: (_) => onClose(),
-          ),
+          FindNextIntent: CallbackAction<FindNextIntent>(onInvoke: (_) => onNext()),
+          FindPrevIntent: CallbackAction<FindPrevIntent>(onInvoke: (_) => onPrev()),
+          CloseFindIntent: CallbackAction<CloseFindIntent>(onInvoke: (_) => onClose()),
         },
-        child: Container(
-          key: const Key('find-bar'),
-          padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLowest,
-            border: Border(
-              bottom: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-          child: Row(
+        child: Row(
             children: [
-              Icon(
-                Icons.search,
-                size: 15,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              Icon(Icons.search, size: 15, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -84,17 +63,13 @@ class FindBar extends StatelessWidget {
                   focusNode: focusNode,
                   autofocus: true,
                   onChanged: onChanged,
-                  style: safeHanken(
-                    TextStyle(fontSize: 13, color: theme.colorScheme.onSurface),
-                  ),
+                  style: safeHanken(TextStyle(fontSize: 13, color: theme.colorScheme.onSurface)),
                   decoration: InputDecoration(
                     hintText: 'Find in note…',
                     hintStyle: safeHanken(
                       TextStyle(
                         fontSize: 13,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: 0.7,
-                        ),
+                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                       ),
                     ),
                     filled: false,
@@ -108,12 +83,7 @@ class FindBar extends StatelessWidget {
               ),
               Text(
                 counter,
-                style: safeMono(
-                  TextStyle(
-                    fontSize: 11,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                style: safeMono(TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant)),
               ),
               const SizedBox(width: 4),
               Tooltip(
@@ -174,7 +144,6 @@ class FindBar extends StatelessWidget {
               ),
             ],
           ),
-        ),
       ),
     );
   }

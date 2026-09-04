@@ -1,29 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Renders tag chips extracted from the note body. Used inside
-/// EditorPane so chips scroll with content and are visible in focus
-/// mode. Reuses the same pill style as the old container.
 class TagChipBar extends StatelessWidget {
-  const TagChipBar({super.key, required this.tags, required this.onTap});
+  const TagChipBar({super.key, required this.tags, required this.onTap, this.focusMode = false});
 
   final List<String> tags;
   final ValueChanged<String> onTap;
+  final bool focusMode;
 
   @override
   Widget build(BuildContext context) {
     if (tags.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLowest,
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-      ),
+    return SizedBox(
+      width: double.infinity,
       child: Wrap(
         spacing: 6,
         runSpacing: 6,
@@ -35,10 +25,7 @@ class TagChipBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 onTap: () => onTap(tag),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(999),

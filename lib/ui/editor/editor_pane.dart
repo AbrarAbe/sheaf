@@ -8,26 +8,27 @@ import 'package:path/path.dart' as p;
 
 import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
-import '../../logic/vault_controller.dart';
 import '../../logic/find_controller.dart';
 import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
 import '../../logic/list_continuation.dart';
+import '../../logic/vault_controller.dart';
 import '../../models/settings.dart';
 import '../../models/shortcut_settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
+import '../common/widgets/hover_scrollbar.dart';
 import '../shell/shortcuts.dart';
 import 'edit_menu.dart';
 import 'highlighting_controller.dart';
 import 'intents.dart';
+import 'markdown_preview.dart';
 import 'widgets/find_bar.dart';
 import 'widgets/mode_switch.dart';
 import 'widgets/placeholder.dart';
 import 'widgets/status_footer.dart';
 import 'widgets/tag_chip_bar.dart';
-import '../common/widgets/hover_scrollbar.dart';
-import 'markdown_preview.dart';
+
 export 'intents.dart';
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
@@ -205,46 +206,44 @@ class _EditorState extends State<_Editor> {
     if (_findOpen) {
       return {
         const SingleActivator(LogicalKeyboardKey.enter): const FindNextIntent(),
-        const SingleActivator(LogicalKeyboardKey.numpadEnter):
-            const FindNextIntent(),
-        const SingleActivator(LogicalKeyboardKey.enter, shift: true):
-            const FindPrevIntent(),
-        const SingleActivator(LogicalKeyboardKey.escape):
-            const CloseFindIntent(),
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): const FindNextIntent(),
+        const SingleActivator(LogicalKeyboardKey.enter, shift: true): const FindPrevIntent(),
+        const SingleActivator(LogicalKeyboardKey.escape): const CloseFindIntent(),
         a(ShortcutAction.openFind): const OpenFindIntent(),
         a(ShortcutAction.selectWord): const SelectWordIntent(),
         a(ShortcutAction.copySelection): CopySelectionTextIntent.copy,
-        a(ShortcutAction.pasteSelection): const PasteTextIntent(
-          SelectionChangedCause.keyboard,
-        ),
+        a(ShortcutAction.pasteSelection): const PasteTextIntent(SelectionChangedCause.keyboard),
         if (widget.controller.mode != EditorMode.preview) ...{
-          const SingleActivator(LogicalKeyboardKey.keyB, control: true):
-              const FormatIntent(FormatKind.bold),
-          const SingleActivator(LogicalKeyboardKey.keyI, control: true):
-              const FormatIntent(FormatKind.italic),
-          const SingleActivator(LogicalKeyboardKey.keyU, control: true):
-              const FormatIntent(FormatKind.underline),
+          const SingleActivator(LogicalKeyboardKey.keyB, control: true): const FormatIntent(
+            FormatKind.bold,
+          ),
+          const SingleActivator(LogicalKeyboardKey.keyI, control: true): const FormatIntent(
+            FormatKind.italic,
+          ),
+          const SingleActivator(LogicalKeyboardKey.keyU, control: true): const FormatIntent(
+            FormatKind.underline,
+          ),
         },
       };
     }
     return {
       a(ShortcutAction.continueList): const ContinueListIntent(),
-      const SingleActivator(LogicalKeyboardKey.numpadEnter):
-          const ContinueListIntent(),
+      const SingleActivator(LogicalKeyboardKey.numpadEnter): const ContinueListIntent(),
       a(ShortcutAction.openFind): const OpenFindIntent(),
       a(ShortcutAction.selectWord): const SelectWordIntent(),
       a(ShortcutAction.copySelection): CopySelectionTextIntent.copy,
-      a(ShortcutAction.pasteSelection): const PasteTextIntent(
-        SelectionChangedCause.keyboard,
-      ),
+      a(ShortcutAction.pasteSelection): const PasteTextIntent(SelectionChangedCause.keyboard),
       if (widget.controller.mode != EditorMode.preview) ...{
         // Formatting (Ctrl+B/I/U) excluded from customization.
-        const SingleActivator(LogicalKeyboardKey.keyB, control: true):
-            const FormatIntent(FormatKind.bold),
-        const SingleActivator(LogicalKeyboardKey.keyI, control: true):
-            const FormatIntent(FormatKind.italic),
-        const SingleActivator(LogicalKeyboardKey.keyU, control: true):
-            const FormatIntent(FormatKind.underline),
+        const SingleActivator(LogicalKeyboardKey.keyB, control: true): const FormatIntent(
+          FormatKind.bold,
+        ),
+        const SingleActivator(LogicalKeyboardKey.keyI, control: true): const FormatIntent(
+          FormatKind.italic,
+        ),
+        const SingleActivator(LogicalKeyboardKey.keyU, control: true): const FormatIntent(
+          FormatKind.underline,
+        ),
       },
     };
   }
@@ -288,10 +287,7 @@ class _EditorState extends State<_Editor> {
     // formatted range highlighted so a second press can toggle it back off.
     final next = selection.isCollapsed
         ? TextSelection.collapsed(offset: result.caret)
-        : TextSelection(
-            baseOffset: result.selStart,
-            extentOffset: result.selEnd,
-          );
+        : TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd);
     _body.value = TextEditingValue(text: result.text, selection: next);
     widget.controller.updateBody(result.text);
   }
@@ -331,9 +327,7 @@ class _EditorState extends State<_Editor> {
   void _openFind() {
     final selection = _body.selection;
     var prefill = '';
-    if (selection.isValid &&
-        selection.start >= 0 &&
-        selection.end > selection.start) {
+    if (selection.isValid && selection.start >= 0 && selection.end > selection.start) {
       prefill = _body.text.substring(selection.start, selection.end);
     }
     _findCtrl?.dispose();
@@ -398,15 +392,11 @@ class _EditorState extends State<_Editor> {
     final start = _matches[_matchIndex];
     _body.value = TextEditingValue(
       text: _body.text,
-      selection: TextSelection(
-        baseOffset: start,
-        extentOffset: start + _lastQuery.length,
-      ),
+      selection: TextSelection(baseOffset: start, extentOffset: start + _lastQuery.length),
     );
   }
 
-  String get _counterLabel =>
-      _matches.isEmpty ? '0/0' : '${_matchIndex + 1}/${_matches.length}';
+  String get _counterLabel => _matches.isEmpty ? '0/0' : '${_matchIndex + 1}/${_matches.length}';
 
   /// Ctrl+D — select the word at the caret (story 11, F6).
   void _selectWord() {
@@ -470,8 +460,7 @@ class _EditorState extends State<_Editor> {
     final current = widget.controller.current;
     if (current == null) return;
     final trimmed = newTitle.trim();
-    if (trimmed.isEmpty ||
-        trimmed == extractTitle(current.body, current.fileName)) {
+    if (trimmed.isEmpty || trimmed == extractTitle(current.body, current.fileName)) {
       _title.text = current.title;
       return;
     }
@@ -484,13 +473,7 @@ class _EditorState extends State<_Editor> {
     for (final item in items) {
       if (item is! DropItemFile) continue;
       final path = item.path;
-      if ([
-        '.png',
-        '.jpg',
-        '.jpeg',
-        '.gif',
-        '.webp',
-      ].contains(p.extension(path).toLowerCase())) {
+      if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].contains(p.extension(path).toLowerCase())) {
         await _insertImage(File(path));
       }
     }
@@ -520,13 +503,9 @@ class _EditorState extends State<_Editor> {
     final controller = widget.controller;
     final quire =
         theme.extension<QuireColors>() ??
-        (theme.brightness == Brightness.dark
-            ? quireColorsDark
-            : quireColorsLight);
+        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
     final tags = extractTags(_body.text);
-    final words = _body.text.trim().isEmpty
-        ? 0
-        : _body.text.trim().split(RegExp(r'\s+')).length;
+    final words = _body.text.trim().isEmpty ? 0 : _body.text.trim().split(RegExp(r'\s+')).length;
 
     return Container(
       color: theme.colorScheme.surfaceContainerLowest,
@@ -535,16 +514,16 @@ class _EditorState extends State<_Editor> {
         children: [
           // Header: title + actions
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 18, 16, 14),
+            padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerLowest,
-              border: Border(
-                bottom: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: 0.5,
-                  ),
-                ),
-              ),
+              border: (tags.isEmpty && _findOpen == false && _findCtrl == null)
+                  ? Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    )
+                  : null,
             ),
             child: widget.focusMode
                 ? Align(
@@ -584,16 +563,10 @@ class _EditorState extends State<_Editor> {
                                 isDense: true,
                               ),
                               onSubmitted: _commitRename,
-                              onEditingComplete: () =>
-                                  _commitRename(_title.text),
+                              onEditingComplete: () => _commitRename(_title.text),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          const SizedBox(width: 8),
-                          ModeSwitch(
-                            mode: controller.mode,
-                            onSelected: controller.setMode,
-                          ),
+                          ModeSwitch(mode: controller.mode, onSelected: controller.setMode),
                         ],
                       ),
                     ),
@@ -634,207 +607,221 @@ class _EditorState extends State<_Editor> {
                           onEditingComplete: () => _commitRename(_title.text),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const SizedBox(width: 8),
-                      ModeSwitch(
-                        mode: controller.mode,
-                        onSelected: controller.setMode,
-                      ),
+                      ModeSwitch(mode: controller.mode, onSelected: controller.setMode),
                     ],
                   ),
           ),
-          // Find bar (story 14)
-          if (_findOpen && _findCtrl != null)
-            FindBar(
-              controller: _findCtrl!,
-              focusNode: _findFocus,
-              counter: _counterLabel,
-              hasMatches: _matches.isNotEmpty,
-              onChanged: _runFind,
-              onNext: _nextMatch,
-              onPrev: _prevMatch,
-              onClose: _closeFind,
-              settings: widget.settings,
-              caseSensitive: _caseSensitive,
-              onCaseSensitiveChanged: (_) => _toggleCaseSensitive(),
+          // Tag bar — container like title
+          if (tags.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                border: (_findOpen == false && _findCtrl == null)
+                    ? Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant
+                              .withValues(alpha: 0.5),
+                        ),
+                      )
+                    : null,
+              ),
+              child: Align(
+                alignment: widget.focusMode ? Alignment.topCenter : Alignment.topLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : double.infinity),
+                  child: TagChipBar(tags: tags, onTap: _focusTag),
+                ),
+              ),
             ),
-          TagChipBar(tags: tags, onTap: _focusTag),
+          // Find bar
+          if (_findOpen && _findCtrl != null)
+            Container(
+              key: const Key('find-bar'),
+              padding: const EdgeInsets.fromLTRB(24, 0, 16, 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+              child: Align(
+                alignment: widget.focusMode ? Alignment.topCenter : Alignment.topLeft,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : double.infinity),
+                  child: FindBar(
+                    controller: _findCtrl!,
+                    focusNode: _findFocus,
+                    counter: _counterLabel,
+                    hasMatches: _matches.isNotEmpty,
+                    onChanged: _runFind,
+                    onNext: _nextMatch,
+                    onPrev: _prevMatch,
+                    onClose: _closeFind,
+                    settings: widget.settings,
+                    caseSensitive: _caseSensitive,
+                    onCaseSensitiveChanged: (_) => _toggleCaseSensitive(),
+                  ),
+                ),
+              ),
+            ),
           // Body
           Expanded(
-            child: HoverScrollbar(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               // Top-left aligned (feedback F3 + "top left aligned"): the preview
               // scroll view shrink-wraps its content; Center would float it mid
               // pane. The 680px column is now anchored to the left gutter
               // instead of hovering in the middle of a wide window.
               child: Align(
-                alignment: widget.focusMode
-                    ? Alignment.topCenter
-                    : Alignment.topLeft,
+                alignment: widget.focusMode ? Alignment.topCenter : Alignment.topLeft,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: widget.focusMode ? 740 : 680,
-                  ),
-                  child: switch (controller.mode) {
-                    EditorMode.preview => Builder(
-                      builder: (context) {
-                        final overrides =
-                            widget.settings?.shortcutOverrides ?? const {};
-                        final cycleActivator = activatorFor(
-                          ShortcutAction.cycleEditorMode,
-                          overrides,
-                        );
-                        return Focus(
-                          focusNode: _previewFocus,
-                          autofocus: true,
-                          child: Shortcuts(
-                            shortcuts: {
-                              cycleActivator: const CycleEditorModeIntent(),
-                            },
-                            child: Actions(
-                              actions: {
-                                CycleEditorModeIntent:
-                                    CallbackAction<CycleEditorModeIntent>(
-                                      onInvoke: (intent) {
-                                        widget.controller.cycleMode();
-                                        return null;
-                                      },
-                                    ),
-                              },
-                              child: MarkdownPreview(
-                                body: _body.text,
-                                vaultRoot: controller.vaultRoot,
-                                baseFontSize: widget.baseFontSize ?? 16,
+                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : double.infinity),
+                  child: HoverScrollbar(
+                    child: switch (controller.mode) {
+                      EditorMode.preview => Builder(
+                        builder: (context) {
+                          final overrides = widget.settings?.shortcutOverrides ?? const {};
+                          final cycleActivator = activatorFor(
+                            ShortcutAction.cycleEditorMode,
+                            overrides,
+                          );
+                          return Focus(
+                            focusNode: _previewFocus,
+                            autofocus: true,
+                            child: Shortcuts(
+                              shortcuts: {cycleActivator: const CycleEditorModeIntent()},
+                              child: Actions(
+                                actions: {
+                                  CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
+                                    onInvoke: (intent) {
+                                      widget.controller.cycleMode();
+                                      return null;
+                                    },
+                                  ),
+                                },
+                                child: MarkdownPreview(
+                                  body: _body.text,
+                                  vaultRoot: controller.vaultRoot,
+                                  baseFontSize: widget.baseFontSize ?? 16,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                    _ => Shortcuts(
-                      shortcuts: _editShortcuts(),
-                      child: Actions(
-                        actions: {
-                          FormatIntent: CallbackAction<FormatIntent>(
-                            onInvoke: (intent) => _applyFormat(intent),
-                          ),
-                          ContinueListIntent:
-                              CallbackAction<ContinueListIntent>(
-                                onInvoke: (intent) => _handleEnter(),
-                              ),
-                          OpenFindIntent: CallbackAction<OpenFindIntent>(
-                            onInvoke: (intent) => _openFind(),
-                          ),
-                          SelectWordIntent: CallbackAction<SelectWordIntent>(
-                            onInvoke: (intent) => _selectWord(),
-                          ),
-                          FindNextIntent: CallbackAction<FindNextIntent>(
-                            onInvoke: (intent) {
-                              _nextMatch();
-                              return null;
-                            },
-                          ),
-                          FindPrevIntent: CallbackAction<FindPrevIntent>(
-                            onInvoke: (intent) {
-                              _prevMatch();
-                              return null;
-                            },
-                          ),
-                          CloseFindIntent: CallbackAction<CloseFindIntent>(
-                            onInvoke: (intent) {
-                              _closeFind();
-                              return null;
-                            },
-                          ),
+                          );
                         },
-                        child: DropTarget(
-                          onDragDone: (details) =>
-                              _insertDroppedImages(details.files),
-                          onDragEntered: (_) =>
-                              setState(() => _dragging = true),
-                          onDragExited: (_) =>
-                              setState(() => _dragging = false),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
-                            decoration: BoxDecoration(
-                              color: _dragging
-                                  ? theme.colorScheme.secondaryContainer
-                                        .withValues(alpha: 0.3)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                QuireRadius.m,
-                              ),
-                              border: _dragging
-                                  ? Border.all(
-                                      color: theme.colorScheme.primary,
-                                      width: 1.6,
-                                    )
-                                  : Border.all(color: Colors.transparent),
+                      ),
+                      _ => Shortcuts(
+                        shortcuts: _editShortcuts(),
+                        child: Actions(
+                          actions: {
+                            FormatIntent: CallbackAction<FormatIntent>(
+                              onInvoke: (intent) => _applyFormat(intent),
                             ),
-                            padding: const EdgeInsets.all(12),
-                            child: TextField(
-                              key: const Key('editor-body'),
-                              controller: _body,
-                              focusNode: _bodyFocus,
-                              onChanged: controller.updateBody,
-                              // Quire-styled cut/copy/paste menu (round 6):
-                              // defer into our own overlay route; the inline
-                              // toolbar slot stays empty. The gate keeps
-                              // builder re-fires from stacking menus.
-                              contextMenuBuilder: (context, editableState) {
-                                if (_editMenuOpen) {
-                                  return const SizedBox.shrink();
-                                }
-                                _editMenuOpen = true;
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  if (!context.mounted) {
-                                    _editMenuOpen = false;
-                                    return;
-                                  }
-                                  unawaited(
-                                    showBodyEditMenu(
-                                      context,
-                                      editableState,
-                                    ).whenComplete(() => _editMenuOpen = false),
-                                  );
-                                });
-                                return const SizedBox.shrink();
+                            ContinueListIntent: CallbackAction<ContinueListIntent>(
+                              onInvoke: (intent) => _handleEnter(),
+                            ),
+                            OpenFindIntent: CallbackAction<OpenFindIntent>(
+                              onInvoke: (intent) => _openFind(),
+                            ),
+                            SelectWordIntent: CallbackAction<SelectWordIntent>(
+                              onInvoke: (intent) => _selectWord(),
+                            ),
+                            FindNextIntent: CallbackAction<FindNextIntent>(
+                              onInvoke: (intent) {
+                                _nextMatch();
+                                return null;
                               },
-                              maxLines: null,
-                              expands: false,
-                              textAlignVertical: TextAlignVertical.top,
-                              keyboardType: TextInputType.multiline,
-                              style: _bodyStyle(theme),
-                              decoration: InputDecoration(
-                                hintText: 'Take a note…  Type #tags, drag images, write in Markdown.',
-                                hintStyle: safeHanken(
-                                  TextStyle(
-                                    fontSize: 16,
-                                    height: 26 / 16,
-                                    color: quire.textTertiary.withValues(
-                                      alpha: 0.9,
+                            ),
+                            FindPrevIntent: CallbackAction<FindPrevIntent>(
+                              onInvoke: (intent) {
+                                _prevMatch();
+                                return null;
+                              },
+                            ),
+                            CloseFindIntent: CallbackAction<CloseFindIntent>(
+                              onInvoke: (intent) {
+                                _closeFind();
+                                return null;
+                              },
+                            ),
+                          },
+                          child: DropTarget(
+                            onDragDone: (details) => _insertDroppedImages(details.files),
+                            onDragEntered: (_) => setState(() => _dragging = true),
+                            onDragExited: (_) => setState(() => _dragging = false),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 140),
+                              decoration: BoxDecoration(
+                                color: _dragging
+                                    ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(QuireRadius.m),
+                                border: _dragging
+                                    ? Border.all(color: theme.colorScheme.primary, width: 1.6)
+                                    : Border.all(color: Colors.transparent),
+                              ),
+                              padding: const EdgeInsets.all(12),
+                              child: TextField(
+                                key: const Key('editor-body'),
+                                controller: _body,
+                                focusNode: _bodyFocus,
+                                onChanged: controller.updateBody,
+                                // Quire-styled cut/copy/paste menu (round 6):
+                                // defer into our own overlay route; the inline
+                                // toolbar slot stays empty. The gate keeps
+                                // builder re-fires from stacking menus.
+                                contextMenuBuilder: (context, editableState) {
+                                  if (_editMenuOpen) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  _editMenuOpen = true;
+                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    if (!context.mounted) {
+                                      _editMenuOpen = false;
+                                      return;
+                                    }
+                                    unawaited(
+                                      showBodyEditMenu(
+                                        context,
+                                        editableState,
+                                      ).whenComplete(() => _editMenuOpen = false),
+                                    );
+                                  });
+                                  return const SizedBox.shrink();
+                                },
+                                maxLines: null,
+                                expands: false,
+                                textAlignVertical: TextAlignVertical.top,
+                                keyboardType: TextInputType.multiline,
+                                style: _bodyStyle(theme),
+                                decoration: InputDecoration(
+                                  hintText:
+                                      'Take a note…  Type #tags, drag images, write in Markdown.',
+                                  hintStyle: safeHanken(
+                                    TextStyle(
+                                      fontSize: 16,
+                                      height: 26 / 16,
+                                      color: quire.textTertiary.withValues(alpha: 0.9),
                                     ),
                                   ),
+                                  filled: false,
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
                                 ),
-                                filled: false,
-                                border: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
+                                cursorColor: theme.colorScheme.primary,
                               ),
-                              cursorColor: theme.colorScheme.primary,
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  },
+                    },
+                  ),
                 ),
               ),
-            ),
             ),
           ),
           // Status footer: mono
