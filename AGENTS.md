@@ -93,3 +93,8 @@ Whenever you make edits to any Dart or Flutter files in this project:
 1. Proactively connect to the running application using the `dtd` tool and its subcommands. Make sure to read the schema for this tool.
 2. Trigger a hot reload using the `hot_reload` tool to push the changes immediately.
 3. If no app is running, inform the user but do not let it stop you from completing the code edits.
+
+## Widget organization
+
+- Every `class _Foo extends StatelessWidget` or `extends StatefulWidget` MUST become public `class Foo` in its own file under a sibling `widgets/` directory (e.g. `lib/ui/editor/editor_pane.dart` → `lib/ui/editor/widgets/mode_switch.dart`). Private `State` classes (`class _FooState extends State<Foo>`) may remain private alongside their widget.
+- Keep ≥60% of widgets as standalone public files; do not add new private widget classes to existing panes/shell/sidebar — extract them instead.
