@@ -457,10 +457,20 @@ ThemeData buildTokens({
       ),
     ),
     scrollbarTheme: ScrollbarThemeData(
-      thumbColor: WidgetStatePropertyAll(onSurfaceVariant.withValues(alpha: 0.28)),
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.dragged)) {
+          return onSurfaceVariant.withValues(alpha: 0.6);
+        }
+        if (states.contains(WidgetState.hovered)) {
+          return onSurfaceVariant.withValues(alpha: 0.45);
+        }
+        return onSurfaceVariant.withValues(alpha: 0.28);
+      }),
       trackColor: const WidgetStatePropertyAll(Colors.transparent),
       radius: const Radius.circular(4),
       thickness: const WidgetStatePropertyAll(6),
+      crossAxisMargin: 2,
+      mainAxisMargin: 2,
     ),
   );
 }

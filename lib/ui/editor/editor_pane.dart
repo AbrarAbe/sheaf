@@ -25,6 +25,7 @@ import 'widgets/mode_switch.dart';
 import 'widgets/placeholder.dart';
 import 'widgets/status_footer.dart';
 import 'widgets/tag_chip_bar.dart';
+import '../common/widgets/hover_scrollbar.dart';
 import 'markdown_preview.dart';
 export 'intents.dart';
 
@@ -633,8 +634,9 @@ class _EditorState extends State<_Editor> {
           TagChipBar(tags: tags, onTap: _insertTag),
           // Body
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: HoverScrollbar(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
               // Top-left aligned (feedback F3 + "top left aligned"): the preview
               // scroll view shrink-wraps its content; Center would float it mid
               // pane. The 680px column is now anchored to the left gutter
@@ -805,6 +807,7 @@ class _EditorState extends State<_Editor> {
                   },
                 ),
               ),
+            ),
             ),
           ),
           // Status footer: mono

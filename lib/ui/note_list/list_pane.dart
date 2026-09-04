@@ -7,6 +7,7 @@ import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
 import '../common/context_menus.dart';
 import '../common/corner_toast.dart';
+import '../common/widgets/hover_scrollbar.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/note_row.dart';
 import 'widgets/scope_chip.dart';
@@ -239,7 +240,7 @@ class _ListPaneState extends State<ListPane> {
           }
         }
 
-        return ListView(children: blocks);
+        return HoverScrollbar(child: ListView(children: blocks));
       },
     );
   }
