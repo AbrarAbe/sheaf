@@ -9,6 +9,7 @@ import '../intents.dart';
 class FindBar extends StatelessWidget {
   const FindBar({
     required this.controller,
+    this.focusNode,
     required this.counter,
     required this.hasMatches,
     required this.onChanged,
@@ -28,6 +29,7 @@ class FindBar extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onClose;
   final AppSettings? settings;
+  final FocusNode? focusNode;
   final bool caseSensitive;
   final ValueChanged<bool>? onCaseSensitiveChanged;
 
@@ -79,6 +81,7 @@ class FindBar extends StatelessWidget {
                 child: TextField(
                   key: const Key('find-field'),
                   controller: controller,
+                  focusNode: focusNode,
                   autofocus: true,
                   onChanged: onChanged,
                   style: safeHanken(

@@ -121,6 +121,7 @@ class _EditorState extends State<_Editor> {
   /// Focus node for preview mode so `Ctrl+Shift+M` remains dispatchable
   /// when the TextField is unmounted.
   late final FocusNode _previewFocus;
+  late final FocusNode _findFocus;
 
   /// Focus *intent*: true once the body has been focused, sticky across mode
   /// switches (Preview unmounts the TextField, so hasFocus is false on return).
@@ -146,6 +147,7 @@ class _EditorState extends State<_Editor> {
     _bodyFocus = FocusNode();
     _bodyFocus.addListener(_onBodyFocusChange);
     _previewFocus = FocusNode(debugLabel: 'preview');
+    _findFocus = FocusNode(debugLabel: 'find');
     _titleFocus = FocusNode();
     _titleFocus.addListener(_onTitleFocusChange);
     _load();
@@ -339,6 +341,9 @@ class _EditorState extends State<_Editor> {
     setState(() => _findOpen = true);
     _body.addListener(_recomputeFind);
     _runFind(prefill);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _findFocus.requestFocus();
+    });
   }
 
   void _closeFind() {
@@ -455,6 +460,7 @@ class _EditorState extends State<_Editor> {
     _title.dispose();
     _bodyFocus.dispose();
     _previewFocus.dispose();
+    _findFocus.dispose();
     _titleFocus.dispose();
     _findCtrl?.dispose();
     super.dispose();
@@ -641,6 +647,7 @@ class _EditorState extends State<_Editor> {
           if (_findOpen && _findCtrl != null)
             FindBar(
               controller: _findCtrl!,
+              focusNode: _findFocus,
               counter: _counterLabel,
               hasMatches: _matches.isNotEmpty,
               onChanged: _runFind,
