@@ -15,18 +15,30 @@ class FolderRow extends StatefulWidget {
     required this.controller,
     required this.node,
     this.depth = 0,
+    this.expandVersion = 0,
+    this.expandValue = false,
   });
 
   final VaultController controller;
   final FolderNode node;
   final int depth;
+  final int expandVersion;
+  final bool expandValue;
 
   @override
   State<FolderRow> createState() => _FolderRowState();
 }
 
 class _FolderRowState extends State<FolderRow> {
-  bool _expanded = true;
+  bool _expanded = false;
+
+  @override
+  void didUpdateWidget(covariant FolderRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.expandVersion != oldWidget.expandVersion) {
+      _expanded = widget.expandValue;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +130,8 @@ class _FolderRowState extends State<FolderRow> {
                   controller: controller,
                   node: child,
                   depth: depth + 1,
+                  expandVersion: widget.expandVersion,
+                  expandValue: widget.expandValue,
                 ),
             ],
           ),

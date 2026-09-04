@@ -47,12 +47,7 @@ class _HoverScrollbarState extends State<HoverScrollbar> {
             onPointerUp: (_) {
               if (_dragging) setState(() => _dragging = false);
             },
-            child: RawScrollbar(
-              thumbVisibility: false,
-              thickness: 6,
-              radius: const Radius.circular(4),
-              child: widget.child,
-            ),
+            child: widget.child,
           ),
         );
       },

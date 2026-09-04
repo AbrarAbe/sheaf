@@ -16,6 +16,8 @@ class FindBar extends StatelessWidget {
     required this.onPrev,
     required this.onClose,
     this.settings,
+    this.caseSensitive = false,
+    this.onCaseSensitiveChanged,
   });
 
   final TextEditingController controller;
@@ -26,6 +28,8 @@ class FindBar extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onClose;
   final AppSettings? settings;
+  final bool caseSensitive;
+  final ValueChanged<bool>? onCaseSensitiveChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +109,42 @@ class FindBar extends StatelessWidget {
                   TextStyle(
                     fontSize: 11,
                     color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Tooltip(
+                message: 'Match case',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(4),
+                  onTap: onCaseSensitiveChanged == null
+                      ? null
+                      : () => onCaseSensitiveChanged!(!caseSensitive),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: caseSensitive
+                          ? theme.colorScheme.secondaryContainer
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: caseSensitive
+                            ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      'Aa',
+                      style: safeMono(
+                        TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: caseSensitive
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

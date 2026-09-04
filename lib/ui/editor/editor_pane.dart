@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 
 import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
+import '../../logic/vault_controller.dart';
 import '../../logic/find_controller.dart';
 import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
@@ -40,6 +41,7 @@ class EditorPane extends StatelessWidget {
     this.baseFontSize,
     this.focusMode = false,
     this.settings,
+    this.vaultController,
   });
 
   /// Null while no vault is open; renders the placeholder.
@@ -57,6 +59,9 @@ class EditorPane extends StatelessWidget {
 
   /// Settings for shortcut customization; if null, defaults are used.
   final AppSettings? settings;
+
+  /// Vault controller for tag-filter focus (tag chips).
+  final VaultController? vaultController;
   @override
   Widget build(BuildContext context) {
     final editor = controller;
@@ -75,6 +80,7 @@ class EditorPane extends StatelessWidget {
           baseFontSize: baseFontSize,
           focusMode: focusMode,
           settings: settings,
+          vaultController: vaultController,
         );
       },
     );
@@ -88,6 +94,7 @@ class _Editor extends StatefulWidget {
     this.baseFontSize,
     this.focusMode = false,
     this.settings,
+    this.vaultController,
   });
 
   final EditorController controller;
@@ -95,6 +102,7 @@ class _Editor extends StatefulWidget {
   final double? baseFontSize;
   final bool focusMode;
   final AppSettings? settings;
+  final VaultController? vaultController;
 
   @override
   State<_Editor> createState() => _EditorState();
@@ -126,6 +134,7 @@ class _EditorState extends State<_Editor> {
   List<int> _matches = [];
   int _matchIndex = -1;
   String _lastQuery = '';
+  bool _caseSensitive = false;
 
   @override
   void initState() {
@@ -342,7 +351,7 @@ class _EditorState extends State<_Editor> {
 
   void _recomputeFind() {
     if (!_findOpen || _lastQuery.isEmpty) return;
-    final newMatches = matchOffsets(_body.text, _lastQuery);
+    final newMatches = matchOffsets(_body.text, _lastQuery, caseSensitive: _caseSensitive);
     // Preserve index clamped.
     if (newMatches.isEmpty) {
       _matches = [];
@@ -356,10 +365,15 @@ class _EditorState extends State<_Editor> {
 
   void _runFind(String query) {
     _lastQuery = query.trim();
-    _matches = matchOffsets(_body.text, _lastQuery);
+    _matches = matchOffsets(_body.text, _lastQuery, caseSensitive: _caseSensitive);
     _matchIndex = _matches.isEmpty ? -1 : 0;
     _jumpToCurrentMatch();
     if (mounted) setState(() {});
+  }
+
+  void _toggleCaseSensitive() {
+    setState(() => _caseSensitive = !_caseSensitive);
+    if (_lastQuery.isNotEmpty) _runFind(_lastQuery);
   }
 
   void _nextMatch() => _stepMatch(1);
@@ -402,20 +416,14 @@ class _EditorState extends State<_Editor> {
     );
   }
 
-  void _insertTag(String tag) {
-    final insert = '#$tag ';
-    final text = _body.text;
-    final sel = _body.selection;
-    final offset = sel.isValid
-        ? sel.baseOffset.clamp(0, text.length)
-        : text.length;
-    final newText = text.replaceRange(offset, offset, insert);
-    _body.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: offset + insert.length),
-    );
-    widget.controller.updateBody(newText);
-    _bodyFocus.requestFocus();
+  void _focusTag(String tag) {
+    final vc = widget.vaultController;
+    if (vc == null) return;
+    if (vc.selectedTag == tag) {
+      vc.selectTag(null);
+    } else {
+      vc.selectTag(tag);
+    }
   }
 
   Future<void> _load() async {
@@ -630,8 +638,10 @@ class _EditorState extends State<_Editor> {
               onPrev: _prevMatch,
               onClose: _closeFind,
               settings: widget.settings,
+              caseSensitive: _caseSensitive,
+              onCaseSensitiveChanged: (_) => _toggleCaseSensitive(),
             ),
-          TagChipBar(tags: tags, onTap: _insertTag),
+          TagChipBar(tags: tags, onTap: _focusTag),
           // Body
           Expanded(
             child: HoverScrollbar(

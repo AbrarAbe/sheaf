@@ -345,6 +345,7 @@ class _ShellState extends State<Shell> {
       baseFontSize: s.editorFontSize,
       focusMode: focusMode,
       settings: s,
+      vaultController: widget.controller,
     );
   }
 
