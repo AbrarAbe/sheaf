@@ -20,7 +20,7 @@ class TagChipBar extends StatelessWidget {
         children: [
           for (final tag in tags)
             Tooltip(
-              message: '#$tag',
+              message: 'Go to #$tag',
               child: InkWell(
                 borderRadius: BorderRadius.circular(999),
                 onTap: () => onTap(tag),

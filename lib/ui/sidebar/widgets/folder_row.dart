@@ -85,11 +85,7 @@ class _FolderRowState extends State<FolderRow> {
                       value: 'new-inside',
                       icon: Icons.create_new_folder_outlined,
                     ),
-                    menuItem(
-                      'Rename',
-                      value: 'rename',
-                      icon: Icons.drive_file_rename_outline,
-                    ),
+                    menuItem('Rename', value: 'rename', icon: Icons.drive_file_rename_outline),
                     menuDivider,
                     menuItem(
                       'Delete',
@@ -111,9 +107,7 @@ class _FolderRowState extends State<FolderRow> {
                   child: HoverRow(
                     selected: isSelected,
                     onTap: () => controller.selectFolder(node.relPath),
-                    icon: isSelected
-                        ? Icons.folder_rounded
-                        : Icons.folder_outlined,
+                    icon: isSelected ? Icons.folder_rounded : Icons.folder_outlined,
                     label: node.name,
                   ),
                 ),
@@ -140,24 +134,15 @@ class _FolderRowState extends State<FolderRow> {
   }
 
   Future<void> _promptAndCreate(BuildContext context) async {
-    final name = await textPrompt(
-      context,
-      title: 'New folder inside "${widget.node.name}"',
-    );
+    final name = await textPrompt(context, title: 'New folder inside "${widget.node.name}"');
     if (name != null && name.trim().isNotEmpty) {
       await widget.controller.createFolderAt(widget.node.relPath, name.trim());
     }
   }
 
   Future<void> _promptAndRename(BuildContext context) async {
-    final name = await textPrompt(
-      context,
-      title: 'Rename folder',
-      initial: widget.node.name,
-    );
-    if (name != null &&
-        name.trim().isNotEmpty &&
-        name.trim() != widget.node.name) {
+    final name = await textPrompt(context, title: 'Rename folder', initial: widget.node.name);
+    if (name != null && name.trim().isNotEmpty && name.trim() != widget.node.name) {
       await widget.controller.renameFolder(widget.node.relPath, name.trim());
     }
   }

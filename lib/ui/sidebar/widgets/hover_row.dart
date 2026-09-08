@@ -35,13 +35,33 @@ class HoverRowState extends State<HoverRow> {
         color: widget.selected
             ? theme.colorScheme.secondaryContainer
             : _hover
-            ? theme.colorScheme.onSurface.withValues(alpha: 0.04)
+            ? theme.colorScheme.surfaceContainerLowest
             : Colors.transparent,
         borderRadius: BorderRadius.circular(QuireRadius.m),
         child: InkWell(
           borderRadius: BorderRadius.circular(QuireRadius.m),
           onTap: widget.onTap,
-          child: Padding(
+          child: Container(
+            decoration: widget.selected
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(QuireRadius.l),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.0),
+                    ),
+                  )
+                : _hover
+                ? BoxDecoration(
+                    borderRadius: BorderRadius.circular(QuireRadius.l),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 1),
+                    ),
+                  )
+                : BoxDecoration(
+                    borderRadius: BorderRadius.circular(QuireRadius.l),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.0),
+                    ),
+                  ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
             child: Row(
               children: [
@@ -64,12 +84,6 @@ class HoverRowState extends State<HoverRow> {
                     ),
                   ),
                 ),
-                if (_hover && !widget.selected)
-                  Icon(
-                    Icons.more_horiz,
-                    size: 14,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  ),
               ],
             ),
           ),

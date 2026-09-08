@@ -69,15 +69,25 @@ class _NoteRowState extends State<NoteRow> {
             onTap: widget.onTap,
             child: Container(
               decoration: widget.selected
-                  ? null
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(QuireRadius.l),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.0),
+                      ),
+                    )
                   : _hover
                   ? BoxDecoration(
                       borderRadius: BorderRadius.circular(QuireRadius.l),
                       border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 1),
                       ),
                     )
-                  : null,
+                  : BoxDecoration(
+                      borderRadius: BorderRadius.circular(QuireRadius.l),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.0),
+                      ),
+                    ),
               constraints: const BoxConstraints(minHeight: 64),
               padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
               child: Row(
