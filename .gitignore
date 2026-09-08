@@ -46,3 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Rules prompt
+AGENTS.md
+CLAUDE.md
+
+# AppImage
+Sheaf.AppImage

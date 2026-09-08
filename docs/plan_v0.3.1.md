@@ -20,7 +20,7 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
   **Description:** Make the folder list show the full tree that `VaultRepository` already returns, indented per depth, with chevron expand/collapse.
   **Acceptance criteria:**
   - [ ] Creating `a/b/c` (via `createFolderAt` or on-disk) appears as `a` → `b` → `c` indented in `Sidebar`; `folderTree()` with nested dirs returns `children` matching disk layout.
-  - [ ] `FolderRow` is `StatefulWidget` with `bool _expanded = true`; chevron `Icons.chevron_right` (rotated 90° when expanded) toggles subtree without selecting folder; collapsed hides `children` `Column`; indent `left: depth*16`.
+  - [ ] `FolderRow` is `StatefulWidget` with `bool _expanded = false`; chevron `Icons.chevron_right` (rotated 90° when expanded) toggles subtree without selecting folder; collapsed hides `children` `Column`; indent `left: depth*16`.
   - [ ] Selecting any nested folder (tap row, not chevron) sets `controller.selectedFolder == relPath` and filters `visibleNotes` to that subtree; expand state is in-memory per `relPath` for v0.3.1.
   **Verification:**
   - [ ] `flutter test test/ui/sidebar/sidebar_test.dart` — new case: nested `a/b/c` renders 3 rows with increasing indent; tap `c` selects `a/b/c`; tap chevron on `a` collapses/hides `b/c` and expands again.
@@ -36,15 +36,15 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 
 ### Phase 2 — Editor focus & selection
 
-- [ ] **Task 2: Find selection & focus**
+- [x] **Task 2: Find selection & focus**
   **Description:** `Ctrl+F` bar drives selection *and* focus correctly through typing, next/prev, and `Esc`.
   **Acceptance criteria:**
-  - [ ] `_jumpToCurrentMatch` after setting `TextSelection` calls `_bodyFocus.requestFocus()`; focus stays in `_body` while navigating matches (Enter / Shift+Enter / buttons do not move focus to the bar).
-  - [ ] Typing in the bar keeps `_recomputeFind` but does not steal editor focus when `_body` had it; bar `onChanged` is debounced and does not call `requestFocus` on the bar.
-  - [ ] `Esc` (`CloseFindIntent`) closes bar, clears `_findCtrl`, and restores `_bodyFocus`; `_body.removeListener(_recomputeFind)` is always paired.
+  - [x] `_jumpToCurrentMatch` after setting `TextSelection` calls `_bodyFocus.requestFocus()`; focus stays in `_body` while navigating matches (Enter / Shift+Enter / buttons do not move focus to the bar).
+  - [x] Typing in the bar keeps `_recomputeFind` but does not steal editor focus when `_body` had it; bar `onChanged` is debounced and does not call `requestFocus` on the bar.
+  - [x] `Esc` (`CloseFindIntent`) closes bar, clears `_findCtrl`, and restores `_bodyFocus`; `_body.removeListener(_recomputeFind)` is always paired.
   **Verification:**
-  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — `find in note (spec story 14)` group passes; new case: open bar, type, `Enter` moves highlight without focusing bar; `Esc` returns focus to `editor-body`.
-  - [ ] Manual: `Ctrl+F` with selection prefill, type query, `Enter`/`Shift+Enter` cycle, `Esc` → caret in editor.
+  - [x] `flutter test test/ui/editor/editor_pane_test.dart` — `find in note (spec story 14)` group passes; new case: open bar, type, `Enter` moves highlight without focusing bar; `Esc` returns focus to `editor-body`.
+  - [x] Manual: `Ctrl+F` with selection prefill, type query, `Enter`/`Shift+Enter` cycle, `Esc` → caret in editor.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`
@@ -69,15 +69,15 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 
 ### Phase 3 — Chips & chrome
 
-- [ ] **Task 4: In-editor tag chip bar**
+- [x] **Task 4: Onclick to focus tag chip bar**
   **Description:** Move tag chips from the standalone container above the body into a proper `TagChipBar` inside the editor column.
   **Acceptance criteria:**
-  - [ ] New `lib/ui/editor/widgets/tag_chip_bar.dart` (`TagChipBar extends StatelessWidget`) renders `Wrap` of pill chips from `extractTags(bodyText)` with same `secondaryContainer` style as before; appears directly under the title/header inside the scrollable editor column (scrolls with content, visible in focus mode).
-  - [ ] Old `Container` at `editor_pane.dart:591-632` removed; `TagChipBar` replaces it; `lib/data/markdown_parser.dart:extractTags` is the only tag source (no forked regex).
-  - [ ] Tapping a chip inserts `#tag ` at the caret (or copies to clipboard — document choice); long-press shows `#tag` tooltip.
+  - [x] New `lib/ui/editor/widgets/tag_chip_bar.dart` (`TagChipBar extends StatelessWidget`) renders `Wrap` of pill chips from `extractTags(bodyText)` with same `secondaryContainer` style as before; appears directly under the title/header inside the scrollable editor column (scrolls with content, visible in focus mode).
+  - [x] Old `Container` at `editor_pane.dart:591-632` removed; `TagChipBar` replaces it; `lib/data/markdown_parser.dart:extractTags` is the only tag source (no forked regex).
+  - [x] Tapping a chip focus `#tag ` in the editor; hover shows 'Go to #tag' tooltip.
   **Verification:**
-  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — chips render for `#a #b`, tap inserts text at caret.
-  - [ ] Manual: open note with `#urgent #proj` → chips under title, scroll with body, tap chip → text inserted.
+  - [x] `flutter test test/ui/editor/editor_pane_test.dart` — chips render for `#a #b`, tap inserts text at caret.
+  - [x] Manual: open note with `#urgent #proj` → chips under title, scroll with body, tap chip → text inserted.
   **Dependencies:** None (parallel with Task 2/3)
   **Files likely touched:**
   - `lib/ui/editor/widgets/tag_chip_bar.dart` (new)
@@ -104,21 +104,39 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 
 ### Phase 4 — Docs hygiene
 
-- [ ] **Task 6: Remove untested Task 11 action-bar fiction**
+- [x] **Task 6: Remove untested Task 11 action-bar fiction**
   **Description:** Delete the `EditorActionBar`/`ListKind`/`link_formatting` docs that describe unshipped/untested code and keep only the real list behavior.
   **Acceptance criteria:**
-  - [ ] `docs/plan_v0.3.md:127-144` (Task 11 & Task 12 blocks) edited: if `lib/ui/editor/action_bar.dart` / `lib/logic/list_formatting.dart` / `link_bar.dart` have no tests and are not wired, remove those Task sections and replace with a one-line note: "List action bar deferred — list continuation (Task 3) is the shipped list behavior."
-  - [ ] No code left that is both untested and unreferenced; `flutter analyze` clean, `grep -R ActionBar lib` empty after the doc cut (or file deleted).
-  - [ ] `docs/spec.md` not re-adding a spec story for the bar; deferred list lives in Spec's deferred list if needed.
+  - [x] `docs/plan_v0.3.md:127-144` (Task 11 & Task 12 blocks) edited: if `lib/ui/editor/action_bar.dart` / `lib/logic/list_formatting.dart` / `link_bar.dart` have no tests and are not wired, remove those Task sections and replace with a one-line note: "List action bar deferred — list continuation (Task 3) is the shipped list behavior."
+  - [x] No code left that is both untested and unreferenced; `flutter analyze` clean, `grep -R ActionBar lib` empty after the doc cut (or file deleted).
+  - [x] `docs/spec.md` not re-adding a spec story for the bar; deferred list lives in Spec's deferred list if needed.
   **Verification:**
-  - [ ] `grep -R "ActionBar\|ListKind" docs/` shows only the deferral note.
-  - [ ] `flutter analyze` + `flutter test` still green.
+  - [x] `grep -R "ActionBar\|ListKind" docs/` shows only the deferral note.
+  - [x] `flutter analyze` + `flutter test` still green.
   **Dependencies:** Tasks 1-5 (so grep scope is final)
   **Files likely touched:**
   - `docs/plan_v0.3.md`
   - `lib/ui/editor/action_bar.dart` (delete if exists)
   - `lib/logic/list_formatting.dart` (delete if exists & untested)
   **Estimated scope:** XS (1-2 files)
+
+### Phase 5 — Build & Distribution
+
+- [x] **Task 10: AppImage build for Linux**
+  **Description:** Create a script to package the Flutter Linux build as a portable AppImage.
+  **Acceptance criteria:**
+  - [x] Script `scripts/build_appimage.sh` exists and is executable.
+  - [x] It runs `flutter build linux --release`, then uses `linuxdeploy` and `linuxdeploy-plugin-gtk` to create `Sheaf.AppImage`.
+  - [x] The AppImage runs on a clean Ubuntu 22.04 system without additional dependencies.
+  - [x] The script exits with a clear error if prerequisites are missing.
+  **Verification:**
+  - [x] Run `scripts/build_appimage.sh` – produces `Sheaf.AppImage` in the project root.
+  - [x] Test the AppImage on a fresh Linux VM: `./Sheaf.AppImage` launches the app.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `scripts/build_appimage.sh` (new)
+  - `.gitignore` (add `Sheaf.AppImage`)
+  - `.github/workflows/release.yml` (new)
 
 ### Checkpoint: v0.3.1 complete
 - [ ] `flutter analyze` clean

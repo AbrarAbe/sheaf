@@ -48,20 +48,27 @@ jobs:
                   cp -r build/linux/x64/release/bundle/* /tmp/sheaf-package/sheaf/
                   tar czf "$GITHUB_WORKSPACE/sheaf-$GITHUB_REF_NAME-linux-x64.tar.gz" -C /tmp/sheaf-package sheaf
 
+            - name: Build AppImage
+              run: ./scripts/build_appimage.sh "sheaf-$GITHUB_REF_NAME-linux-x64.AppImage"
+
             - name: Generate release notes (git-cliff)
               id: notes
               uses: orhun/git-cliff-action@v4
               with:
                   args: --latest --strip header
 
-            - name: Upload build artifact
+            - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
                   name: sheaf-linux-x64
-                  path: sheaf-*-linux-x64.tar.gz
+                  path: |
+                      sheaf-*-linux-x64.tar.gz
+                      sheaf-*-linux-x64.AppImage
 
             - name: Publish GitHub Release
               uses: softprops/action-gh-release@v2
               with:
                   body: ${{ steps.notes.outputs.content }}
-                  files: sheaf-*-linux-x64.tar.gz
+                  files: |
+                      sheaf-*-linux-x64.tar.gz
+                      sheaf-*-linux-x64.AppImage
