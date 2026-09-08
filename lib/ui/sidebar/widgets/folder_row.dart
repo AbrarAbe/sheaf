@@ -49,6 +49,7 @@ class _FolderRowState extends State<FolderRow> {
     final hasChildren = node.children.isNotEmpty;
 
     return Column(
+      spacing: 2,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(

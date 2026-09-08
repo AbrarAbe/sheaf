@@ -16,16 +16,16 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 
 ### Phase 1 — Data-visible correctness
 
-- [ ] **Task 1: Nested folders render recursively with expand/collapse**
+- [x] **Task 1: Nested folders render recursively with expand/collapse**
   **Description:** Make the folder list show the full tree that `VaultRepository` already returns, indented per depth, with chevron expand/collapse.
   **Acceptance criteria:**
-  - [ ] Creating `a/b/c` (via `createFolderAt` or on-disk) appears as `a` → `b` → `c` indented in `Sidebar`; `folderTree()` with nested dirs returns `children` matching disk layout.
-  - [ ] `FolderRow` is `StatefulWidget` with `bool _expanded = false`; chevron `Icons.chevron_right` (rotated 90° when expanded) toggles subtree without selecting folder; collapsed hides `children` `Column`; indent `left: depth*16`.
-  - [ ] Selecting any nested folder (tap row, not chevron) sets `controller.selectedFolder == relPath` and filters `visibleNotes` to that subtree; expand state is in-memory per `relPath` for v0.3.1.
+  - [x] Creating `a/b/c` (via `createFolderAt` or on-disk) appears as `a` → `b` → `c` indented in `Sidebar`; `folderTree()` with nested dirs returns `children` matching disk layout.
+  - [x] `FolderRow` is `StatefulWidget` with `bool _expanded = false`; chevron `Icons.chevron_right` (rotated 90° when expanded) toggles subtree without selecting folder; collapsed hides `children` `Column`; indent `left: depth*16`.
+  - [x] Selecting any nested folder (tap row, not chevron) sets `controller.selectedFolder == relPath` and filters `visibleNotes` to that subtree; expand state is in-memory per `relPath` for v0.3.1.
   **Verification:**
-  - [ ] `flutter test test/ui/sidebar/sidebar_test.dart` — new case: nested `a/b/c` renders 3 rows with increasing indent; tap `c` selects `a/b/c`; tap chevron on `a` collapses/hides `b/c` and expands again.
-  - [ ] `flutter test test/data/vault_repository_test.dart` — existing `folderTree` recursion still passes.
-  - [ ] Manual: `mkdir -p /tmp/vault/a/b/c && flutter run` → indented rows with chevrons, collapse/expand works.
+  - [x] `flutter test test/ui/sidebar/sidebar_test.dart` — new case: nested `a/b/c` renders 3 rows with increasing indent; tap `c` selects `a/b/c`; tap chevron on `a` collapses/hides `b/c` and expands again.
+  - [x] `flutter test test/data/vault_repository_test.dart` — existing `folderTree` recursion still passes.
+  - [x] Manual: `mkdir -p /tmp/vault/a/b/c && flutter run` → indented rows with chevrons, collapse/expand works.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/ui/sidebar/sidebar.dart`
@@ -33,6 +33,53 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
   - `lib/ui/sidebar/widgets/section.dart`
   - `test/ui/sidebar/sidebar_test.dart`
   **Estimated scope:** S (3-4 files)
+
+### Phase 1b — UX polish (folder creation, sticky header, platform label)
+
+- [x] **Task 7: Select & focus new folder after creation with loading state**
+  **Description:** When a user creates a folder via the dialog, the sidebar should select it and show a loading indicator (cursor spinner) while the async operation is in-flight.
+  **Acceptance criteria:**
+  - [x] `_newFolderDialog` selects the newly created folder via `controller.selectFolder(relPath)` after creation, so the folder tree scopes to it immediately.
+  - [x] While `createFolderAt` is running (after dialog closes, before refresh completes), the sidebar shows a loading affordance: `SystemMouseCursors.wait` on the sidebar pane and a small `CircularProgressIndicator` replacing the "new folder" button during the operation.
+  - [x] Loading state is `_SidebarState`-local (a `bool _creatingFolder` flag), set `true` before calling `createFolderAt`, `false` after it completes; `ListenableBuilder` rebuilds on `setState`.
+  **Verification:**
+  - [x] Widget test: pump sidebar, open dialog, enter name, confirm → `selectFolder` called with the new folder's relPath; `_creatingFolder` was `true` during the async gap.
+  - [x] Manual: create folder → spinner appears briefly, then folder is selected with highlight.
+  **Dependencies:** Task 1
+  **Files likely touched:**
+  - `lib/ui/sidebar/sidebar.dart`
+  - `lib/logic/vault_controller.dart` (add `selectFolder` call in `createFolderAt` or a new wrapper)
+  - `test/ui/sidebar/sidebar_test.dart`
+  **Estimated scope:** S (2-3 files)
+
+- [x] **Task 8: Sticky FOLDERS section header**
+  **Description:** The FOLDERS label, expand/collapse toggle, and new-folder button should stay pinned at the top of the scrollable area so they're always visible when the folder list is long.
+  **Acceptance criteria:**
+  - [x] The folders header (label + expand/collapse + new-folder button) is extracted from the `SingleChildScrollView` and placed in a fixed position above the scrollable folder list.
+  - [x] The folder list scrolls independently underneath the header; empty state ("No folders yet...") also lives in the scrollable area.
+  - [x] TAGS section remains below the folder list inside the scrollable area (it scrolls away as expected).
+  - [x] No visual regression: padding, divider, and spacing match the current layout.
+  **Verification:**
+  - [x] Widget test: sidebar with many folders, scroll down → FOLDERS header stays visible at top; TAGS header scrolls out of view.
+  - [x] Manual: create 10+ folders, scroll → header pinned.
+  **Dependencies:** Task 1
+  **Files likely touched:**
+  - `lib/ui/sidebar/sidebar.dart`
+  **Estimated scope:** XS (1 file)
+
+- [x] **Task 9: Platform-aware folder section label**
+  **Description:** On Linux, the FOLDERS section label reads "DIRECTORIES" instead of "FOLDERS" to match platform conventions. Other platforms keep "FOLDERS".
+  **Acceptance criteria:**
+  - [x] `dart:io` `Platform.isLinux` check in the `Sidebar` build method selects the label string: `'DIRECTORIES'` on Linux, `'FOLDERS'` otherwise.
+  - [x] No new dependency; `dart:io` is already available in Flutter on all desktop targets.
+  - [x] Label is computed once per build, not stored in state.
+  **Verification:**
+  - [x] Widget test: verify label text matches platform expectation.
+  - [x] Manual: run on Linux → "DIRECTORIES"; macOS/Windows → "FOLDERS".
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/ui/sidebar/sidebar.dart`
+  **Estimated scope:** XS (1 file)
 
 ### Phase 2 — Editor focus & selection
 
@@ -151,3 +198,6 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 | Find focus fight with bar TextField | Low | Bar field uses `onChanged` only; editor focus is always restored after `_jumpToCurrentMatch`; no `autofocus` on FindBar. |
 | Tag chip insertion conflicts with autosave debounce | Low | Chip tap does `_body.value = ...` then `controller.updateBody`; autosave 1s debounce coalesces — no extra flush. |
 | Docs deletion hides real intent for future action bar | Low | Keep one-sentence deferral note with ADR link placeholder. |
+| Loading spinner race: folder created but refresh hasn't returned yet | Low | `_creatingFolder` state is scoped to `_SidebarState`; `setState` after completion always clears it. |
+| Sticky header increases Sidebar complexity | Low | Simple `Column` split: header outside `Expanded`, scrollable list inside `Expanded`. No new widget. |
+| `Platform.isLinux` returns true inside Flutter test on Linux host | Low | Acceptable — test verifies correct label on the host platform; CI on Linux confirms "DIRECTORIES". |

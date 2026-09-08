@@ -145,6 +145,7 @@ class _CommandPaletteState extends State<CommandPalette> {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 480),
                   child: ListView.builder(
+                    shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     itemCount: results.length,
                     itemBuilder: (context, i) {
