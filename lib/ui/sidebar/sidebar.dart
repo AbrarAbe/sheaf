@@ -82,114 +82,107 @@ class _SidebarState extends State<Sidebar> {
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
                       child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Section(
-                          label: 'FOLDERS',
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'Expand all',
-                                visualDensity: VisualDensity.compact,
-                                icon: Icon(
-                                  Icons.unfold_more,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                onPressed: () => setState(() {
-                                  _expandVersion++;
-                                  _expandValue = true;
-                                }),
-                              ),
-                              IconButton(
-                                tooltip: 'Collapse all',
-                                visualDensity: VisualDensity.compact,
-                                icon: Icon(
-                                  Icons.unfold_less,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                onPressed: () => setState(() {
-                                  _expandVersion++;
-                                  _expandValue = false;
-                                }),
-                              ),
-                              IconButton(
-                                tooltip: 'New folder',
-                                visualDensity: VisualDensity.compact,
-                                icon: Icon(
-                                  Icons.create_new_folder_outlined,
-                                  size: 18,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                onPressed: () => _newFolderDialog(context),
-                              ),
-                            ],
-                          ),
-                          child: controller.folders.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                                  child: Text(
-                                    'No folders yet.\nCreate one to organize.',
-                                    style: GoogleFonts.hankenGrotesk(
-                                      fontSize: 12,
-                                      height: 16 / 12,
-                                      color: theme.colorScheme.onSurfaceVariant.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Column(
-                                  children: [
-                                    for (final folder in controller.folders)
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: 2),
-                                        child: FolderRow(
-                                          controller: controller,
-                                          node: folder,
-                                          expandVersion: _expandVersion,
-                                          expandValue: _expandValue,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                        ),
-                        const SizedBox(height: 20),
-                        if (tags.isNotEmpty)
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Section(
-                            label: 'TAGS',
-                            child: Column(
+                            label: 'FOLDERS',
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                for (final tag in tags)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
-                                    child: TagRow(
-                                      controller: controller,
-                                      tag: tag,
-                                      count: counts[tag]!,
+                                IconButton(
+                                  tooltip: _expandValue ? 'Collapse all' : 'Expand all',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 150),
+                                    child: Icon(
+                                      _expandValue ? Icons.unfold_less : Icons.unfold_more,
+                                      key: ValueKey(_expandValue),
+                                      size: 18,
+                                      color: theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
+                                  onPressed: () => setState(() {
+                                    _expandVersion++;
+                                    _expandValue = !_expandValue;
+                                  }),
+                                ),
+                                IconButton(
+                                  tooltip: 'New folder',
+                                  visualDensity: VisualDensity.compact,
+                                  icon: Icon(
+                                    Icons.create_new_folder_outlined,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  onPressed: () => _newFolderDialog(context),
+                                ),
                               ],
                             ),
-                          )
-                        else
-                          Section(
-                            label: 'TAGS',
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
-                              child: Text(
-                                'Inline #tags appear here.',
-                                style: GoogleFonts.hankenGrotesk(
-                                  fontSize: 12,
-                                  height: 16 / 12,
-                                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                            child: controller.folders.isEmpty
+                                ? Padding(
+                                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                                    child: Text(
+                                      'No folders yet.\nCreate one to organize.',
+                                      style: GoogleFonts.hankenGrotesk(
+                                        fontSize: 12,
+                                        height: 16 / 12,
+                                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                                          alpha: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Column(
+                                    children: [
+                                      for (final folder in controller.folders)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 2),
+                                          child: FolderRow(
+                                            controller: controller,
+                                            node: folder,
+                                            expandVersion: _expandVersion,
+                                            expandValue: _expandValue,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                          ),
+                          const SizedBox(height: 20),
+                          if (tags.isNotEmpty)
+                            Section(
+                              label: 'TAGS',
+                              child: Column(
+                                children: [
+                                  for (final tag in tags)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: TagRow(
+                                        controller: controller,
+                                        tag: tag,
+                                        count: counts[tag]!,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            )
+                          else
+                            Section(
+                              label: 'TAGS',
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
+                                child: Text(
+                                  'Inline #tags appear here.',
+                                  style: GoogleFonts.hankenGrotesk(
+                                    fontSize: 12,
+                                    height: 16 / 12,
+                                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                                      alpha: 0.7,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
                       ),
                     ),
                   ),
