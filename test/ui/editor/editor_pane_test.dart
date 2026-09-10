@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -111,6 +112,52 @@ void main() {
         reason: 'editor prose sits on the card, not in a well',
       );
     }
+  });
+
+  testWidgets('body selection is bounded to the prose column, not the pane', (tester) async {
+    final note = await real(
+      () => vaultController.createNote(title: 'Prose', body: 'a short line'),
+      tester,
+    );
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    final editableState = tester.state<EditableTextState>(
+      find.descendant(
+        of: find.byKey(const Key('editor-body')),
+        matching: find.byType(EditableText),
+      ),
+    );
+    final editableWidth = editableState.renderEditable.size.width;
+    final paneWidth = tester.getSize(find.byType(EditorPane)).width;
+
+    expect(
+      editableWidth,
+      lessThan(paneWidth),
+      reason: 'a full-width RenderEditable paints selection across the empty gutter',
+    );
+    expect(
+      editableWidth,
+      lessThanOrEqualTo(680.0),
+      reason: 'body prose column is the 680px reading measure',
+    );
+  });
+
+  testWidgets('body field uses tight selection boxes so multi-line highlight hugs text', (
+    tester,
+  ) async {
+    final note = await real(() => vaultController.createNote(title: 'Tight'), tester);
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    expect(
+      field.selectionWidthStyle,
+      ui.BoxWidthStyle.tight,
+      reason:
+          'non-web default is BoxWidthStyle.max, which pads each selected '
+          'line out to the widest line in the paragraph',
+    );
   });
 
   testWidgets('tag chips render from body tags', (tester) async {
@@ -799,27 +846,31 @@ void main() {
       await pumpEditor(tester);
       expect(editorController.mode, EditorMode.preview);
     });
-  group('find and tag bars container like title (focus mode)', () {
-    testWidgets('find bar uses container like title in focus mode', (tester) async {
-      await openAndPump(tester);
-      expect(find.byKey(const Key('find-bar')), findsNothing);
-      final ctx = tester.element(find.byKey(const Key('editor-body')));
-      Actions.invoke(ctx, const OpenFindIntent());
-      await tester.pump();
-      expect(find.byKey(const Key('find-bar')), findsOneWidget);
-      final container = tester.widget<Container>(find.byKey(const Key('find-bar')));
-      expect(container.decoration, isA<BoxDecoration>());
-    });
+    group('find and tag bars container like title (focus mode)', () {
+      testWidgets('find bar uses container like title in focus mode', (tester) async {
+        await openAndPump(tester);
+        expect(find.byKey(const Key('find-bar')), findsNothing);
+        final ctx = tester.element(find.byKey(const Key('editor-body')));
+        Actions.invoke(ctx, const OpenFindIntent());
+        await tester.pump();
+        expect(find.byKey(const Key('find-bar')), findsOneWidget);
+        final container = tester.widget<Container>(find.byKey(const Key('find-bar')));
+        expect(container.decoration, isA<BoxDecoration>());
+      });
 
-    testWidgets('tag bar only built when tags non-empty and uses container like title', (tester) async {
-      final note = await real(() => vaultController.createNote(title: 'T', body: 'hello #tag'), tester);
-      await real(() => editorController.open(note), tester);
-      await pumpEditor(tester);
-      expect(find.text('#tag'), findsOneWidget);
-      expect(find.byType(TagChipBar), findsOneWidget);
+      testWidgets('tag bar only built when tags non-empty and uses container like title', (
+        tester,
+      ) async {
+        final note = await real(
+          () => vaultController.createNote(title: 'T', body: 'hello #tag'),
+          tester,
+        );
+        await real(() => editorController.open(note), tester);
+        await pumpEditor(tester);
+        expect(find.text('#tag'), findsOneWidget);
+        expect(find.byType(TagChipBar), findsOneWidget);
+      });
     });
-  });
-
   });
 }
 
@@ -848,5 +899,3 @@ TextSelection? _bodySelection(WidgetTester tester) {
   );
   return state.widget.controller.selection;
 }
-
-

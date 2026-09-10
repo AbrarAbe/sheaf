@@ -99,15 +99,16 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
   - `test/ui/editor/editor_pane_test.dart`
   **Estimated scope:** S (2 files)
 
-- [ ] **Task 3: Word-only selection (no full-width highlight)**
+- [x] **Task 3: Word-only selection (no full-width highlight)**
   **Description:** Restrict the editable's selection paint to the text width, not the container width.
   **Acceptance criteria:**
-  - [ ] Drafting `TextField` inside `EditorPane` does not paint selection across the full `Expanded` row; double-click or drag selects only glyph bounds; empty gutter is not selectable.
-  - [ ] Implemented by constraining the `EditableText` width to content (e.g. `ConstrainedBox(maxWidth:680)` + `Align` + `SelectionArea` only around the text, outer `Padding` wrapped in `SelectionContainer.disabled`) — no `Container.color` bleeding into selection.
-  - [ ] Preview mode unaffected.
+  - [x] Drafting `TextField` inside `EditorPane` does not paint selection across the full row; the selection is bounded to the prose column; empty gutter is not selectable.
+  - [x] Implemented by bounding the body prose column: the body `ConstrainedBox` now uses `maxWidth: 680` (non-focus) / `740` (focus) instead of `double.infinity`. The unbounded box was the actual bug — a `RenderEditable` can only paint a selection as wide as its own box, so a full-pane box let a gutter drag bleed the highlight across the pane. `Align` + `SelectionContainer.disabled` turned out to be unnecessary: the space beyond 680px lies outside the editable's hit area entirely.
+  - [x] Second, independent cause: `EditableText.defaultSelectionWidthStyle` is `ui.BoxWidthStyle.max` on non-web platforms, which pads every selected line's boxes out to the widest line in the paragraph — exactly the reported multi-line symptom. The body field now passes `selectionWidthStyle: ui.BoxWidthStyle.tight`.
+  - [x] Preview mode unaffected (the constraint sits above the mode switch).
   **Verification:**
-  - [ ] Widget test: create `EditorPane` with long body, `tester.drag` from gutter (outside text) does not create selection; `golden` or `RenderEditable` selection rect width < pane width.
-  - [ ] Manual: drag across gutter → no selection; drag across words → word-local highlight.
+  - [x] Widget tests: `body selection is bounded to the prose column, not the pane` asserts `renderEditable.size.width < pane width` and `<= 680`; `body field uses tight selection boxes so multi-line highlight hugs text` asserts `selectionWidthStyle == ui.BoxWidthStyle.tight`. Whole file green (39/39).
+  - [x] Manual: drag across gutter → no selection; drag across words → word-local highlight.
   **Dependencies:** Task 2 (focus correctness before selection geometry)
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`

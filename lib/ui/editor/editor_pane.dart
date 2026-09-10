@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
@@ -675,10 +676,17 @@ class _EditorState extends State<_Editor> {
               // scroll view shrink-wraps its content; Center would float it mid
               // pane. The 680px column is now anchored to the left gutter
               // instead of hovering in the middle of a wide window.
+              //
+              // v0.3.1 Task 3: this bound is load-bearing for selection, not
+              // just layout. A RenderEditable can only paint a selection as
+              // wide as its own box, so the old `double.infinity` let a drag
+              // from the empty gutter bleed the highlight across the whole
+              // pane. 680 is the reading column the comment above promised;
+              // 740 is the focus-mode measure.
               child: Align(
                 alignment: widget.focusMode ? Alignment.topCenter : Alignment.topLeft,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : double.infinity),
+                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : 680),
                   child: HoverScrollbar(
                     child: switch (controller.mode) {
                       EditorMode.preview => Builder(
@@ -795,6 +803,13 @@ class _EditorState extends State<_Editor> {
                                 expands: false,
                                 textAlignVertical: TextAlignVertical.top,
                                 keyboardType: TextInputType.multiline,
+                                // v0.3.1 Task 3: the non-web default is
+                                // ui.BoxWidthStyle.max, which pads every selected
+                                // line's highlight out to the widest line in the
+                                // paragraph. tight hugs each line's glyph run, so a
+                                // multi-line selection stops painting the empty
+                                // tail of short lines.
+                                selectionWidthStyle: ui.BoxWidthStyle.tight,
                                 style: _bodyStyle(theme),
                                 decoration: InputDecoration(
                                   hintText:
