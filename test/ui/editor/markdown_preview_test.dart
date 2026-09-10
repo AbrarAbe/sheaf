@@ -27,11 +27,17 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    final scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MarkdownPreview(body: body, vaultRoot: tempDir),
+          body: MarkdownPreview(
+            body: body,
+            vaultRoot: tempDir,
+            scrollController: scrollController,
+          ),
         ),
       ),
     );

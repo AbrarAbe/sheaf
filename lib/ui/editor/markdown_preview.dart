@@ -28,9 +28,7 @@ class _UnderlineNode extends SpanNode {
   @override
   InlineSpan build() => TextSpan(
     text: _element.textContent,
-    style: (parentStyle ?? const TextStyle()).copyWith(
-      decoration: TextDecoration.underline,
-    ),
+    style: (parentStyle ?? const TextStyle()).copyWith(decoration: TextDecoration.underline),
   );
 }
 
@@ -43,11 +41,13 @@ class MarkdownPreview extends StatelessWidget {
     super.key,
     required this.body,
     required this.vaultRoot,
+    required this.scrollController,
     this.baseFontSize = 16,
   });
 
   final String body;
   final Directory vaultRoot;
+  final ScrollController scrollController;
 
   /// Base size from settings (story 16); all preview sizes scale by it/16.
   final double baseFontSize;
@@ -59,9 +59,7 @@ class MarkdownPreview extends StatelessWidget {
     final theme = Theme.of(context);
     final quire =
         theme.extension<QuireColors>() ??
-        (theme.brightness == Brightness.dark
-            ? quireColorsDark
-            : quireColorsLight);
+        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
     final onSurface = theme.colorScheme.onSurface;
     final inset = theme.colorScheme.surfaceContainerHighest;
 
@@ -102,53 +100,30 @@ class MarkdownPreview extends StatelessWidget {
         ),
         H3Config(
           style: safeHanken(
-            TextStyle(
-              fontSize: 17,
-              height: 24 / 17,
-              fontWeight: FontWeight.w600,
-              color: onSurface,
-            ),
+            TextStyle(fontSize: 17, height: 24 / 17, fontWeight: FontWeight.w600, color: onSurface),
           ),
         ),
         CodeConfig(
           style: safeMono(
-            TextStyle(
-              fontSize: 13,
-              height: 18 / 13,
-              color: onSurface,
-              backgroundColor: inset,
-            ),
+            TextStyle(fontSize: 13, height: 18 / 13, color: onSurface, backgroundColor: inset),
           ),
         ),
         PreConfig(
-          textStyle: safeMono(
-            TextStyle(fontSize: 13, height: 18 / 13, color: onSurface),
-          ),
+          textStyle: safeMono(TextStyle(fontSize: 13, height: 18 / 13, color: onSurface)),
           decoration: BoxDecoration(
             color: inset,
             borderRadius: BorderRadius.circular(QuireRadius.s),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-            ),
+            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6)),
           ),
           padding: const EdgeInsets.all(14),
           language: '',
         ),
-        BlockquoteConfig(
-          sideColor: theme.colorScheme.primary,
-          textColor: onSurface,
-        ),
+        BlockquoteConfig(sideColor: theme.colorScheme.primary, textColor: onSurface),
         TableConfig(
           headerStyle: safeHanken(
-            TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: onSurface,
-            ),
+            TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: onSurface),
           ),
-          bodyStyle: safeHanken(
-            TextStyle(fontSize: 14, height: 20 / 14, color: onSurface),
-          ),
+          bodyStyle: safeHanken(TextStyle(fontSize: 14, height: 20 / 14, color: onSurface)),
           wrapper: (child) => Container(
             decoration: BoxDecoration(
               border: Border.all(color: theme.colorScheme.outlineVariant),
@@ -163,17 +138,12 @@ class MarkdownPreview extends StatelessWidget {
             margin: const EdgeInsets.only(top: 10, right: 8),
             width: 5,
             height: 5,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
           ),
         ),
         CheckBoxConfig(
           builder: (checked) => Icon(
-            checked
-                ? Icons.check_box_rounded
-                : Icons.check_box_outline_blank_rounded,
+            checked ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
             size: 18,
             color: checked ? theme.colorScheme.primary : quire.textTertiary,
           ),
@@ -189,13 +159,7 @@ class MarkdownPreview extends StatelessWidget {
           child: Text(
             'Nothing written yet.\nSwitch to Normal or Markdown to start.',
             textAlign: TextAlign.center,
-            style: safeHanken(
-              TextStyle(
-                fontSize: 14,
-                height: 20 / 14,
-                color: quire.textTertiary,
-              ),
-            ),
+            style: safeHanken(TextStyle(fontSize: 14, height: 20 / 14, color: quire.textTertiary)),
           ),
         ),
       );
@@ -203,7 +167,9 @@ class MarkdownPreview extends StatelessWidget {
 
     return SelectionArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(4, 8, 4, 24),
+        controller: scrollController,
+        // padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
+        padding: const EdgeInsets.only(top: 2, right: 24, bottom: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _generator().buildWidgets(body, config: config),
@@ -216,10 +182,7 @@ class MarkdownPreview extends StatelessWidget {
     linesMargin: const EdgeInsets.symmetric(vertical: 7),
     inlineSyntaxList: [_UnderlineSyntax()],
     generators: [
-      SpanNodeGeneratorWithTag(
-        tag: 'u',
-        generator: (e, config, visitor) => _UnderlineNode(e),
-      ),
+      SpanNodeGeneratorWithTag(tag: 'u', generator: (e, config, visitor) => _UnderlineNode(e)),
     ],
   );
 
@@ -248,26 +211,17 @@ class MarkdownPreview extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(QuireRadius.s),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.broken_image,
-                size: 16,
-                color: Theme.of(context).colorScheme.error,
-              ),
+              Icon(Icons.broken_image, size: 16, color: Theme.of(context).colorScheme.error),
               const SizedBox(width: 8),
               Text(
                 alt.isEmpty ? url : alt,
                 style: safeMono(
-                  TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -286,9 +240,6 @@ class MarkdownPreview extends StatelessWidget {
       );
     }
 
-    return KeyedSubtree(
-      key: Key(width == null ? 'md-img-natural' : 'md-img-$width'),
-      child: image,
-    );
+    return KeyedSubtree(key: Key(width == null ? 'md-img-natural' : 'md-img-$width'), child: image);
   }
 }

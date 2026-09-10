@@ -6,6 +6,7 @@ import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:sheaf/ui/common/widgets/hover_scrollbar.dart';
 
 import '../../data/markdown_parser.dart';
 import '../../logic/editor_controller.dart';
@@ -18,7 +19,6 @@ import '../../models/settings.dart';
 import '../../models/shortcut_settings.dart';
 import '../../theme/quire_colors.dart';
 import '../../theme/quire_theme.dart';
-import '../common/widgets/hover_scrollbar.dart';
 import '../shell/shortcuts.dart';
 import 'edit_menu.dart';
 import 'highlighting_controller.dart';
@@ -31,6 +31,22 @@ import 'widgets/status_footer.dart';
 import 'widgets/tag_chip_bar.dart';
 
 export 'intents.dart';
+
+/// Suppresses the [TextField]'s built-in overlay scrollbar so the body can
+/// supply its own padded [Scrollbar] (mirroring preview mode).
+///
+/// Load-bearing: material [TextField] exposes no `scrollBehavior` parameter,
+/// and its internal `EditableText` forces
+/// `ScrollConfiguration.of(context).copyWith(scrollbars: true)` for multiline
+/// fields — so an ancestor `copyWith(scrollbars: false)` is overwritten back
+/// to true. A custom behavior survives because `_WrappedScrollBehavior`
+/// delegates `buildScrollbar` to this override even when the flag is true.
+class _NoScrollbarBehavior extends MaterialScrollBehavior {
+  const _NoScrollbarBehavior();
+
+  @override
+  Widget buildScrollbar(BuildContext context, Widget child, ScrollableDetails details) => child;
+}
 
 /// The editor pane: title row (renames file), tag chips, prose editor with
 /// debounced autosave, and the mono status footer.
@@ -129,6 +145,7 @@ class _EditorState extends State<_Editor> {
   /// switches (Preview unmounts the TextField, so hasFocus is false on return).
   bool _wantBodyFocus = false;
   late final FocusNode _titleFocus;
+  late final ScrollController _bodyScroll;
   String? _loadedPath;
   EditorMode? _syncedMode;
   bool _dragging = false;
@@ -152,6 +169,7 @@ class _EditorState extends State<_Editor> {
     _findFocus = FocusNode(debugLabel: 'find');
     _titleFocus = FocusNode();
     _titleFocus.addListener(_onTitleFocusChange);
+    _bodyScroll = ScrollController();
     _load();
   }
 
@@ -438,6 +456,7 @@ class _EditorState extends State<_Editor> {
     _loadedPath = note.path;
     _body.text = note.body;
     _title.text = note.title;
+    if (_bodyScroll.hasClients) _bodyScroll.jumpTo(0);
     if (mounted) setState(() {});
   }
 
@@ -453,6 +472,7 @@ class _EditorState extends State<_Editor> {
     _previewFocus.dispose();
     _findFocus.dispose();
     _titleFocus.dispose();
+    _bodyScroll.dispose();
     _findCtrl?.dispose();
     super.dispose();
   }
@@ -612,7 +632,7 @@ class _EditorState extends State<_Editor> {
                     ],
                   ),
           ),
-          // Tag bar — container like title
+          // Tag bar container
           if (tags.isNotEmpty)
             Container(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
@@ -671,170 +691,182 @@ class _EditorState extends State<_Editor> {
           // Body
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              // Top-left aligned (feedback F3 + "top left aligned"): the preview
-              // scroll view shrink-wraps its content; Center would float it mid
-              // pane. The 680px column is now anchored to the left gutter
-              // instead of hovering in the middle of a wide window.
-              //
-              // v0.3.1 Task 3: this bound is load-bearing for selection, not
-              // just layout. A RenderEditable can only paint a selection as
-              // wide as its own box, so the old `double.infinity` let a drag
-              // from the empty gutter bleed the highlight across the whole
-              // pane. 680 is the reading column the comment above promised;
-              // 740 is the focus-mode measure.
+              padding: EdgeInsets.only(left: widget.focusMode ? 0 : 24, top: 6, bottom: 8),
               child: Align(
                 alignment: widget.focusMode ? Alignment.topCenter : Alignment.topLeft,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : 680),
-                  child: HoverScrollbar(
-                    child: switch (controller.mode) {
-                      EditorMode.preview => Builder(
-                        builder: (context) {
-                          final overrides = widget.settings?.shortcutOverrides ?? const {};
-                          final cycleActivator = activatorFor(
-                            ShortcutAction.cycleEditorMode,
-                            overrides,
-                          );
-                          return Focus(
-                            focusNode: _previewFocus,
-                            autofocus: true,
-                            child: Shortcuts(
-                              shortcuts: {cycleActivator: const CycleEditorModeIntent()},
-                              child: Actions(
-                                actions: {
-                                  CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
-                                    onInvoke: (intent) {
-                                      widget.controller.cycleMode();
-                                      return null;
-                                    },
-                                  ),
-                                },
-                                child: MarkdownPreview(
-                                  body: _body.text,
-                                  vaultRoot: controller.vaultRoot,
-                                  baseFontSize: widget.baseFontSize ?? 16,
+                  constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : double.infinity),
+                  child: switch (controller.mode) {
+                    EditorMode.preview => Builder(
+                      builder: (context) {
+                        final overrides = widget.settings?.shortcutOverrides ?? const {};
+                        final cycleActivator = activatorFor(
+                          ShortcutAction.cycleEditorMode,
+                          overrides,
+                        );
+                        return Focus(
+                          focusNode: _previewFocus,
+                          autofocus: true,
+                          child: Shortcuts(
+                            shortcuts: {cycleActivator: const CycleEditorModeIntent()},
+                            child: Actions(
+                              actions: {
+                                CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
+                                  onInvoke: (intent) {
+                                    widget.controller.cycleMode();
+                                    return null;
+                                  },
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _ => Shortcuts(
-                        shortcuts: _editShortcuts(),
-                        child: Actions(
-                          actions: {
-                            FormatIntent: CallbackAction<FormatIntent>(
-                              onInvoke: (intent) => _applyFormat(intent),
-                            ),
-                            ContinueListIntent: CallbackAction<ContinueListIntent>(
-                              onInvoke: (intent) => _handleEnter(),
-                            ),
-                            OpenFindIntent: CallbackAction<OpenFindIntent>(
-                              onInvoke: (intent) => _openFind(),
-                            ),
-                            SelectWordIntent: CallbackAction<SelectWordIntent>(
-                              onInvoke: (intent) => _selectWord(),
-                            ),
-                            FindNextIntent: CallbackAction<FindNextIntent>(
-                              onInvoke: (intent) {
-                                _nextMatch();
-                                return null;
                               },
-                            ),
-                            FindPrevIntent: CallbackAction<FindPrevIntent>(
-                              onInvoke: (intent) {
-                                _prevMatch();
-                                return null;
-                              },
-                            ),
-                            CloseFindIntent: CallbackAction<CloseFindIntent>(
-                              onInvoke: (intent) {
-                                _closeFind();
-                                return null;
-                              },
-                            ),
-                          },
-                          child: DropTarget(
-                            onDragDone: (details) => _insertDroppedImages(details.files),
-                            onDragEntered: (_) => setState(() => _dragging = true),
-                            onDragExited: (_) => setState(() => _dragging = false),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 140),
-                              decoration: BoxDecoration(
-                                color: _dragging
-                                    ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(QuireRadius.m),
-                                border: _dragging
-                                    ? Border.all(color: theme.colorScheme.primary, width: 1.6)
-                                    : Border.all(color: Colors.transparent),
-                              ),
-                              padding: const EdgeInsets.all(12),
-                              child: TextField(
-                                key: const Key('editor-body'),
-                                controller: _body,
-                                focusNode: _bodyFocus,
-                                onChanged: controller.updateBody,
-                                // Quire-styled cut/copy/paste menu (round 6):
-                                // defer into our own overlay route; the inline
-                                // toolbar slot stays empty. The gate keeps
-                                // builder re-fires from stacking menus.
-                                contextMenuBuilder: (context, editableState) {
-                                  if (_editMenuOpen) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  _editMenuOpen = true;
-                                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                                    if (!context.mounted) {
-                                      _editMenuOpen = false;
-                                      return;
-                                    }
-                                    unawaited(
-                                      showBodyEditMenu(
-                                        context,
-                                        editableState,
-                                      ).whenComplete(() => _editMenuOpen = false),
-                                    );
-                                  });
-                                  return const SizedBox.shrink();
-                                },
-                                maxLines: null,
-                                expands: false,
-                                textAlignVertical: TextAlignVertical.top,
-                                keyboardType: TextInputType.multiline,
-                                // v0.3.1 Task 3: the non-web default is
-                                // ui.BoxWidthStyle.max, which pads every selected
-                                // line's highlight out to the widest line in the
-                                // paragraph. tight hugs each line's glyph run, so a
-                                // multi-line selection stops painting the empty
-                                // tail of short lines.
-                                selectionWidthStyle: ui.BoxWidthStyle.tight,
-                                style: _bodyStyle(theme),
-                                decoration: InputDecoration(
-                                  hintText:
-                                      'Take a note…  Type #tags, drag images, write in Markdown.',
-                                  hintStyle: safeHanken(
-                                    TextStyle(
-                                      fontSize: 16,
-                                      height: 26 / 16,
-                                      color: quire.textTertiary.withValues(alpha: 0.9),
+                              child: ScrollConfiguration(
+                                behavior: const _NoScrollbarBehavior(),
+                                child: HoverScrollbar(
+                                  child: Scrollbar(
+                                    interactive: true,
+                                    controller: _bodyScroll,
+                                    child: MarkdownPreview(
+                                      scrollController: _bodyScroll,
+                                      body: _body.text,
+                                      vaultRoot: controller.vaultRoot,
+                                      baseFontSize: widget.baseFontSize ?? 16,
                                     ),
                                   ),
-                                  filled: false,
-                                  border: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
                                 ),
-                                cursorColor: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    _ => Shortcuts(
+                      shortcuts: _editShortcuts(),
+                      child: Actions(
+                        actions: {
+                          FormatIntent: CallbackAction<FormatIntent>(
+                            onInvoke: (intent) => _applyFormat(intent),
+                          ),
+                          ContinueListIntent: CallbackAction<ContinueListIntent>(
+                            onInvoke: (intent) => _handleEnter(),
+                          ),
+                          OpenFindIntent: CallbackAction<OpenFindIntent>(
+                            onInvoke: (intent) => _openFind(),
+                          ),
+                          SelectWordIntent: CallbackAction<SelectWordIntent>(
+                            onInvoke: (intent) => _selectWord(),
+                          ),
+                          FindNextIntent: CallbackAction<FindNextIntent>(
+                            onInvoke: (intent) {
+                              _nextMatch();
+                              return null;
+                            },
+                          ),
+                          FindPrevIntent: CallbackAction<FindPrevIntent>(
+                            onInvoke: (intent) {
+                              _prevMatch();
+                              return null;
+                            },
+                          ),
+                          CloseFindIntent: CallbackAction<CloseFindIntent>(
+                            onInvoke: (intent) {
+                              _closeFind();
+                              return null;
+                            },
+                          ),
+                        },
+                        child: DropTarget(
+                          onDragDone: (details) => _insertDroppedImages(details.files),
+                          onDragEntered: (_) => setState(() => _dragging = true),
+                          onDragExited: (_) => setState(() => _dragging = false),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 140),
+                            decoration: BoxDecoration(
+                              color: _dragging
+                                  ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(QuireRadius.m),
+                              border: _dragging
+                                  ? Border.all(color: theme.colorScheme.primary, width: 1.6)
+                                  : Border.all(color: Colors.transparent),
+                            ),
+                            // TextField's inner overlay scrollbar cannot take
+                            // padding (it paints over the text) and wrapping
+                            // the field in a second Scrollbar doubles it.
+                            // _NoScrollbarBehavior kills the inner one; the
+                            // outer Scrollbar + right padding reserves the
+                            // gutter, mirroring preview mode above.
+                            child: ScrollConfiguration(
+                              behavior: const _NoScrollbarBehavior(),
+                              child: HoverScrollbar(
+                                child: Scrollbar(
+                                  interactive: true,
+                                  controller: _bodyScroll,
+                                  child: TextField(
+                                    key: const Key('editor-body'),
+                                    controller: _body,
+                                    focusNode: _bodyFocus,
+                                    scrollController: _bodyScroll,
+                                    scrollPadding: EdgeInsets.symmetric(vertical: 0),
+                                    onChanged: controller.updateBody,
+                                    // Quire-styled cut/copy/paste menu (round 6):
+                                    // defer into our own overlay route; the inline
+                                    // toolbar slot stays empty. The gate keeps
+                                    // builder re-fires from stacking menus.
+                                    contextMenuBuilder: (context, editableState) {
+                                      if (_editMenuOpen) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      _editMenuOpen = true;
+                                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                                        if (!context.mounted) {
+                                          _editMenuOpen = false;
+                                          return;
+                                        }
+                                        unawaited(
+                                          showBodyEditMenu(
+                                            context,
+                                            editableState,
+                                          ).whenComplete(() => _editMenuOpen = false),
+                                        );
+                                      });
+                                      return const SizedBox.shrink();
+                                    },
+                                    maxLines: null,
+                                    expands: false,
+                                    textAlignVertical: TextAlignVertical.top,
+                                    keyboardType: TextInputType.multiline,
+                                    // v0.3.1 Task 3: the non-web default is
+                                    // ui.BoxWidthStyle.max, which pads every selected
+                                    // line's highlight out to the widest line in the
+                                    // paragraph. tight hugs each line's glyph run, so a
+                                    // multi-line selection stops painting the empty
+                                    // tail of short lines.
+                                    selectionWidthStyle: ui.BoxWidthStyle.tight,
+                                    style: _bodyStyle(theme),
+                                    decoration: InputDecoration(
+                                      hintText: 'Take a note…  Type #tags, drag images, write in Markdown.',
+                                      hintStyle: safeHanken(
+                                        TextStyle(
+                                          fontSize: 16,
+                                          height: 26 / 16,
+                                          color: quire.textTertiary.withValues(alpha: 0.9),
+                                        ),
+                                      ),
+                                      filled: false,
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      contentPadding: const EdgeInsets.only(top: 10, right: 18),
+                                    ),
+                                    cursorColor: theme.colorScheme.primary,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    },
-                  ),
+                    ),
+                  },
                 ),
               ),
             ),

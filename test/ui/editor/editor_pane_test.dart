@@ -114,7 +114,7 @@ void main() {
     }
   });
 
-  testWidgets('body selection is bounded to the prose column, not the pane', (tester) async {
+  testWidgets('body prose column spans the pane width (unbounded)', (tester) async {
     final note = await real(
       () => vaultController.createNote(title: 'Prose', body: 'a short line'),
       tester,
@@ -131,15 +131,13 @@ void main() {
     final editableWidth = editableState.renderEditable.size.width;
     final paneWidth = tester.getSize(find.byType(EditorPane)).width;
 
+    // v0.3.1 Task 3/5: no capped reading measure — the column fills the pane
+    // and the scrollbar gutter lives inside the content padding. Word-local
+    // highlight comes from tight selection boxes (asserted by the next test).
     expect(
       editableWidth,
-      lessThan(paneWidth),
-      reason: 'a full-width RenderEditable paints selection across the empty gutter',
-    );
-    expect(
-      editableWidth,
-      lessThanOrEqualTo(680.0),
-      reason: 'body prose column is the 680px reading measure',
+      greaterThan(paneWidth * 0.9),
+      reason: 'body prose column is unbounded and fills the pane',
     );
   });
 
@@ -846,8 +844,8 @@ void main() {
       await pumpEditor(tester);
       expect(editorController.mode, EditorMode.preview);
     });
-    group('find and tag bars container like title (focus mode)', () {
-      testWidgets('find bar uses container like title in focus mode', (tester) async {
+    group('find and tag bars container (focus mode)', () {
+      testWidgets('find bar uses container in focus mode', (tester) async {
         await openAndPump(tester);
         expect(find.byKey(const Key('find-bar')), findsNothing);
         final ctx = tester.element(find.byKey(const Key('editor-body')));
@@ -858,9 +856,7 @@ void main() {
         expect(container.decoration, isA<BoxDecoration>());
       });
 
-      testWidgets('tag bar only built when tags non-empty and uses container like title', (
-        tester,
-      ) async {
+      testWidgets('tag bar only built when tags non-empty', (tester) async {
         final note = await real(
           () => vaultController.createNote(title: 'T', body: 'hello #tag'),
           tester,
