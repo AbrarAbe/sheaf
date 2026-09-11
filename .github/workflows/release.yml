@@ -49,7 +49,7 @@ jobs:
                   tar czf "$GITHUB_WORKSPACE/sheaf-$GITHUB_REF_NAME-linux-x64.tar.gz" -C /tmp/sheaf-package sheaf
 
             - name: Build AppImage
-              run: ./scripts/build_appimage.sh "sheaf-$GITHUB_REF_NAME-linux-x64.AppImage"
+              run: bash ./scripts/build_appimage.sh "sheaf-$GITHUB_REF_NAME-linux-x64.AppImage"
 
             - name: Generate release notes (git-cliff)
               id: notes
