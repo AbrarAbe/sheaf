@@ -21,7 +21,10 @@ shipped as a self-contained tarball.
   until touched; Markdown shows raw monospace source; Preview renders the GFM
   subset read-only. Autosave (~1 s) behaves identically everywhere.
 - **Keyboard-complete editing** — `Ctrl+B/I/U` toggle bold/italic/underline (combinable, nesting `***`/`**<u>`; word-aware Unicode `café naïve` at bare caret), Enter continues lists (`- `, `* `, `1. `, `- [ ] `), `Ctrl+F` finds inside the note (recomputes on edit), `Ctrl+D` selects word, `Ctrl+Shift+C/V` copy/paste, `Ctrl+Tab` cycles notes.
-- **List & link formatting** — toggle bullet/star/numbered/task lists and link/image `[text](url)` with combinable styles.
+- **Nested folders** — folder tree renders recursively with chevron expand/collapse; indent per depth; collapsed state hides subtree without selecting.
+- **Sticky DIRECTORIES header** — FOLDERS header (DIRECTORIES on Linux) stays pinned above the scrollable folder list.
+- **In-editor tags** — `#tag` chips live inside the editor column under the title, scroll with content; tap copies `#tag ` at caret.
+- **Tight selection & scrollbar** — multi-line selection hugs glyphs (`BoxWidthStyle.tight`); interactive scrollbar shows hand cursor and padded gutter (`right 18/24`) without covering text.
 - **Live preview** — GFM subset (headings, emphasis, lists, task lists,
   quotes, fenced code, links, tables, `<u>` underline) rendered with your
   chosen theme world; System mode follows your desktop.
@@ -67,9 +70,9 @@ shipped as a self-contained tarball.
 Download and install to `~/.local/share/sheaf` (keep the `sheaf/` folder intact — `lib/` and `data/` must stay beside the binary):
 
 ```
-curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/sheaf-v0.3.0-linux-x64.tar.gz
+curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/sheaf-v0.3.1-linux-x64.tar.gz
 mkdir -p ~/.local/share
-tar xzf sheaf-v0.3.0-linux-x64.tar.gz -C ~/.local/share
+tar xzf sheaf-v0.3.1-linux-x64.tar.gz -C ~/.local/share
 ~/.local/share/sheaf/sheaf
 ```
 
@@ -80,8 +83,16 @@ mkdir -p ~/.local/bin
 ln -sf ~/.local/share/sheaf/sheaf ~/.local/bin/sheaf
 ```
 
+AppImage alternative (portable, no install):
+
+```
+curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/Sheaf-x86_64.AppImage
+chmod +x Sheaf-x86_64.AppImage
+./Sheaf-x86_64.AppImage
+```
+
 GTK 3 is the only runtime expectation, and it ships with virtually every
-desktop distribution. Download a specific version by replacing `latest` with `download/v0.3.0` in the URL, or pick a tarball from [Releases](https://github.com/AbrarAbe/sheaf/releases).
+desktop distribution. Download a specific version by replacing `latest` with `download/v0.3.1` in the URL, or pick a tarball from [Releases](https://github.com/AbrarAbe/sheaf/releases).
 
 ## Build from source
 
@@ -106,3 +117,4 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/plan_v0.1.md`](docs/plan_v0.1.md) — v0.1 implementation plan
 - [`docs/plan_v0.2.md`](docs/plan_v0.2.md) — v0.2 implementation plan (editor, modes, pinning, appearance)
 - [`docs/plan_v0.3.md`](docs/plan_v0.3.md) — v0.3 implementation plan (polish & multi-directory)
+- [`docs/plan_v0.3.1.md`](docs/plan_v0.3.1.md) — v0.3.1 implementation plan (paper cuts)

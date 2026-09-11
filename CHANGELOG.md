@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-09-11
+
+### Added
+
+- Add linux installer
+- Docs(plan): add v0.3.1 paper cuts — nested folders, find, chips,
+- Add in-editor TagChipBar
+- Add AppImage support for Linux distribution
+
+### Changed
+
+- Update header initial to S
+- Extract private widgets to sibling widgets/ folders
+- Require private widgets be extracted to widgets/ folders
+- Render nested folders with expand/collapse
+- Scrollbar hover cursor and thumb fade
+- Simplify find & tag containers
+- Improve tag chip tooltip clarity and folder row styling
+- Merged expand/collapse folder button
+- Select new folder, sticky header, platform label
+- Own padded scrollbar with hand cursor, drop 680 cap
+
+### Fixed
+
+- Keep find navigation focus in editor
+- Word-only selection, no gutter highlight
+- Tag focus, find match case, single scrollbar, collapsed folders
+- Tag chip focuses tag in editor, not note filter
+- Focus find bar when opened
+- Constrain command palette height
+- Fix(editor): constrain selection to prose column and use tight selection
+
+### Removed
+
+- Remove untested Task 11/12 action-bar fiction
+
 ## [0.3.0] - 2026-08-31
 
 ### Added
@@ -20,6 +56,7 @@ All notable changes to this project will be documented in this file.
 - Center focus mode with wider column
 - Center title in focus mode
 - Mark v0.3 tasks complete
+- V0.3.0
 
 ### Fixed
 
@@ -29,6 +66,7 @@ All notable changes to this project will be documented in this file.
 - Canonical nesting for bold/italic/underline combine
 - Stop infinite italic wrap in bold and caret drift in underline
 - Render combined *** and nested <u> correctly
+- Curly braces and doc comment nits
 
 ## [0.2.0] - 2026-08-29
 
@@ -163,6 +201,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.1]: https://github.com/AbrarAbe/sheaf/compare/v0.3.0..v0.3.1
 [0.3.0]: https://github.com/AbrarAbe/sheaf/compare/v0.2.0..v0.3.0
 [0.2.0]: https://github.com/AbrarAbe/sheaf/compare/v0.1.0..v0.2.0
 [0.1.0]: https://github.com/AbrarAbe/sheaf/tree/v0.1.0
