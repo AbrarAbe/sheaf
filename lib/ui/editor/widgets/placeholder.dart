@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/quire_theme.dart';
 
 class EditorPlaceholder extends StatelessWidget {
-  const EditorPlaceholder();
+  const EditorPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {

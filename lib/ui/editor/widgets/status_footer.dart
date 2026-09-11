@@ -6,7 +6,7 @@ import '../../../theme/quire_colors.dart';
 import '../../../theme/quire_theme.dart';
 
 class StatusFooter extends StatelessWidget {
-  const StatusFooter({required this.controller, required this.words});
+  const StatusFooter({super.key, required this.controller, required this.words});
 
   final EditorController controller;
   final int words;

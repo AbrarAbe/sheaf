@@ -4,7 +4,7 @@ import '../../../models/settings.dart';
 import '../../../theme/quire_theme.dart';
 
 class ModeSwitch extends StatelessWidget {
-  const ModeSwitch({required this.mode, required this.onSelected});
+  const ModeSwitch({super.key, required this.mode, required this.onSelected});
 
   final EditorMode mode;
   final ValueChanged<EditorMode> onSelected;
