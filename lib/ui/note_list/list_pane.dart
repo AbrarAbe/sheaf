@@ -8,6 +8,8 @@ import '../../models/note.dart';
 import '../common/context_menus.dart';
 import '../common/corner_toast.dart';
 import '../common/widgets/hover_scrollbar.dart';
+import '../common/widgets/loading_overlay.dart';
+import '../dialogs/confirm_delete.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/note_row.dart';
 import 'widgets/scope_chip.dart';
@@ -46,19 +48,29 @@ class _ListPaneState extends State<ListPane> {
   /// Notes in current display order (scope-filtered, newest-first).
   List<Note> get _orderedNotes => widget.controller.visibleNotes.toList();
 
-  /// Deletes [note] and offers an undo toast backed by the trash.
+  /// Deletes [note] after confirming, then offers an undo toast backed by trash.
   Future<void> _deleteWithUndo(Note note) async {
+    final confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Move to trash?',
+      message: 'Are you sure you want to move "${note.title}" to trash?',
+      confirmLabel: 'Move to trash',
+    );
+    if (!confirmed || !mounted) return;
+
     final controller = widget.controller;
-    await controller.deleteNote(note.path);
+    await showLoadingOverlay(context, controller.deleteNote(note.path));
     if (!mounted) return;
     final entries = await controller.trash();
     if (!mounted || entries.isEmpty) return;
+    // The entry we just created is the last one in the list.
+    final entry = entries.last;
     CornerToast.show(
       context,
       message: 'Deleted "${note.title}"',
       actionLabel: 'Undo',
       icon: Icons.delete_outline_rounded,
-      onAction: () => controller.restoreFromTrash(entries.first.trashedName),
+      onAction: () => controller.restoreFromTrash(entry.trashedName),
     );
   }
 

@@ -1,18 +1,21 @@
 # Spec: Sheaf — living product spec
 
-Milestone history: v0.1 ("the desk") shipped and released as `v0.1.0`. This
-revision adds milestone **v0.2 ("the editor")**: keyboard-complete editing,
-editor modes, real pinning, find-in-note, user-controlled panes, fullscreen,
-and appearance customization.
+Milestone history: v0.1 ("the desk") shipped as `v0.1.0`; v0.2
+("the editor") shipped; v0.3 ("polish & power") shipped; v0.3.1
+("paper cuts") shipped; v0.3.2 ("no surprises") is the current release.
+This revision brings the spec up to v0.3.2 and records the deferred items still open.
 
 ## Objective
 
-Make the desk feel like a mature editor. A v0.1 user can take notes but edits
-with bare hands: no formatting keys, no find-in-note, no way to pin, forced
-pane layouts, one look. Success looks like: every common action reachable from
-the keyboard, the editor offers Normal/Markdown/Preview like Obsidian, panes
-obey the user instead of the window width, and the settings page meaningfully
-changes how the app looks (worlds, zoom, type size, typeface).
+Make the desk feel like a mature editor. A v0.1 user could take notes but
+edited with bare hands: no formatting keys, no find-in-note, no way to pin,
+forced pane layouts, one look. v0.2 made every common action reachable from
+the keyboard and gave the user control of panes and appearance. v0.3 hardened
+the foundation (correctness, performance, multi-vault) and added real
+formatting power. v0.3.1 closed the paper cuts that blocked the polished feel
+of v0.3.0. v0.3.2 "no surprises" adds delete/folder confirmation dialogs,
+command palette polish, note info (EXIF) dialog, and an editor scroll fix
+for Enter on the last line.
 
 ### User stories — v0.1 (shipped)
 
@@ -27,132 +30,186 @@ changes how the app looks (worlds, zoom, type size, typeface).
 8. **Shell** ✅ three tiers (≥1120 / 720–1119 / <720), draggable dividers
 9. **Theme** ✅ Daylight/Lamplight/System, `Ctrl+Shift+L`, persisted
 
-### User stories — v0.2
+### User stories — v0.2 (shipped)
 
-10. **Formatting keys** — While editing (either editing mode):
-    `Ctrl+B` toggles `**bold**`, `Ctrl+I` toggles `*italic*`, `Ctrl+U` toggles
-    `<u>underline</u>`. With a selection the span wraps/unwraps as before;
-    with a bare caret **touching a word, the whole word is selected and
-    wrapped** (never splitting it with an empty pair — feedback F10); only a
-    caret on whitespace/punctuation inserts an empty pair. Invoking inside an
-    existing span always unwraps it. Terminal-style `Ctrl+Shift+C` /
-    `Ctrl+Shift+V` copy/paste the focused editor selection (plain `Ctrl+C/V/X`
-    keep working natively). Preview renders `<u>` underlined — which is why
-    the Ctrl+U binding is justified despite vanilla Markdown lacking
-    underline; all other raw HTML stays literal.
-11. **Navigation & zoom keys** — `Ctrl+Tab` / `Ctrl+Shift+Tab` select the
-    next/previous note in the current list order. `Ctrl+D` selects the word
-    at the caret (VS Code-style) in either editing mode. `Ctrl+=` / `Ctrl+-`
-    step the app-wide text scale by 10% within 50%–200%, `Ctrl+0` resets to
-    100%. The zoom level persists across restarts and scales text everywhere
-    (list, sidebar, editor, preview) — icons and layout metrics are unaffected.
-    `Delete`/`Backspace` always edit text when an editor holds focus; the
-    delete-selected-note binding fires only while the note list has focus.
-12. **Editor modes** — Three-way switch (segmented control in the editor
-    header, cycled by `Ctrl+Shift+M`). Both editing modes share the same
-    buffer and the same keyboard behaviors (formatting, list continuation,
-    find): **Normal** — word-like reading surface: written formatting
-    *renders live* with **markers hidden until the caret touches that span**
-    (Obsidian-style live preview — touch reveals them dimmed); proportional
-    type. **Markdown** — raw source view in monospace, every marker visible;
-    **Preview** — rendered read-only output. Autosave behaves identically in
-    all modes. The last-used mode persists as the opening mode for the next
-    session.
-13. **Pinning** — Notes can be pinned from the row's hover pin button (today a
-    dead stub) and the note context menu. Pinned notes sort into a **Pinned**
-    group above the rest of the list with a filled-pin indicator; unpinning
-    restores normal ordering. Pin state must not modify note `.md` files — it
-    lives in a vault-sidecar `<vault>/.sheaf/meta.json` (same philosophy as
-    `.trash/index.json`). Deleting a note drops its pin record.
-14. **Find in note** — `Ctrl+F` opens a find bar docked in the editor: query
-    field (pre-filled with the selection if any), match counter `n/m`,
-    next/previous (`Enter` / `Shift+Enter` plus buttons), highlight of the
-    current match via selection jump, `Esc` closes and restores focus. Works
-    in Normal and Markdown modes.
-15. **List continuation** — Pressing `Enter` at the end of a list item
-    continues the list: `- `, `* `, `- [ ] ` carry over verbatim; `1. `
-    increments to `2. `; leading indentation is preserved. `Enter` on a line
-    holding only a marker clears it (smart exit), matching Obsidian. Active
-    in Normal and Markdown editing.
-15. **Pane control** — Sidebar visibility is user-owned in every tier; the
-    icon rail is retired (feedback round: one mental model everywhere):
-    - All tiers: a header toggle button and `Ctrl+\` show/hide the sidebar.
-      Expanded ≥1120 shows it as the resizable first pane; Full 720–1119
-      likewise; Stack <720 presents it as an overlay drawer over the content.
-    - Choice persists per tier across sessions (per layout-and-space.md);
-      defaults: visible on Expanded, hidden on Full and Stack.
-    - **Focus mode**: a header button (and `F10`) hides sidebar and note list
-      so the editor fills the window; any pane toggle or `F10` again exits.
-    - **OS fullscreen**: `F11` toggles true window fullscreen via a window
-      manager plugin.
-16. **Appearance settings** — The settings page grows an Appearance section:
-    - **Theme worlds**: curated hardcoded worlds beyond Daylight/Lamplight
-      (launch set: **Graphite** neutral light/dark, **Sepia** paper-warm
-      light/dark), selected alongside the existing System/Light/Dark mode —
-      i.e. pick a world *and* a mode. All worlds defined purely as token sets
-      in `lib/theme`; nothing outside reads hex.
-    - **Zoom**: default view zoom percent (persisted; story 11 keys adjust it).
-    - **Type size**: editor base font size (12–24 px) applied to editor body
-      and preview. (The v0.2 typeface picker was **removed** in feedback
-      round 5 — bundled Google Fonts only; old settings JSON with font keys
-      still loads.)
-    - **Window controls**: functional traffic-light dots (minimize /
-      maximize-or-restore / close via `window_manager`), hideable with a
-      settings switch for setups that keep the compositor title bar.
-17. **Quick-switcher (⌘K)** — a header pill (hidden on the stack tier) and a
-    global `Ctrl+K` open an overlay palette: one query field, ranked note
-    rows. Empty query lists every vault note newest-first, so row one is
-    always the last-edited note; typing narrows by title-then-body matches.
-    ↑/↓ move the highlight (scrolling it into view), Enter opens, Esc closes;
-    mouse hover follows and clicks open. The palette ignores sidebar folder/
-    tag scope so any note is reachable from any scoping state.
-18. **Scope chips in the list pane** — the list-level filter field is gone
-    (vault search lives in ⌘K). When a folder or tag filter is active the
-    toolbar shows a removable chip (`in proj`, `#urgent`); tapping clears
-    back to All notes. Unscoped, a dim caption reads "All notes".
-19. **Trash timestamps** — each trash entry shows a compact age stamp
-    (just now / 5m / 3h / 2d; absolute date beyond a week) with the full
-    timestamp on hover.
+10. **Formatting keys** — `Ctrl+B` toggles `**bold**`, `Ctrl+I` toggles
+    `*italic*`, `Ctrl+U` toggles `<u>underline</u>`. Selection wraps/unwraps;
+    bare caret touching a word selects and wraps the whole word; caret on
+    whitespace/punctuation inserts an empty pair. `Ctrl+Shift+C` /
+    `Ctrl+Shift+V` copy/paste the focused editor selection. Preview renders
+    `<u>` underlined; all other raw HTML stays literal.
+11. **Navigation & zoom keys** — `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle notes.
+    `Ctrl+D` selects the word at the caret. `Ctrl+=` / `Ctrl+-` step app-wide
+    text scale 50%–200%, `Ctrl+0` resets. Zoom persists and scales text
+    everywhere; icons and layout metrics are unaffected.
+12. **Editor modes** — Normal (live-rendered, markers hidden until the caret
+    touches a span), Markdown (raw monospace), Preview (rendered read-only).
+    Segmented control + `Ctrl+Shift+M`; last mode persists.
+13. **Pinning** — pin from row hover or context menu; Pinned group sorts above
+    the rest; state lives in `<vault>/.sheaf/meta.json`, never in `.md` files.
+14. **Find in note** — `Ctrl+F` bar: query field, `n/m` counter,
+    `Enter`/`Shift+Enter` traversal, `Esc` closes.
+15. **List continuation** — `Enter` at the end of a list item carries the
+    marker (`- `, `* `, `- [ ] ` verbatim; `1. ` increments), preserves
+    indentation, and clears a marker-only line (smart exit).
+16. **Pane control** — sidebar visibility is user-owned in every tier, header
+    toggle + `Ctrl+\`, per-tier persistence, focus mode (`F10`), OS fullscreen
+    (`F11`).
+17. **Appearance settings** — theme worlds (Graphite, Sepia) × System/Light/Dark,
+    zoom %, editor base size 12–24 px, functional window controls. The v0.2
+    typeface picker was removed in feedback round 5 — bundled Google Fonts only;
+    old settings JSON with font keys still loads.
+18. **Quick-switcher (⌘K)** — header pill (hidden on stack tier) + global
+    `Ctrl+K` overlay: ranked note rows, empty query lists newest-first, typing
+    narrows by title then body, ↑/↓ move, Enter opens, Esc closes.
+19. **Scope chips in the list pane** — removable `in proj` / `#urgent` chip when
+    a folder or tag filter is active; tapping clears to All notes.
+20. **Trash timestamps** — compact age stamp per trash entry, full timestamp on
+    hover.
 
-Explicitly **deferred**: command palette (`Ctrl+K`) → **shipped in round 5**
-as story 17, global hotkeys (`Ctrl+Alt+N`), reminders, sync/mobile polish,
-WYSIWYG editing, parsing local GTK themes' CSS into color worlds (see Open
-Questions), bundling additional Google Fonts as offline assets, local font
-loading (removed), open-notes editor tabs (proposed — see
-`docs/adr/0007-open-notes-tabs.md`).
+### User stories — v0.3 "polish & power" (shipped)
+
+21. **Unicode-aware word formatting** — word = maximal run of `\p{L}\p{N}_`
+    (any script), replacing the ASCII-only `\w`. Fixes `café naïve 中文`
+    splitting and surrogate-pair emoji. Marker scanning skips `*`, `**`, and
+    list markers so one word's emphasis never bleeds into a neighbour.
+22. **Combinable formatting** — `*`, `**`, `<u>` are orthogonal and stack:
+    `Ctrl+B` then `Ctrl+I` yields `***word***`; unwrapping removes only the
+    requested marker's smallest qualifying span. `***word***` unwraps
+    piecewise (`*` → `**word**`, `**` → `*word*`).
+23. **List continuation correctness** — `Enter` on a middle line of a document
+    continues/clears correctly (line-end guard), non-collapsed selections are
+    replaced like normal typing, and numeric markers clamp (`9999999999.` no
+    longer throws).
+24. **Find staleness** — editing the body while the find bar is open
+    re-computes matches and keeps the current match tracked, without closing
+    the bar; lowercase cache is per body change, not per query keystroke.
+25. **Rebuild scoping** — typing/autosave no longer rebuilds the sidebar
+    folder tree; note-list, folder, and tag-count slices notify independently,
+    and stale async refreshes are cancelled by a generation guard.
+26. **Editor & preview performance** — highlighting memoizes its parse per text
+    change (caret moves reuse spans); preview images load asynchronously with
+    `cacheWidth` and an `errorBuilder`, behind a path-traversal guard that
+    rejects `..`/absolute paths.
+27. **Large-vault scrolling** — the note list virtualizes per group
+    (`SliverList.builder`), prunes stale row keys, and the command palette
+    computes results once per query change.
+28. **Focus & shortcut correctness** — a single autofocus owner in the shell;
+    the palette restores focus on close; the stack-tier drawer closes on `Esc`;
+    `Delete` in a focused editor edits text instead of deleting the note.
+29. **Multi-directory vaults** — `AppSettings.vaultPaths` (ordered, primary =
+    index 0) replaces the single path; `VaultController` fans out over
+    `List<VaultRepository>`, notes merge newest-first, folders are sectioned
+    per vault with a vault header and "Add vault" row, drag-drop/import routes
+    to the note's owning vault, and pins are namespaced per vault via each
+    root's `.sheaf/meta.json`. Legacy single-path settings JSON migrates on
+    read.
+30. **Keyboard shortcut customization** — Settings gains a Keyboard Shortcuts
+    section: every shell/editor action except the formatting trio is
+    remappable through a key recorder with conflict detection, persisted as
+    `AppSettings.shortcutOverrides` (`Map<String,String>`, empty omitted,
+    corrupt → defaults). `Ctrl+B/I/U` and `Ctrl+C/V/X` are reserved.
+
+### User stories — v0.3.1 "paper cuts" (shipped)
+
+31. **Nested folders** — the sidebar renders the full recursive folder tree
+    that `FolderNode.children` already returns, indented per depth, with a
+    chevron expand/collapse that does not select the folder. Selecting any
+    nested folder filters notes to that subtree. Expand state is in-memory per
+    `relPath` for this release.
+32. **Find selection & focus** — jumping between matches keeps focus in the
+    editor body (the bar never steals it), `Esc` closes and restores the body
+    focus, and every listener added for the bar is paired with a removal.
+33. **Tight selection boxes** — multi-line selection highlights hug each line's
+    glyph run (`BoxWidthStyle.tight`) instead of painting to the widest line.
+    The prose column is unbounded by design (740 px in focus mode); no capped
+    reading measure.
+34. **In-editor tag chip bar** — `TagChipBar` renders `extractTags` pills
+    inside the scrollable editor column under the title row, so chips scroll
+    with content and remain reachable in focus mode. Tapping a chip inserts
+    `#tag ` at the caret.
+35. **Scrollbar affordance** — the scrollbar thumb shows a hand cursor, a
+    grabbing cursor while dragging, and a state-owned thumb color
+    (idle → hovered → dragged). The thumb never paints over text: the gutter is
+    reserved inside the content padding, and the built-in overlay scrollbar is
+    disabled per editor mode in favour of one interactive `Scrollbar`.
+36. **Folder creation feedback** — creating a folder selects it immediately and
+    shows a loading affordance (wait cursor + spinner replacing the new-folder
+    button) while the async operation is in flight.
+37. **Sticky folder header** — the folder-section label, expand/collapse
+    toggle, and new-folder button stay pinned above the independently scrolling
+    folder list; the tags section scrolls away normally.
+38. **Platform-aware section label** — the folder section reads "DIRECTORIES"
+    on Linux and "FOLDERS" elsewhere, computed per build with `dart:io`.
+39. **Linux AppImage build** — `scripts/build_appimage.sh` packages the Linux
+    release build via `linuxdeploy` + `linuxdeploy-plugin-gtk`, fails clearly
+    when prerequisites are missing, and runs on a clean Ubuntu 22.04.
+
+### User stories — v0.3.2 "no surprises"
+
+40. **Delete confirmation** — deleting a note shows a confirmation dialog
+    before the undo-toast path; deleting a folder shows a confirmation dialog
+    naming the folder and stating that all contained notes will be trashed.
+    The dialog has a non-destructive Cancel and a destructive Confirm.
+41. **Command palette arrow-key polish** — up/down arrow navigation no longer
+    leaves the selected row with a stale background; typing in the query field
+    automatically highlights the first result (the background is not stale).
+    The highlight paints instantly (no cross-fade / flicker).
+42. **Note info (EXIF) dialog** — the note context menu gains an `Info` entry
+    (I icon). Hovering shows a tooltip with the file path. Clicking opens an
+    info dialog displaying: file name, full path, created date, last modified
+    date, word count, and character count. The dialog is non-modal (the user
+    can interact with the editor while it's open).
+43. **Editor auto-scroll on last-line Enter** — pressing Enter on the very
+    last line of the document scrolls the editor to keep the new blank line
+    visible before any character is typed, not after.
+
+Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
+`ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list
+behavior and the untested scaffolding was removed in v0.3.1; open-notes editor
+tabs (see `docs/adr/0007-open-notes-tabs.md`); global hotkeys
+(`Ctrl+Alt+N`); reminders; sync/mobile polish; true marker-hiding WYSIWYG;
+parsing local GTK themes' CSS into color worlds; bundling additional Google
+Fonts as offline assets; local font loading (removed).
 
 ## Assumptions
 
 1. v0.1 assumptions carry over (files-on-disk vault, source-mode editor +
    preview, inline tags, H1/filename titles, Linux-only).
-2. **Normal vs Markdown distinction**: same buffer, same keybindings;
-    Normal *renders* formatting live (styled spans, dimmed markers — not
-    full WYSIWYG: markers stay selectable/editable), Markdown shows the raw
-    monospace source. True marker-hiding WYSIWYG stays deferred.
+2. **Normal vs Markdown distinction**: same buffer, same keybindings; Normal
+   *renders* formatting live with dimmed markers (not full WYSIWYG — markers
+   stay selectable/editable), Markdown shows raw monospace source.
 3. **Underline** has no native Markdown; we use `<u></u>` and teach the
    preview's renderer that one tag (minimal inline-HTML support, nothing else).
 4. **Pin storage** adds `<vault>/.sheaf/meta.json` (JSON map of path → flags).
-   This touches the vault contract — flagged for review below.
+   Multi-vault namespaces pins per root; there is no cross-vault pin file.
 5. **Zoom** is app-wide *text* scaling via the framework text scaler — every
-   surface (list, sidebar, editor, preview, menus) grows/shrinks together,
-   crisp at every step. Fixed-dp icons and layout metrics intentionally stay
-   constant: Flutter re-renders text at any scale without quality loss, but
-   scaling painted pixels would blur them. The settings' editor **font size**
-   tunes note-body type independently of zoom.
-6. Plain `Ctrl+C/V/X` are native Flutter text behaviors already; only the
-   `Ctrl+Shift+` variants are added explicitly.
+   surface grows/shrinks together, crisp at every step. Fixed-dp icons and
+   layout metrics intentionally stay constant. The settings' editor **font
+   size** tunes note-body type independently of zoom.
+6. Plain `Ctrl+C/V/X` are native Flutter text behaviors; only the
+   `Ctrl+Shift+` variants are added explicitly, and all are reserved against
+   remapping.
 7. Focus mode is session-scoped; OS fullscreen state follows the WM, not us.
+8. **Multi-vault ordering** — merged notes sort by updated time, ties broken by
+   vault index then path to keep ordering stable. Cross-vault folder rename is
+   not supported; an operation routes to the owning vault.
 
 ## Tech Stack
 
-Unchanged from v0.1 (Flutter ^3.14 Linux desktop, Material 3,
-ChangeNotifier controllers, google_fonts, markdown/markdown_widget,
-desktop_drop, watcher, flutter_context_menu, dynamic_color/material_ui) plus:
+Carried from v0.1 (Flutter Linux desktop, Material 3, `ChangeNotifier`
+controllers, `google_fonts`, `markdown`/`markdown_widget`, `desktop_drop`,
+`watcher`, `flutter_context_menu`) plus:
 
-- **New dependency:** `window_manager` (^0.5.x) — F11 OS fullscreen. Nothing
-  on the current stack can fullscreen the native window.
-- **No new deps** for fonts (directory scan + `dart:ui` FontLoader) or pins
-  (hand-rolled JSON sidecar).
+- **`window_manager`** (^0.5.x) — F11 OS fullscreen and the functional
+  traffic-light window controls.
+- **No new deps** for pins (hand-rolled JSON sidecar), shortcut serialization
+  (`SingleActivator` round-trip), or multi-vault (per-root `VaultRepository`).
+
+Known deviation from the v0.3 hygiene task: `pubspec.yaml` still pins
+`sdk: ^3.14.0-95.2.beta`. The stable-SDK drop and any `dynamic_color` /
+`material_ui` removal are **not** confirmed done — treat as open cleanup, not
+as shipped.
 
 ## Commands
 
@@ -161,28 +218,38 @@ flutter run -d linux          # dev run
 flutter analyze               # lint gate
 flutter test                  # test gate
 flutter test --coverage       # coverage gate (data+logic ≥80%)
+scripts/build_appimage.sh     # package Linux AppImage (needs linuxdeploy)
 ```
 
 ## Project Structure
 
 ```
-lib/theme/         → Quire tokens; NEW: world registry (Quire/Graphite/Sepia)
-lib/models/        → NEW fields on AppSettings (mode, world, zoom, sizes, fonts)
-lib/data/          → NEW: font_scanner.dart; vault_repository gains meta.json API
-lib/logic/         → NEW: formatting.dart, find_controller.dart, zoom_controller.dart
-lib/ui/editor/     → 3-mode editor, find bar, formatting keybindings
-lib/ui/shell/      → pane visibility model, focus mode, new shortcuts
-lib/ui/dialogs/    → settings dialog: Appearance section
-docs/adr/          → decisions: meta.json sidecar, zoom model, theme worlds
+lib/theme/         → Quire tokens + world registry (Quire/Graphite/Sepia)
+lib/models/        → AppSettings (mode, world, zoom, sizes, vaultPaths,
+                     shortcutOverrides), shortcut_settings.dart
+lib/data/          → vault_repository, settings_repository, markdown_parser
+lib/logic/         → formatting.dart, list_continuation.dart,
+                     find_controller.dart, zoom_controller.dart,
+                     vault_controller.dart, shortcut_serializer.dart
+lib/ui/editor/     → 3-mode editor, widgets/ (find bar, tag chip bar)
+lib/ui/shell/      → pane model, focus mode, shortcuts, command palette
+lib/ui/sidebar/    → recursive folder tree, widgets/ (folder_row, section)
+lib/ui/note_list/  → virtualized list pane
+lib/ui/common/widgets/ → hover_scrollbar
+lib/ui/dialogs/    → settings dialog: Appearance, Keyboard Shortcuts
+scripts/           → build_appimage.sh
+docs/adr/          → 0001 vault/storage, 0004–0006 v0.2, 0007 open-notes tabs
 ```
 
 ## Code Style
 
-Carried from v0.1: `ChangeNotifier` + `switch` expressions, private widgets
-prefixed `_`, injectable platform seams for tests (`pickFolder` pattern),
-2-space indent, single quotes. Pure logic lives in `lib/logic` with zero
-Flutter imports wherever possible (e.g. `formatting.dart` operates on
-`String` + offsets, not controllers):
+Carried from v0.1: `ChangeNotifier` + `switch` expressions, injectable platform
+seams for tests (`pickFolder` pattern), 2-space indent, single quotes. Widget
+organization: any non-`State` widget class becomes a public `class Foo` in its
+own file under a sibling `widgets/` directory; only `_FooState` may stay private
+alongside its widget. Pure logic lives in `lib/logic` with zero Flutter imports
+wherever possible (e.g. `formatting.dart` operates on `String` + offsets, not
+controllers):
 
 ```dart
 FormatEdit toggleWrap({required String text, required TextSelection sel, required String marker});
@@ -193,60 +260,94 @@ FormatEdit toggleWrap({required String text, required TextSelection sel, require
 
 Carried from v0.1: real temp dirs for `data/`+`logic/`, widget tests via
 `flutter_test` with `tester.runAsync` for disk, spy controllers for dialogs,
-failing-first regression tests for bugs. New coverage targets:
+failing-first regression tests for bugs. Coverage targets:
 
-- `formatting.dart`, `find_controller.dart`, `zoom_controller.dart`,
-  `font_scanner.dart`: ≥90% lines (pure logic).
-- Meta.json round-trip incl. corrupt-file recovery and delete-cleanup.
-- Widget: mode switch renders correct surface per mode; find bar counts and
-  jumps; pane toggle in all three tiers; settings dialog new controls.
+- `formatting.dart`, `list_continuation.dart`, `find_controller.dart`,
+  `zoom_controller.dart`, `shortcut_serializer.dart`: ≥90% lines (pure logic).
+- Meta.json round-trip incl. corrupt-file recovery and delete-cleanup;
+  settings migration from single-path to `vaultPaths`.
+- Widget: mode switch surface per mode; find bar count/jump/focus; recursive
+  folder tree expand/collapse; tag chip bar; scrollbar hover/drag cursor;
+  shortcut recorder conflict handling; pane toggle per tier.
+- Security: preview image path-traversal rejection (`../../etc/passwd` renders
+  a missing placeholder, no read).
 
 ## Boundaries
 
 - **Always:** `flutter analyze` + `flutter test` green before done; Quire
   tokens/design docs govern visuals; hot reload pushed to running app after
   Dart edits; commit per task with Conventional Commits ≤72 chars.
-- **Ask first:** adding dependencies (`window_manager` requested here);
-  changing the vault contract (`.sheaf/meta.json` requested here); settings
-  schema growth (fields enumerated in story 16, backward-compatible).
+- **Ask first:** adding dependencies; changing the vault contract
+  (`.sheaf/meta.json`); settings schema growth (must stay backward-compatible).
 - **Never:** hard-delete user content; hardcode colors outside `lib/theme`;
   write outside the vault except `.trash/`, `attachments/`, `.sheaf/`;
-  regress v0.1 stories (all 130+ existing tests stay green).
+  regress v0.1–v0.3 stories (existing tests stay green).
 
 ## Success Criteria
 
-v0.1 criteria remain true (regression gate). v0.2 adds:
+v0.1–v0.2 criteria remain true (regression gate). v0.3 / v0.3.1 / v0.3.2 add:
 
-- [ ] `Ctrl+B/I/U` wrap/unwrap correctly with selection, empty caret, and
-      repeat-invocation; preview shows `<u>` underlined
-- [ ] `Ctrl+Tab`/`Ctrl+Shift+Tab` walk the note list cyclically
-- [ ] `Ctrl+=/-/0` change/reset persistent app-wide text scale, clamped
-      50–200%
-- [ ] Mode switcher + `Ctrl+Shift+M` swap Normal/Markdown/Preview; mode
-      persists; autosave works in every mode
-- [ ] `Enter` continues `- `/`* `/`1. ` lists with correct increments and
+- [x] `Ctrl+B/I/U` wrap/unwrap with selection, empty caret, Unicode words, and
+      stacking (`Ctrl+B` → `Ctrl+I` → `***word***`); preview renders `<u>`
+- [x] `Ctrl+Tab`/`Ctrl+Shift+Tab` walk the note list cyclically;
+      `Ctrl+=/-/0` change/reset persistent text scale, clamped 50–200%
+- [x] Mode switcher + `Ctrl+Shift+M` swap Normal/Markdown/Preview; persists
+- [x] `Enter` continues `- `/`* `/`1. ` lists on any line, increments, and
       exits cleanly when the marker line is empty
-- [ ] Pin from hover + context menu; Pinned group orders first; survives
-      restart; deleting removes the pin record
-- [ ] `Ctrl+F` find bar: count, Enter/Shift+Enter traversal, Esc closes;
-      selection lands on each match
-- [ ] Header toggle shows/hides sidebar in Full tier and drawers it in Stack;
-      per-tier state persists
-- [ ] `F10` focus mode collapses to editor-only; `F11` true fullscreen
-- [ ] Settings offer ≥3 worlds × 3 modes, zoom %, editor size 12–24, font
-      picker from system dirs; choices persist and survive missing-font launch
+- [x] Pin from hover + context menu; Pinned group first; survives restart;
+      deleting removes the pin record
+- [x] `Ctrl+F` find bar: count, traversal, Esc; highlight tracks body edits
+      without closing the bar
+- [x] Sidebar toggle per tier; `F10` focus mode; `F11` true fullscreen
+- [x] Settings offer worlds × modes, zoom %, editor size 12–24; choices
+      persist
+- [x] Multi-vault: add a second root, notes merge newest-first, per-vault pins,
+      delete/restore routes to the owning vault, legacy settings migrate
+- [x] Remappable shortcuts (formatting reserved) persist across restart
+- [x] Nested folder tree renders recursively and filters to the subtree
+- [x] In-editor tag chips scroll with content; tapping inserts `#tag `
+- [x] Scrollbar hand/grabbing cursor, state-owned thumb color, gutter never
+      paints over text
+- [x] Multi-line selection hugs text (tight boxes); prose column unbounded
+- [x] Folder creation selects the new folder and shows a loading affordance
+- [x] Sticky folder header; "DIRECTORIES" label on Linux
+- [x] `scripts/build_appimage.sh` produces a runnable `Sheaf.AppImage`
+- [ ] Open cleanup: drop the beta SDK constraint / confirm
+      `dynamic_color` + `material_ui` removal (not verified done)
 - [ ] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
       data+logic ≥80%
 
-## Decisions (resolved 2026-08-24)
+## Decisions
+
+Resolved 2026-08-24 (v0.2):
 
 1. **GTK themes** — deferred. Curated hardcoded worlds + system accent cover
    v0.2; parsing arbitrary `gtk.css` is fragile.
-2. **Font sources** — standard directories only (`~/.fonts`,
-   `~/.local/share/fonts`, `/usr/share/fonts`). No file-browser entry.
+2. **Font sources** — standard directories only. Superseded for the typeface
+   picker, which was removed in feedback round 5 (bundled Google Fonts only).
 3. **List continuation** — approved (story 15).
-4. **Zoom scope** — app-wide text scaling; editor font size is the
-   independent per-editor control (assumption 5 records the icon/padding
-   tradeoff).
+4. **Zoom scope** — app-wide text scaling; editor font size is the independent
+   per-editor control (assumption 5 records the icon/padding tradeoff).
 5. **New dependency** `window_manager` and the **`.sheaf/meta.json` vault
-   sidecar** were reviewed and approved alongside these answers.
+   sidecar** reviewed and approved.
+
+Resolved during v0.3 / v0.3.1:
+
+6. **Word definition** — Unicode-aware `\p{L}\p{N}_`, replacing ASCII `\w`
+   (fixes accented and CJK words plus surrogate pairs).
+7. **Combinable formatting** — stacking markers, not a toggle-one-style model;
+   unwrap only the requested marker's smallest qualifying span.
+8. **Multi-directory** — `List<String> vaultPaths` replaces `String vaultPath`;
+   one `.sheaf/meta.json` per vault, no cross-vault state.
+9. **List action bar** — deferred; the untested `EditorActionBar` /
+   `list_formatting` / `link_formatting` scaffolding was deleted rather than
+   shipped (story 21 deferral note).
+10. **Keyboard shortcuts** — settings-driven `Map<String,String>` with
+    `SingleActivator` serialization; formatting `Ctrl+B/I/U` stays hard-coded
+    and reserved.
+11. **Scrollbar gutter** — reserved inside content padding per editor mode
+    rather than laid over text; built-in overlay scrollbar disabled.
+12. **Selection paint** — `BoxWidthStyle.tight` for tight boxes; prose column
+    intentionally unbounded, no reading-measure cap.
+13. **Linux packaging** — AppImage via `linuxdeploy` + GTK plugin, driven by a
+    checked-in script.

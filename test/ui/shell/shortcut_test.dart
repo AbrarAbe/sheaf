@@ -207,13 +207,47 @@ void _registerTests() {
     await tester.runAsync(() async {
       final ctx = tester.element(find.byKey(const Key('pane-editor')));
       Actions.invoke(ctx, const DeleteNoteIntent());
-      // The action's awaited disk IO must progress in real time.
       await Future<void>.delayed(const Duration(milliseconds: 60));
     });
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Confirmation dialog appears — tap "Move to trash".
+    await tester.tap(find.widgetWithText(TextButton, 'Move to trash'));
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(controller.selectedNote, isNull);
     expect(controller.notes, isEmpty);
+  });
+
+  testWidgets('Del outside editors shows confirmation dialog first (v0.3.2)', (tester) async {
+    final (controller, _) = await pumpShell(tester);
+    final note = await tester.runAsync(() => controller.createNote(title: 'Gone'));
+    controller.selectNote(note!);
+    await tester.pump();
+
+    // No editable holds focus here — the shell-root focus wins.
+    await tester.runAsync(() async {
+      final ctx = tester.element(find.byKey(const Key('pane-editor')));
+      Actions.invoke(ctx, const DeleteNoteIntent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Confirmation dialog should appear.
+    expect(find.text('Move to trash?'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+
+    // Tap Cancel (FilledButton) — note should remain.
+    await tester.tap(find.widgetWithText(FilledButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(controller.selectedNote?.path, note.path);
+    expect(controller.notes, isNotEmpty);
   });
 
   group('task 12 — focus mode & fullscreen', () {

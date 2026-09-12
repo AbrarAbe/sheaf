@@ -7,6 +7,8 @@ import '../../logic/zoom.dart';
 import '../../models/note.dart';
 import '../../models/settings.dart';
 import '../common/corner_toast.dart';
+import '../common/widgets/loading_overlay.dart';
+import '../dialogs/confirm_delete.dart';
 import '../dialogs/settings_dialog.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
@@ -318,21 +320,31 @@ class _ShellState extends State<Shell> {
     controller.selectNote(next);
   }
 
-  /// Deletes the selected note and offers an undo toast backed by trash.
+  /// Deletes the selected note after confirming, then offers an undo toast.
   Future<void> _deleteSelectedWithUndo(BuildContext context) async {
     final controller = widget.controller;
     final note = controller.selectedNote;
     if (note == null) return;
 
-    await controller.deleteNote(note.path);
+    final confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Move to trash?',
+      message: 'Are you sure you want to move "${note.title}" to trash?',
+      confirmLabel: 'Move to trash',
+    );
+    if (!confirmed || !context.mounted) return;
+
+    await showLoadingOverlay(context, controller.deleteNote(note.path));
     final entries = await controller.trash();
     if (!context.mounted || entries.isEmpty) return;
+    // The entry we just created is the last one in the list.
+    final entry = entries.last;
     CornerToast.show(
       context,
       message: 'Deleted "${note.title}"',
       actionLabel: 'Undo',
       icon: Icons.delete_outline_rounded,
-      onAction: () => controller.restoreFromTrash(entries.first.trashedName),
+      onAction: () => controller.restoreFromTrash(entry.trashedName),
     );
   }
 

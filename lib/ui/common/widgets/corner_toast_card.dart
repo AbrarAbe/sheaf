@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../theme/quire_theme.dart';
 import '../corner_toast.dart';
@@ -63,8 +62,7 @@ class CornerToastCardState extends State<CornerToastCard> {
           tween: Tween(begin: 0, end: 1),
           duration: const Duration(milliseconds: 240),
           curve: Curves.easeOutCubic,
-          builder: (context, enter, child) =>
-              Opacity(opacity: enter, child: child),
+          builder: (context, enter, child) => Opacity(opacity: enter, child: child),
           child: _child(context, theme),
         ),
       ),
@@ -79,9 +77,7 @@ class CornerToastCardState extends State<CornerToastCard> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(QuireRadius.m),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7),
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.7)),
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.shadow.withValues(alpha: 0.18),
@@ -91,17 +87,20 @@ class CornerToastCardState extends State<CornerToastCard> {
         ],
       ),
       child: Row(
+        spacing: 10,
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(widget.data.icon, size: 17, color: theme.colorScheme.primary),
-          const SizedBox(width: 9),
           Flexible(
             child: Text(
               widget.data.message,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 13,
-                height: 18 / 13,
-                color: theme.colorScheme.onSurface,
+              style: safeHanken(
+                TextStyle(
+                  fontSize: 13,
+                  height: 18 / 13,
+                  color: theme.colorScheme.onSurface,
+                  decoration: TextDecoration.none,
+                ),
               ),
             ),
           ),
@@ -114,9 +113,12 @@ class CornerToastCardState extends State<CornerToastCard> {
               onPressed: _handleAction,
               child: Text(
                 widget.data.actionLabel!,
-                style: GoogleFonts.hankenGrotesk(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                style: safeHanken(
+                  TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.none,
+                  ),
                 ),
               ),
             ),

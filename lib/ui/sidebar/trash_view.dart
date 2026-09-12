@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../data/vault_repository.dart' show TrashEntry;
 import '../../logic/search_controller.dart' show ageLabel;
 import '../../logic/vault_controller.dart';
+import '../common/corner_toast.dart';
+import '../dialogs/confirm_delete.dart';
 
 /// Modal trash view: restore items or delete them forever.
 ///
@@ -107,8 +109,16 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
                         IconButton(
                           tooltip: 'Restore',
                           icon: const Icon(Icons.restore, size: 20),
-                          onPressed: () =>
-                              _mutate(() => widget.controller.restoreFromTrash(entry.trashedName)),
+                          onPressed: () async {
+                            await widget.controller.restoreFromTrash(entry.trashedName);
+                            if (!context.mounted) return;
+                            CornerToast.show(
+                              context,
+                              message: 'Restored "${entry.trashedName}"',
+                              icon: Icons.restore,
+                            );
+                            await _refresh();
+                          },
                         ),
                         IconButton(
                           tooltip: 'Delete forever',
@@ -117,8 +127,18 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
                             size: 20,
                             color: theme.colorScheme.error,
                           ),
-                          onPressed: () =>
-                              _mutate(() => widget.controller.emptyTrashItem(entry.trashedName)),
+                          onPressed: () async {
+                            final confirmed = await showConfirmDeleteDialog(
+                              context,
+                              title: 'Delete permanently?',
+                              message:
+                                  'This action cannot be undone.\nThe file "${entry.trashedName}" will be permanently deleted.',
+                              confirmLabel: 'Delete permanently',
+                            );
+                            if (!confirmed || !context.mounted) return;
+                            await widget.controller.emptyTrashItem(entry.trashedName);
+                            if (context.mounted) await _refresh();
+                          },
                         ),
                       ],
                     ),
@@ -132,9 +152,8 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
     );
   }
 
-  /// Runs the mutation, then refreshes the visible list from disk.
-  Future<void> _mutate(Future<void> Function() action) async {
-    await action();
+  /// Refreshes the visible list from disk.
+  Future<void> _refresh() async {
     _entries = await widget.controller.trash();
     if (mounted) setState(() {});
   }

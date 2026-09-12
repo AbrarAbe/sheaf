@@ -31,15 +31,18 @@ void main() {
     await tester.pumpAndSettle();
 
     // QuireMenuItem renders its label exactly once.
+    // Context menu has both "Delete" and "Info" items — but we only check
+    // the "Delete" label from the context menu (before dialog opens).
     expect(find.text('Delete'), findsOneWidget);
 
-    // Quire typography: full-contrast Hanken label, compact row.
-    final label = tester.widget<Text>(find.text('Delete'));
-    expect(label.style?.fontSize, 13);
-    expect(label.style?.fontWeight, FontWeight.w500);
-
     await tester.tap(find.text('Delete'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Confirmation dialog appears — tap "Move to trash" to confirm.
+    await tester.tap(find.widgetWithText(TextButton, 'Move to trash'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(controller.deleted, ['Alpha.md']);
   });

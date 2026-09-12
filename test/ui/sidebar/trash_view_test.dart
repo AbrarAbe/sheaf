@@ -61,10 +61,20 @@ void main() {
     expect(find.text('Trash is empty.'), findsOneWidget);
   });
 
-  testWidgets('delete forever delegates to the controller and refreshes', (tester) async {
+  testWidgets('delete forever shows confirmation, delegates to the controller and refreshes', (
+    tester,
+  ) async {
     final controller = await pumpTrash(tester);
 
     await tester.tap(find.byTooltip('Delete forever'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Confirmation dialog should appear.
+    expect(find.text('Delete permanently?'), findsOneWidget);
+
+    // Confirm.
+    await tester.tap(find.widgetWithText(TextButton, 'Delete permanently'));
     await tester.pump();
 
     expect(controller.emptied, ['Goner.md']);
