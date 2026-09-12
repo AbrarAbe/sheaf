@@ -135,14 +135,14 @@ class VaultRepository {
     return newRel;
   }
 
-  Future<void> deleteNote(String relPath) async {
+  Future<void> trashNote(String relPath) async {
     await _trashItem(fileOf(relPath).path);
     // A deleted note carries no pin into the trash (spec story 13).
     await setPinned(relPath, false);
   }
 
   /// Permanently deletes a note file without sending it to trash.
-  Future<void> deleteNotePermanently(String relPath) async {
+  Future<void> deleteNote(String relPath) async {
     final file = fileOf(relPath);
     if (file.existsSync()) await file.delete();
     await setPinned(relPath, false);

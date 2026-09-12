@@ -108,7 +108,7 @@ class _FolderRowState extends State<FolderRow> {
                           context,
                           title: 'Move folder to trash?',
                           message:
-                              'Entire folder "${node.name}" and ALL its contents (subdirectories, notes, files) will be moved to trash.',
+                              'Entire folder "${node.name}" and ALL its contents (subdirectories, notes, files)\nwill be moved to trash.',
                           confirmLabel: 'Move folder to trash',
                         );
                         if (!confirmed || !context.mounted) return;

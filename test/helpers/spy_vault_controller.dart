@@ -76,7 +76,7 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  Future<void> deleteNote(String relPath) async {
+  Future<void> trashNote(String relPath) async {
     deleted.add(relPath);
     fakeNotes = [
       for (final n in fakeNotes)
@@ -85,7 +85,7 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  Future<void> deleteNotePermanently(String relPath) async {
+  Future<void> deleteNote(String relPath) async {
     deletedPermanently ??= [];
     deletedPermanently!.add(relPath);
     fakeNotes = [

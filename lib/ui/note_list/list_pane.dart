@@ -48,8 +48,8 @@ class _ListPaneState extends State<ListPane> {
   /// Notes in current display order (scope-filtered, newest-first).
   List<Note> get _orderedNotes => widget.controller.visibleNotes.toList();
 
-  /// Deletes [note] after confirming, then offers an undo toast backed by trash.
-  Future<void> _deleteWithUndo(Note note) async {
+  /// Trash [note] after confirming, then offers an undo toast backed by trash.
+  Future<void> _onTrash(Note note) async {
     final confirmed = await showConfirmDeleteDialog(
       context,
       title: 'Move to trash?',
@@ -59,7 +59,7 @@ class _ListPaneState extends State<ListPane> {
     if (!confirmed || !mounted) return;
 
     final controller = widget.controller;
-    await showLoadingOverlay(context, controller.deleteNote(note.path));
+    await showLoadingOverlay(context, controller.trashNote(note.path));
     if (!mounted) return;
     final entries = await controller.trash();
     if (!mounted || entries.isEmpty) return;
@@ -67,7 +67,7 @@ class _ListPaneState extends State<ListPane> {
     final entry = entries.last;
     CornerToast.show(
       context,
-      message: 'Deleted "${note.title}"',
+      message: 'Trashed "${note.title}"',
       actionLabel: 'Undo',
       icon: Icons.delete_outline_rounded,
       onAction: () => controller.restoreFromTrash(entry.trashedName),
@@ -75,16 +75,22 @@ class _ListPaneState extends State<ListPane> {
   }
 
   /// Permanently deletes [note] after a confirmation dialog.
-  Future<void> _deleteForever(Note note) async {
+  Future<void> _onDelete(Note note) async {
     final confirmed = await showConfirmDeleteDialog(
       context,
       title: 'Delete permanently?',
-      message: 'This action cannot be undone. "${note.title}" will be permanently deleted.',
+      message: 'This action cannot be undone.\n"${note.title}" will be permanently deleted.',
       confirmLabel: 'Delete permanently',
     );
     if (!confirmed || !mounted) return;
 
-    await showLoadingOverlay(context, widget.controller.deleteNotePermanently(note.path));
+    await showLoadingOverlay(context, widget.controller.deleteNote(note.path));
+    if (!mounted) return;
+    CornerToast.show(
+      context,
+      message: 'Deleted "${note.title}"',
+      icon: Icons.delete_outline_rounded,
+    );
   }
 
   ContextMenu<Object?> get _scaffoldMenu => quireMenu([
@@ -292,10 +298,10 @@ class _ListPaneState extends State<ListPane> {
       note: note,
       selected: controller.selectedNotePath == note.path,
       pinned: controller.isPinned(note.path),
-      onTogglePin: () => controller.togglePin(note.path),
       onTap: () => controller.selectNote(note),
-      onTrash: () => _deleteWithUndo(note),
-      onDeleteForever: () => _deleteForever(note),
+      onTogglePin: () => controller.togglePin(note.path),
+      onTrash: () => _onTrash(note),
+      onDelete: () => _onDelete(note),
     ),
   );
 }

@@ -67,10 +67,10 @@ void main() {
     });
   });
 
-  group('trash', () {
-    test('deleteNote moves file to .trash and records origin', () async {
+  group('trashNote', () {
+    test('trash moves file to .trash and records origin', () async {
       final note = await vault.createNote(title: 'Doomed', folder: 'a/b');
-      await vault.deleteNote(note.path);
+      await vault.trashNote(note.path);
 
       expect(vault.fileOf('a/b/Doomed.md').existsSync(), isFalse);
       final trash = await vault.listTrash();
@@ -80,7 +80,7 @@ void main() {
 
     test('restoreNote returns the file to its original folder', () async {
       final note = await vault.createNote(title: 'Back', folder: 'keep');
-      await vault.deleteNote(note.path);
+      await vault.trashNote(note.path);
       final entry = (await vault.listTrash()).single;
 
       await vault.restore(entry.trashedName);
@@ -92,8 +92,8 @@ void main() {
     test('deleting two same-named notes does not collide', () async {
       final first = await vault.createNote(title: 'Twin', folder: 'one');
       final second = await vault.createNote(title: 'Twin', folder: 'two');
-      await vault.deleteNote(first.path);
-      await vault.deleteNote(second.path);
+      await vault.trashNote(first.path);
+      await vault.trashNote(second.path);
 
       final entries = await vault.listTrash();
       expect(entries.map((e) => e.originalPath).toSet(), {'one/Twin.md', 'two/Twin.md'});
@@ -102,7 +102,7 @@ void main() {
 
     test('deleteForever removes the file and its index entry', () async {
       final note = await vault.createNote(title: 'Goner');
-      await vault.deleteNote(note.path);
+      await vault.trashNote(note.path);
       final entry = (await vault.listTrash()).single;
 
       await vault.deleteForever(entry.trashedName);
@@ -112,8 +112,28 @@ void main() {
 
       // Trashing another note afterwards must not resurrect stale entries.
       final other = await vault.createNote(title: 'Next');
-      await vault.deleteNote(other.path);
+      await vault.trashNote(other.path);
       expect((await vault.listTrash()).single.originalPath, 'Next.md');
+    });
+  });
+
+  group('deleteNote (permanent)', () {
+    test('permanently deletes the file without creating a trash entry', () async {
+      final note = await vault.createNote(title: 'Goner');
+      final path = note.path;
+
+      await vault.deleteNote(path);
+
+      expect(vault.fileOf(path).existsSync(), isFalse);
+      expect(await vault.listTrash(), isEmpty);
+    });
+
+    test('drops the pin record on permanent delete', () async {
+      final note = await vault.createNote(title: 'Pinned');
+      await vault.setPinned(note.path, true);
+
+      await vault.deleteNote(note.path);
+      expect(await vault.pinnedPaths(), isEmpty);
     });
   });
 

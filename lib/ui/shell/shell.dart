@@ -174,7 +174,7 @@ class _ShellState extends State<Shell> {
                   }
                   return;
                 }
-                _deleteSelectedWithUndo(context);
+                _trashNote(context);
               },
               onZoomIn: () =>
                   controller.setZoom(stepZoom(controller.settings.zoomFactor, up: true)),
@@ -321,7 +321,7 @@ class _ShellState extends State<Shell> {
   }
 
   /// Deletes the selected note after confirming, then offers an undo toast.
-  Future<void> _deleteSelectedWithUndo(BuildContext context) async {
+  Future<void> _trashNote(BuildContext context) async {
     final controller = widget.controller;
     final note = controller.selectedNote;
     if (note == null) return;
@@ -334,14 +334,14 @@ class _ShellState extends State<Shell> {
     );
     if (!confirmed || !context.mounted) return;
 
-    await showLoadingOverlay(context, controller.deleteNote(note.path));
+    await showLoadingOverlay(context, controller.trashNote(note.path));
     final entries = await controller.trash();
     if (!context.mounted || entries.isEmpty) return;
     // The entry we just created is the last one in the list.
     final entry = entries.last;
     CornerToast.show(
       context,
-      message: 'Deleted "${note.title}"',
+      message: 'Trashed "${note.title}"',
       actionLabel: 'Undo',
       icon: Icons.delete_outline_rounded,
       onAction: () => controller.restoreFromTrash(entry.trashedName),

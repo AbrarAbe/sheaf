@@ -229,15 +229,15 @@ class VaultController extends ChangeNotifier {
     return note;
   }
 
-  Future<void> deleteNote(String relPath) async {
-    await _requireVault().deleteNote(relPath);
+  Future<void> trashNote(String relPath) async {
+    await _requireVault().trashNote(relPath);
     if (selectedNote?.path == relPath) selectedNote = null;
     await refresh();
   }
 
   /// Permanently deletes a note file without sending it to trash.
-  Future<void> deleteNotePermanently(String relPath) async {
-    await _requireVault().deleteNotePermanently(relPath);
+  Future<void> deleteNote(String relPath) async {
+    await _requireVault().deleteNote(relPath);
     if (selectedNote?.path == relPath) selectedNote = null;
     await refresh();
   }

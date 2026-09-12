@@ -92,14 +92,14 @@ void main() {
     expect(controller.notes.single.title, 'Fresh');
   });
 
-  test('deleteNote removes it from the list', () async {
+  test('trashNote removes it from the list', () async {
     final controller = makeController();
     addTearDown(controller.dispose);
     await controller.initialize();
     await controller.openVault(vaultDir.path);
     final note = await controller.createNote(title: 'Gone');
 
-    await controller.deleteNote(note.path);
+    await controller.trashNote(note.path);
 
     expect(controller.notes, isEmpty);
   });
@@ -290,7 +290,7 @@ void main() {
       final note = await controller.createNote(title: 'Temp');
       await controller.togglePin(note.path);
 
-      await controller.deleteNote(note.path);
+      await controller.trashNote(note.path);
       expect(controller.isPinned(note.path), isFalse);
     });
   });

@@ -14,7 +14,7 @@ class NoteRow extends StatefulWidget {
     required this.selected,
     required this.onTap,
     required this.onTrash,
-    required this.onDeleteForever,
+    required this.onDelete,
     required this.pinned,
     required this.onTogglePin,
   });
@@ -24,7 +24,7 @@ class NoteRow extends StatefulWidget {
   final bool pinned;
   final VoidCallback onTap;
   final VoidCallback onTrash;
-  final VoidCallback onDeleteForever;
+  final VoidCallback onDelete;
   final VoidCallback onTogglePin;
 
   @override
@@ -43,12 +43,7 @@ class _NoteRowState extends State<NoteRow> {
     ),
     menuDivider,
     menuItem('Trash', value: 'trash', icon: Icons.delete_outline, shortcut: deleteActivator),
-    menuItem(
-      'Delete',
-      value: 'delete-forever',
-      icon: Icons.delete_forever_outlined,
-      destructive: true,
-    ),
+    menuItem('Delete', value: 'delete', icon: Icons.delete_forever_outlined, destructive: true),
   ]);
 
   @override
@@ -61,7 +56,7 @@ class _NoteRowState extends State<NoteRow> {
         if (value == 'open') widget.onTap();
         if (value == 'pin') widget.onTogglePin();
         if (value == 'trash') widget.onTrash();
-        if (value == 'delete-forever') widget.onDeleteForever();
+        if (value == 'delete') widget.onDelete();
       },
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
