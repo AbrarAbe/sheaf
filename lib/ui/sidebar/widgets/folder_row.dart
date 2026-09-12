@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../data/vault_repository.dart' show FolderNode;
 import '../../../logic/vault_controller.dart';
 import '../../common/context_menus.dart';
+import '../../common/widgets/loading_overlay.dart';
+import '../../dialogs/confirm_delete.dart';
 import 'hover_row.dart';
 import 'text_prompt.dart';
 
@@ -102,7 +104,15 @@ class _FolderRowState extends State<FolderRow> {
                       case 'rename':
                         await _promptAndRename(context);
                       case 'delete':
-                        await controller.deleteFolder(node.relPath);
+                        final confirmed = await showConfirmDeleteDialog(
+                          context,
+                          title: 'Move folder to trash?',
+                          message:
+                              'Entire folder "${node.name}" and ALL its contents (subdirectories, notes, files) will be moved to trash.',
+                          confirmLabel: 'Move folder to trash',
+                        );
+                        if (!confirmed || !context.mounted) return;
+                        await showLoadingOverlay(context, controller.deleteFolder(node.relPath));
                     }
                   },
                   child: HoverRow(
