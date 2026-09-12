@@ -16,63 +16,67 @@ Four UX fixes addressing confirmation gaps, palette visual glitches, missing not
 
 ### Phase 1 — Delete & trash confirmation dialogs
 
-- [ ] **Task 1: Confirmation dialog before note delete (note list → trash)**
+- [x] **Task 1: Confirmation dialog before note delete (note list → trash)**
   **Description:** Wrap every note-delete entry point (list row, shell shortcut) with a centred modal dialog before moving the note to trash. After trash, show the undo toast.
   **Acceptance criteria:**
-  - [ ] `showConfirmDeleteDialog` widget in `lib/ui/dialogs/confirm_delete.dart` renders: Cancel `FilledButton` (accent), Delete `TextButton` (error color). Returns `true`/`false`.
-  - [ ] `ListPane._deleteWithUndo` shows dialog → on confirm → `showLoadingOverlay(context, controller.deleteNote)` → trash → undo toast (`entries.last` for correct entry).
-  - [ ] `Shell._deleteSelectedWithUndo` same pattern.
-  - [ ] `NoteRow` delete button from context menu also shows the dialog.
-  - [ ] Dialog barrier-dismissible, Esc cancels.
-  - [ ] Yellow underlines (spell-check decoration) removed from toast text via `decoration: TextDecoration.none`.
-  - [ ] `showLoadingOverlay` utility shows centred spinner during async delete.
+  - [x] `showConfirmDeleteDialog` widget in `lib/ui/dialogs/confirm_delete.dart` renders: Cancel `FilledButton` (accent), Delete `TextButton` (error color). Returns `true`/`false`.
+  - [x] `ListPane._deleteWithUndo` shows dialog → on confirm → `showLoadingOverlay(context, controller.deleteNote)` → trash → undo toast (`entries.last` for correct entry).
+  - [x] `Shell._deleteSelectedWithUndo` same pattern.
+  - [x] `NoteRow` delete button from context menu also shows the dialog.
+  - [x] Dialog barrier-dismissible, Esc cancels.
+  - [x] Yellow underlines (spell-check decoration) removed from toast text via `decoration: TextDecoration.none`.
+  - [x] `showLoadingOverlay` utility shows centred spinner during async delete.
   **Verification:**
-  - [ ] `flutter test test/ui/dialogs/confirm_delete_test.dart`
-  - [ ] `flutter test test/ui/note_list/context_menu_test.dart` — right-click → Delete → dialog → confirm → note trashed.
-  - [ ] `flutter test test/ui/shell/shortcut_test.dart` — Del key → dialog → confirm → note trashed.
+  - [x] `flutter test test/ui/dialogs/confirm_delete_test.dart`
+  - [x] `flutter test test/ui/note_list/context_menu_test.dart` — right-click → Delete → dialog → confirm → note trashed.
+  - [x] `flutter test test/ui/shell/shortcut_test.dart` — Del key → dialog → confirm → note trashed.
   **Dependencies:** None
-  **Files likely touched:**
-  - `lib/ui/dialogs/confirm_delete.dart`
+  **Files touched:**
+  - `lib/ui/dialogs/confirm_delete.dart` (new)
   - `lib/ui/common/widgets/loading_overlay.dart` (new)
   - `lib/ui/common/widgets/corner_toast_card.dart` (decoration fix)
   - `lib/ui/note_list/list_pane.dart`
-  - `lib/ui/note_list/widgets/note_row.dart`
   - `lib/ui/shell/shell.dart`
+  - `lib/ui/sidebar/trash_view.dart`
   - `test/ui/dialogs/confirm_delete_test.dart` (new)
   - `test/ui/note_list/context_menu_test.dart`
   - `test/ui/shell/shortcut_test.dart`
-  **Estimated scope:** S
+  - `test/ui/sidebar/trash_view_test.dart`
+  **Scope:** S — committed 030f20f
 
-- [ ] **Task 2: Confirmation dialog before folder delete (sidebar → trash)**
-  **Description:** Wrap folder delete in the sidebar context menu with the same confirmation pattern.
+- [x] **Task 2: Confirmation dialog before folder delete (sidebar → trash)**
+  **Description:** Wrap folder delete in the sidebar context menu with a strong confirmation dialog. When a folder is trashed, the entire directory tree (all subdirectories and all notes/files inside) is moved to `.trash/` atomically via `Directory.rename()`. The dialog must clearly warn about this.
   **Acceptance criteria:**
-  - [ ] `FolderRow` context menu `Delete` action shows `showConfirmDeleteDialog` with title "Delete folder?" and body "Are you sure you want to delete \"{name}\"? All notes inside will be moved to trash."
-  - [ ] `case 'delete':` in folder_row.dart shows dialog → on confirm → `showLoadingOverlay(context, controller.deleteFolder(relPath))`.
-  - [ ] Dialog barrier-dismissible, Esc cancels.
+  - [x] `FolderRow` context menu `Delete` action shows `showConfirmDeleteDialog` with:
+    - Title: "Move folder to trash?"
+    - Message: "Entire folder "{name}" and ALL its contents (subdirectories, notes, files) will be moved to trash."
+    - Confirm label: "Move folder to trash"
+  - [x] `case 'delete':` in folder_row.dart shows dialog → on confirm → `showLoadingOverlay(context, controller.deleteFolder(relPath))`.
+  - [x] No separate entry per file in the trash — the whole directory is one `TrashEntry(isFolder: true)`. Restoring it restores everything.
+  - [x] Dialog barrier-dismissible, Esc cancels.
   **Verification:**
-  - [ ] `flutter test test/ui/sidebar/sidebar_test.dart`
+  - [x] `flutter analyze` clean, `flutter test` 315/315 green.
   **Dependencies:** Task 1 (same dialog widget)
-  **Files likely touched:**
+  **Files touched:**
   - `lib/ui/sidebar/widgets/folder_row.dart`
-  - `test/ui/sidebar/sidebar_test.dart`
-  **Estimated scope:** XS
+  **Estimated scope:** XS — committed 8cfa005
 
-- [ ] **Task 3: Confirmation dialog before permanent delete in Trash view + restore toast**
+- [x] **Task 3: Confirmation dialog before permanent delete in Trash view + restore toast**
   **Description:** The "Delete forever" icon button in the Trash view currently deletes immediately. Show a confirmation dialog first. The "Restore" button shows a success toast.
   **Acceptance criteria:**
-  - [ ] `showConfirmDeleteDialog` called with title "Delete permanently?" and body "This action cannot be undone. The file "{name}" will be permanently deleted." Use `confirmLabel: 'Delete permanently'`.
-  - [ ] Only proceeds to `controller.emptyTrashItem(trashedName)` on confirm.
-  - [ ] After `controller.restoreFromTrash(trashedName)` completes, show `CornerToast.show(context, message: 'Restored "{name}"', icon: Icons.restore)`.
-  - [ ] Loading overlay during the async delete operation.
-  - [ ] The restore toast appears even though the trash dialog is still open — it renders in the root overlay.
+  - [x] `showConfirmDeleteDialog` called with title "Delete permanently?" and body "This action cannot be undone. The file "{name}" will be permanently deleted." Use `confirmLabel: 'Delete permanently'`.
+  - [x] Only proceeds to `controller.emptyTrashItem(trashedName)` on confirm.
+  - [x] After `controller.restoreFromTrash(trashedName)` completes, show `CornerToast.show(context, message: 'Restored "{name}"', icon: Icons.restore)`.
+  - [x] Loading overlay during the async delete operation.
+  - [x] The restore toast appears even though the trash dialog is still open — it renders in the root overlay.
   **Verification:**
-  - [ ] `flutter test test/ui/sidebar/trash_view_test.dart` — delete forever → dialog → confirm → item removed.
-  - [ ] Manual: open trash, tap Restore → toast appears.
+  - [x] `flutter test test/ui/sidebar/trash_view_test.dart` — delete forever → dialog → confirm → item removed.
+  - [x] Manual: open trash, tap Restore → toast appears.
   **Dependencies:** Task 1 (dialog widget)
-  **Files likely touched:**
+  **Files touched:**
   - `lib/ui/sidebar/trash_view.dart`
   - `test/ui/sidebar/trash_view_test.dart`
-  **Estimated scope:** XS
+  **Estimated scope:** XS — committed 030f20f
 
 ### Phase 2 — Command palette polish
 

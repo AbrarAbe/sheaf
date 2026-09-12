@@ -28,6 +28,7 @@ class SpyVaultController extends VaultController {
   final restored = <String>[];
   final emptied = <String>[];
   final deleted = <String>[];
+  List<String>? deletedPermanently;
   final themes = <ThemeSetting>[];
   final worlds = <String>[];
   String themeWorld = 'quire';
@@ -84,6 +85,16 @@ class SpyVaultController extends VaultController {
   }
 
   @override
+  Future<void> deleteNotePermanently(String relPath) async {
+    deletedPermanently ??= [];
+    deletedPermanently!.add(relPath);
+    fakeNotes = [
+      for (final n in fakeNotes)
+        if (n.path != relPath) n,
+    ];
+  }
+
+  @override
   AppSettings get settings => AppSettings(
     vaultPath: vaultPath,
     theme: theme,
@@ -123,10 +134,7 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  Future<void> setShortcutOverride(
-    ShortcutAction action,
-    SingleActivator? activator,
-  ) async {
+  Future<void> setShortcutOverride(ShortcutAction action, SingleActivator? activator) async {
     final serialized = activator == null ? null : serializeActivator(activator);
     shortcutCalls.add('${action.name}:${serialized ?? "reset"}');
     if (serialized == null) {

@@ -24,18 +24,18 @@ void main() {
     return controller;
   }
 
-  testWidgets('secondary click on a row opens a menu with Delete', (tester) async {
+  testWidgets('secondary click on a row opens context menu with Trash and Delete', (tester) async {
     final controller = await pumpList(tester);
 
     await tester.tap(find.text('Alpha'), buttons: kSecondaryButton, warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    // QuireMenuItem renders its label exactly once.
-    // Context menu has both "Delete" and "Info" items — but we only check
-    // the "Delete" label from the context menu (before dialog opens).
+    // Context menu has both "Trash" and "Delete".
+    expect(find.text('Trash'), findsOneWidget);
     expect(find.text('Delete'), findsOneWidget);
 
-    await tester.tap(find.text('Delete'));
+    // Tap "Trash" to move the note to trash.
+    await tester.tap(find.text('Trash'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 

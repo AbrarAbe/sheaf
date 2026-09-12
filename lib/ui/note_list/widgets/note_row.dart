@@ -13,7 +13,8 @@ class NoteRow extends StatefulWidget {
     required this.note,
     required this.selected,
     required this.onTap,
-    required this.onDelete,
+    required this.onTrash,
+    required this.onDeleteForever,
     required this.pinned,
     required this.onTogglePin,
   });
@@ -22,7 +23,8 @@ class NoteRow extends StatefulWidget {
   final bool selected;
   final bool pinned;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
+  final VoidCallback onTrash;
+  final VoidCallback onDeleteForever;
   final VoidCallback onTogglePin;
 
   @override
@@ -40,7 +42,13 @@ class _NoteRowState extends State<NoteRow> {
       icon: widget.pinned ? Icons.push_pin : Icons.push_pin_outlined,
     ),
     menuDivider,
-    menuItem('Delete', value: 'delete', icon: Icons.delete_outline, shortcut: deleteActivator),
+    menuItem('Trash', value: 'trash', icon: Icons.delete_outline, shortcut: deleteActivator),
+    menuItem(
+      'Delete',
+      value: 'delete-forever',
+      icon: Icons.delete_forever_outlined,
+      destructive: true,
+    ),
   ]);
 
   @override
@@ -52,7 +60,8 @@ class _NoteRowState extends State<NoteRow> {
       onItemSelected: (value) {
         if (value == 'open') widget.onTap();
         if (value == 'pin') widget.onTogglePin();
-        if (value == 'delete') widget.onDelete();
+        if (value == 'trash') widget.onTrash();
+        if (value == 'delete-forever') widget.onDeleteForever();
       },
       child: MouseRegion(
         onEnter: (_) => setState(() => _hover = true),
@@ -204,8 +213,8 @@ class _NoteRowState extends State<NoteRow> {
                               const SizedBox(width: 4),
                               HoverIcon(
                                 icon: Icons.delete_outline,
-                                onTap: widget.onDelete,
-                                tooltip: 'Delete',
+                                onTap: widget.onTrash,
+                                tooltip: 'Trash',
                               ),
                             ],
                           ),

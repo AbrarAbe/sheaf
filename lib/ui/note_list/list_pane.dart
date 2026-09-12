@@ -74,6 +74,19 @@ class _ListPaneState extends State<ListPane> {
     );
   }
 
+  /// Permanently deletes [note] after a confirmation dialog.
+  Future<void> _deleteForever(Note note) async {
+    final confirmed = await showConfirmDeleteDialog(
+      context,
+      title: 'Delete permanently?',
+      message: 'This action cannot be undone. "${note.title}" will be permanently deleted.',
+      confirmLabel: 'Delete permanently',
+    );
+    if (!confirmed || !mounted) return;
+
+    await showLoadingOverlay(context, widget.controller.deleteNotePermanently(note.path));
+  }
+
   ContextMenu<Object?> get _scaffoldMenu => quireMenu([
     menuItem(
       'New note',
@@ -281,7 +294,8 @@ class _ListPaneState extends State<ListPane> {
       pinned: controller.isPinned(note.path),
       onTogglePin: () => controller.togglePin(note.path),
       onTap: () => controller.selectNote(note),
-      onDelete: () => _deleteWithUndo(note),
+      onTrash: () => _deleteWithUndo(note),
+      onDeleteForever: () => _deleteForever(note),
     ),
   );
 }

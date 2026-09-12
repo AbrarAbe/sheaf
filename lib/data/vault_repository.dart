@@ -141,6 +141,13 @@ class VaultRepository {
     await setPinned(relPath, false);
   }
 
+  /// Permanently deletes a note file without sending it to trash.
+  Future<void> deleteNotePermanently(String relPath) async {
+    final file = fileOf(relPath);
+    if (file.existsSync()) await file.delete();
+    await setPinned(relPath, false);
+  }
+
   /// Restores a trashed item to where it was before deletion.
   /// [trashedName] is a top-level item name inside `.trash/`.
   Future<void> restore(String trashedName) async {

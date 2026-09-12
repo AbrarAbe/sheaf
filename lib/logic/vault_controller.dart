@@ -14,10 +14,8 @@ import 'package:watcher/watcher.dart';
 
 /// App-wide state: which vault is open, what's in it, and user settings.
 class VaultController extends ChangeNotifier {
-  VaultController({
-    required SettingsRepository settings,
-    required this._vaultFactory,
-  }) : _settingsRepo = settings;
+  VaultController({required SettingsRepository settings, required this._vaultFactory})
+    : _settingsRepo = settings;
 
   final SettingsRepository _settingsRepo;
   final VaultRepository Function(String path) _vaultFactory;
@@ -194,10 +192,7 @@ class VaultController extends ChangeNotifier {
   }
 
   /// Persists a single shortcut override. Pass `null` to reset to default.
-  Future<void> setShortcutOverride(
-    ShortcutAction action,
-    SingleActivator? activator,
-  ) async {
+  Future<void> setShortcutOverride(ShortcutAction action, SingleActivator? activator) async {
     final current = _settings.shortcutOverrides[action.name];
     final serialized = activator == null ? null : serializeActivator(activator);
     if (current == serialized) return;
@@ -224,11 +219,7 @@ class VaultController extends ChangeNotifier {
   SingleActivator shortcutFor(ShortcutAction action) =>
       activatorFor(action, _settings.shortcutOverrides);
 
-  Future<Note> createNote({
-    required String title,
-    String? body,
-    String? folder,
-  }) async {
+  Future<Note> createNote({required String title, String? body, String? folder}) async {
     final note = await _requireVault().createNote(
       title: title,
       body: body,
@@ -240,6 +231,13 @@ class VaultController extends ChangeNotifier {
 
   Future<void> deleteNote(String relPath) async {
     await _requireVault().deleteNote(relPath);
+    if (selectedNote?.path == relPath) selectedNote = null;
+    await refresh();
+  }
+
+  /// Permanently deletes a note file without sending it to trash.
+  Future<void> deleteNotePermanently(String relPath) async {
+    await _requireVault().deleteNotePermanently(relPath);
     if (selectedNote?.path == relPath) selectedNote = null;
     await refresh();
   }
@@ -261,8 +259,7 @@ class VaultController extends ChangeNotifier {
 
   Future<void> renameFolder(String relPath, String newName) async {
     await _requireVault().renameFolder(relPath, newName);
-    if (selectedFolder == relPath ||
-        selectedFolder?.startsWith('$relPath/') == true) {
+    if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
       // The scoped path no longer exists; fall back to all notes.
       selectedFolder = null;
     }
@@ -271,8 +268,7 @@ class VaultController extends ChangeNotifier {
 
   Future<void> deleteFolder(String relPath) async {
     await _requireVault().deleteFolder(relPath);
-    if (selectedFolder == relPath ||
-        selectedFolder?.startsWith('$relPath/') == true) {
+    if (selectedFolder == relPath || selectedFolder?.startsWith('$relPath/') == true) {
       selectedFolder = null;
     }
     await refresh();
