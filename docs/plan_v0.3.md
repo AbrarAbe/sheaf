@@ -159,12 +159,14 @@ Three thrusts: (1) correctness & perf hardening surfaced by audit (word-aware it
 - `lib/logic/shortcut_serializer.dart` — `serializeActivator`/`tryParseActivator` (`Ctrl+Shift+K`, `F10`, `Del`).
 - `lib/ui/shell/shortcuts.dart:118` — `sheafShortcuts([AppSettings])` settings-driven.
 - `lib/ui/dialogs/settings_dialog.dart:27` — Keyboard Shortcuts section, `_ShortcutRow`, `_ShortcutRecorderDialog` conflict handling.
+
 ## Verification
 
 - `flutter analyze` clean after each phase.
 - `flutter test` green; new pure-logic suites: `formatting_test.dart` (unicode, combinable, gap), `list_formatting_test.dart`, `link_formatting_test.dart`, `list_continuation_test.dart` expanded; `vault_controller_multidir_test.dart`; plus `shortcut_serializer_test.dart`, `settings` shortcut round-trip, `settings_dialog` recorder/conflict widget.
 - Manual smoke: `flutter run -d linux` — (a) `café naïve` italic toggle not split, (b) `Ctrl+B` → `Ctrl+I` → `***word***` → unwrap cycle, (c) middle-of-doc list `Enter` continues vs blank-line exit, (d) open Find, edit before match, highlight tracks, (e) add second vault in Settings, notes merge, image drop lands in correct `attachments/`, (f) action bar `•`/`1.`/`Link`/`Image` and right-click menu mirror them, (g) 2000-note vault scroll no jank, (h) traversal image `![](../../../etc/passwd)` shows placeholder, (i) Settings → Keyboard Shortcuts → change `Create note` `Ctrl+N` → `Ctrl+Shift+N` → `Ctrl+Shift+N` creates note, old `Ctrl+N` no longer does, `F3` for find, `Ctrl+B` blocked as reserved, restart persists.
 - Perf: `flutter test --coverage` data+logic ≥80%; frame time on i3-7020U typing 60 fps (DevTools performance overlay).
+
 ## Assumptions & contingencies
 
 - `Ctrl+K` clash (palette vs link): editor-scoped `Ctrl+K` wins when editor has focus; palette uses same binding at shell scope but editor route consumes first. If QA finds confusion, fallback is to move palette to `Ctrl+Shift+K` — implementer picks editor-wins default and records in code comment.

@@ -42,12 +42,14 @@ class MarkdownPreview extends StatelessWidget {
     required this.body,
     required this.vaultRoot,
     required this.scrollController,
+    this.previewPadding,
     this.baseFontSize = 16,
   });
 
   final String body;
   final Directory vaultRoot;
   final ScrollController scrollController;
+  final EdgeInsetsGeometry? previewPadding;
 
   /// Base size from settings (story 16); all preview sizes scale by it/16.
   final double baseFontSize;
@@ -168,8 +170,8 @@ class MarkdownPreview extends StatelessWidget {
     return SelectionArea(
       child: SingleChildScrollView(
         controller: scrollController,
-        // padding: const EdgeInsets.fromLTRB(24, 12, 24, 12),
-        padding: const EdgeInsets.only(top: 2, right: 24, bottom: 2),
+        padding: previewPadding,
+        // padding: const EdgeInsets.only(top: 2, right: 24, bottom: 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: _generator().buildWidgets(body, config: config),
