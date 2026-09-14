@@ -80,19 +80,24 @@ Four UX fixes addressing confirmation gaps, palette visual glitches, missing not
 
 ### Phase 2 — Command palette polish
 
-- [ ] **Task 4: Auto-highlight first result on type, fix arrow-key background staleness**
-  **Description:** When typing in the palette query field, the first result immediately shows the selected background (no arrow-key required) and the list scrolls to it.
+- [x] **Task 4: Improve scrolling and list layout in command palette**
+  **Description:** Refactor the command palette layout and scrolling behaviour to restrict the maximum height of the list, eliminate layout wrap-around, and ensure smooth caret-like scrolling.
   **Acceptance criteria:**
-  - [ ] `_CommandPaletteState.onChanged` already calls `setState(() => _index = 0)`. Add a `_reveal` call for `results[0]` so the first result is scrolled into view.
-  - [ ] Verify animation-free highlight in `PaletteRow` (plain `Container` color, no `AnimatedContainer`).
-  - [ ] No regressions.
+  - [x] Implement a custom scrolling viewport matching exactly 15 visible rows before scrolling (`_pageSize = 15`, `_rowExtent = 38.0`, clamped `fifteenRowHeight`).
+  - [x] Clamp arrow navigation to prevent wrap-around at list boundaries (`_index = (_index + 1).clamp(0, results.length - 1)` and symmetric for up).
+  - [x] Track precise viewport positions in `_reveal` — only triggers `Scrollable.ensureVisible` when the selected item actually exits the viewport (caret-like, no jump for already-visible rows).
+  - [x] `_reveal` uses `alignment: 0` for arrow-up (top-pin) and `alignment: 1` for arrow-down (bottom-pin) for symmetric caret behaviour.
+  - [x] `PaletteRow` uses plain `Container` colour (no `AnimatedContainer`) for flicker-free highlight.
+  - [x] `PaletteRow` uses `theme.colorScheme.secondaryContainer` (not `surfaceContainerHighest`) for highlighting selected rows.
+  - [x] No regressions.
   **Verification:**
-  - [ ] `flutter test test/ui/shell/command_palette_test.dart`
+  - [x] `flutter test test/ui/shell/command_palette_test.dart` — instant highlight on type, no-wrap arrow boundaries, no `AnimatedContainer`.
   **Dependencies:** None
-  **Files likely touched:**
+  **Files touched:**
   - `lib/ui/shell/command_palette.dart`
+  - `lib/ui/shell/widgets/palette_row.dart`
   - `test/ui/shell/command_palette_test.dart`
-  **Estimated scope:** XS
+  **Estimated scope:** S - (3-4 files)
 
 ### Phase 3 — Note info (EXIF) dialog
 

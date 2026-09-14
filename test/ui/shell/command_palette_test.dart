@@ -114,6 +114,84 @@ void main() {
     expect(controller.selectedNotePath, first.path);
   });
 
+  testWidgets('typing instantly highlights the first result', (tester) async {
+    final a = note('Alpha', at: DateTime(2026, 8, 25));
+    final b = note('Beta', at: DateTime(2026, 8, 24));
+    await pumpHost(tester, notes: [a, b]);
+
+    // Default: first row selected.
+    bool firstSelected() {
+      final ctx = tester.element(find.text('Alpha'));
+      final wanted = Theme.of(ctx).colorScheme.secondaryContainer;
+      return tester
+          .widgetList<Container>(
+            find.ancestor(of: find.text('Alpha'), matching: find.byType(Container)),
+          )
+          .where((c) => c.decoration is BoxDecoration)
+          .any((c) => (c.decoration! as BoxDecoration).color == wanted);
+    }
+
+    expect(firstSelected(), isTrue);
+
+    // Type to narrow — first result picks up highlight immediately.
+    await tester.enterText(find.byKey(const Key('palette-field')), 'Bet');
+    await tester.pump();
+
+    bool betaSelected() {
+      final ctx = tester.element(find.text('Beta'));
+      final wanted = Theme.of(ctx).colorScheme.secondaryContainer;
+      return tester
+          .widgetList<Container>(
+            find.ancestor(of: find.text('Beta'), matching: find.byType(Container)),
+          )
+          .where((c) => c.decoration is BoxDecoration)
+          .any((c) => (c.decoration! as BoxDecoration).color == wanted);
+    }
+
+    expect(betaSelected(), isTrue);
+  });
+
+  testWidgets('arrow down at last item does not wrap around', (tester) async {
+    final first = note('First', at: DateTime(2026, 8, 25));
+    final second = note('Second', at: DateTime(2026, 8, 24));
+    await pumpHost(tester, notes: [first, second]);
+
+    // First row selected by default.
+    bool firstSel() {
+      final ctx = tester.element(find.text('First'));
+      final wanted = Theme.of(ctx).colorScheme.secondaryContainer;
+      return tester
+          .widgetList<Container>(
+            find.ancestor(of: find.text('First'), matching: find.byType(Container)),
+          )
+          .where((c) => c.decoration is BoxDecoration)
+          .any((c) => (c.decoration! as BoxDecoration).color == wanted);
+    }
+
+    bool secondSel() {
+      final ctx = tester.element(find.text('Second'));
+      final wanted = Theme.of(ctx).colorScheme.secondaryContainer;
+      return tester
+          .widgetList<Container>(
+            find.ancestor(of: find.text('Second'), matching: find.byType(Container)),
+          )
+          .where((c) => c.decoration is BoxDecoration)
+          .any((c) => (c.decoration! as BoxDecoration).color == wanted);
+    }
+
+    // Arrow down once to second.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(firstSel(), isFalse);
+    expect(secondSel(), isTrue);
+
+    // Arrow down again — should stay at second (no wrap).
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(firstSel(), isFalse);
+    expect(secondSel(), isTrue);
+  });
+
   testWidgets('escape closes without changing the selection', (tester) async {
     final controller = await pumpHost(tester, notes: [note('Solo', at: DateTime(2026, 8, 21))]);
 
@@ -166,7 +244,7 @@ void main() {
 
     bool highlighted(String title) {
       final context = tester.element(find.text(title));
-      final wanted = Theme.of(context).colorScheme.surfaceContainerHighest;
+      final wanted = Theme.of(context).colorScheme.secondaryContainer;
       return tester
           .widgetList<Container>(
             find.ancestor(of: find.text(title), matching: find.byType(Container)),
