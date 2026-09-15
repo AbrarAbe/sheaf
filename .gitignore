@@ -51,5 +51,6 @@ app.*.map.json
 AGENTS.md
 CLAUDE.md
 
-# AppImage
+# AppImage build
 *.AppImage
+AppDir/
