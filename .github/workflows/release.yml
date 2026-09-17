@@ -12,11 +12,7 @@ jobs:
     build-linux:
         runs-on: ubuntu-latest
         steps:
-            # Full history and tags so git-cliff can render notes for the tagged release.
             - uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-                  fetch-tags: true
 
             # pubspec.yaml constrains sdk to ^3.14.0-95.2.beta (beta channel).
             # Move this to stable when the constraint no longer needs beta.
@@ -51,12 +47,6 @@ jobs:
             - name: Build AppImage
               run: bash ./scripts/build_appimage.sh "sheaf-$GITHUB_REF_NAME-linux-x64.AppImage"
 
-            - name: Generate release notes (git-cliff)
-              id: notes
-              uses: orhun/git-cliff-action@v4
-              with:
-                  args: --latest --strip header
-
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
@@ -64,6 +54,29 @@ jobs:
                   path: |
                       sheaf-*-linux-x64.tar.gz
                       sheaf-*-linux-x64.AppImage
+
+    # Separate job so a publish/upload failure can be retried via
+    # "Re-run failed jobs" without rebuilding (~20 min saved).
+    publish-release:
+        needs: build-linux
+        runs-on: ubuntu-latest
+        steps:
+            # Full history and tags so git-cliff can render notes for the tagged release.
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - name: Download build artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  name: sheaf-linux-x64
+
+            - name: Generate release notes (git-cliff)
+              id: notes
+              uses: orhun/git-cliff-action@v4
+              with:
+                  args: --latest --strip header
 
             - name: Publish GitHub Release
               uses: softprops/action-gh-release@v2

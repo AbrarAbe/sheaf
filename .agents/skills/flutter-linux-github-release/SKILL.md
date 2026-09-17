@@ -82,12 +82,28 @@ default branch. The tag `vX.Y.Z` is the version git-cliff uses in CI
 
 ### Step 3 — Verify the run
 
-1. GitHub → Actions: the "Release (Linux)" run on the tag is green — workflow
-   generated notes with `git-cliff --current --strip header` for that tag.
+1. GitHub → Actions: the "Release (Linux)" run on the tag is green — both jobs
+   (`build-linux`, then `publish-release`) succeed; workflow generated notes
+   with `git-cliff --current --strip header` for that tag.
 2. GitHub → Releases: the new release lists `sheaf-vX.Y.Z-linux-x64.tar.gz`
-   and its body matches the `CHANGELOG.md` section for that version (the section
-   created locally with `git cliff --tag vX.Y.Z` / `--bump`).
+   (plus the AppImage) and its body matches the `CHANGELOG.md` section for
+   that version (the section created locally with `git cliff --tag vX.Y.Z` /
+   `--bump`).
 3. Download the tarball, extract it, launch the binary once as a smoke test.
+
+### Step 4 — Recover a failed publish (no rebuild)
+
+Build and publish are separate jobs: `build-linux` uploads the tarball +
+AppImage as the `sheaf-linux-x64` artifact, and `publish-release`
+(`needs: build-linux`) downloads it and publishes. If `publish-release`
+fails (e.g. transient asset-upload timeout — not a quota issue):
+
+1. GitHub → Actions → the failed run → "Re-run failed jobs" — only the
+   lightweight publish job reruns, no rebuild.
+2. If the run's artifacts are still retained, recover locally without CI:
+   `gh run download <run-id> -n sheaf-linux-x64`, verify with
+   `tar tzf`, then `gh release upload <tag> <files> --clobber` and
+   `gh release edit <tag> --draft=false`.
 
 ## Common Rationalizations
 
@@ -124,8 +140,10 @@ Before tagging:
   - [ ] `README.md` reviewed against `docs/spec.md` / `docs/plan_v*.md` **and**
     `git log`/`git diff` since last tag; new or changed features, shortcuts,
     install steps, and doc links updated (no stale version strings)
-- [ ] `.github/workflows/release.yml` present on the default branch with
-  `checkout: fetch-depth: 0` and notes step `args: --current --strip header`
+- [ ] `.github/workflows/release.yml` present on the default branch with two
+  jobs: `build-linux` (builds + uploads `sheaf-linux-x64` artifact) and
+  `publish-release` (`needs: build-linux`, checkout `fetch-depth: 0`, notes
+  step `args: --current --strip header`)
 
 After the run:
 
