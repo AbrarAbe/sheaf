@@ -413,6 +413,80 @@ void main() {
     });
   });
 
+  group('auto-scroll on last-line Enter (spec story 43)', () {
+    String longBody() => List.generate(80, (i) => 'paragraph line number $i').join('\n');
+
+    // The body TextField scrolls on _bodyScroll; read its live position.
+    ScrollPosition bodyPosition(WidgetTester tester) {
+      final scrollable = find
+          .descendant(of: find.byKey(const Key('editor-body')), matching: find.byType(Scrollable))
+          .first;
+      return tester.state<ScrollableState>(scrollable).position;
+    }
+
+    testWidgets('Enter at the very end reveals the new blank line', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'Scroll', body: ''), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // enterText leaves the caret on the last line of a long, overflowing body.
+      await tester.enterText(find.byKey(const Key('editor-body')), longBody());
+      await tester.pump();
+
+      final maxBefore = bodyPosition(tester).maxScrollExtent;
+      expect(maxBefore, greaterThan(0), reason: 'long body should overflow the editor');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.pump();
+
+      expect(editorController.body, '${longBody()}\n');
+      // Viewport jumped to the bottom so the new line is visible immediately.
+      expect(bodyPosition(tester).pixels, greaterThan(maxBefore));
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Enter mid-document does NOT auto-scroll', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'Mid', body: ''), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      await tester.enterText(find.byKey(const Key('editor-body')), longBody());
+      await tester.pump();
+      // Move the caret into the middle of the document, away from the end.
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      field.controller!.selection = TextSelection.collapsed(offset: 5);
+      await tester.pump();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.pump();
+
+      expect(bodyPosition(tester).pixels, 0, reason: 'caret is mid-document, keep the offset');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('list continuation at the end does NOT auto-scroll', (tester) async {
+      final note = await real(() => vaultController.createNote(title: 'List', body: ''), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // Long body whose last line is a list item, caret on that last item.
+      final body = '${List.generate(40, (i) => 'line $i').join('\n')}\n- final item';
+      await tester.enterText(find.byKey(const Key('editor-body')), body);
+      await tester.pump();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.pump();
+
+      // The list was continued (a marker line was appended) but the viewport stayed put.
+      expect(editorController.body.length, greaterThan(body.length));
+      expect(bodyPosition(tester).pixels, 0, reason: 'list continuation is excluded');
+      await real(editorController.flush, tester);
+    });
+  });
+
   group('formatting keys (spec story 10)', () {
     Future<void> openNormal(WidgetTester tester, {String body = 'hello world'}) async {
       final note = await real(() => vaultController.createNote(title: 'Fmt', body: body), tester);

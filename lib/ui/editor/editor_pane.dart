@@ -324,7 +324,10 @@ class _EditorState extends State<_Editor> {
         text: result.text,
         selection: TextSelection.collapsed(offset: result.selStart),
       );
-    } else if (start != end) {
+      widget.controller.updateBody(_body.text);
+      return;
+    }
+    if (start != end) {
       // Selection non-collapsed but not a list: replace with plain newline.
       final replaced = _body.text.replaceRange(start, end, '\n');
       _body.value = TextEditingValue(
@@ -339,6 +342,16 @@ class _EditorState extends State<_Editor> {
       );
     }
     widget.controller.updateBody(_body.text);
+    // Spec story 43: a plain newline whose caret lands at the very end of the
+    // document must reveal the blank line before any character is typed. List
+    // continuation is excluded (returns above). Post-frame so maxScrollExtent
+    // reflects the freshly inserted newline.
+    if (_body.selection.isValid && _body.selection.start >= _body.text.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_bodyScroll.hasClients) return;
+        _bodyScroll.jumpTo(_bodyScroll.position.maxScrollExtent);
+      });
+    }
   }
 
   // --- Find in note (spec story 14) ---------------------------------------
