@@ -294,8 +294,18 @@ class VaultController extends ChangeNotifier {
   Future<void> refresh() async {
     final vault = _vault;
     if (_disposed || vault == null || !vault.root.existsSync()) return;
-    final notes = await vault.listNotes();
-    final folders = await vault.folderTree();
+    // The folder can vanish between the existsSync guard above and the reads
+    // below (external delete, drive eject, or teardown deleting the temp
+    // vault under a still-active watcher). Treat that mid-scan loss the same
+    // as the documented no-op instead of surfacing an uncaught error.
+    List<Note> notes;
+    List<FolderNode> folders;
+    try {
+      notes = await vault.listNotes();
+      folders = await vault.folderTree();
+    } on FileSystemException {
+      return;
+    }
     // Dispose may land while the rescan above was in flight.
     if (_disposed) return;
     _notes = notes;

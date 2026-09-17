@@ -328,4 +328,52 @@ void main() {
       expect(() => controller.fileOf('../escape.md'), throwsArgumentError);
     });
   });
+
+  group('refresh resilience (vault vanishes mid-life)', () {
+    test('refresh is a no-op when the vault folder no longer exists', () async {
+      final dir = Directory('${tempDir.path}/gone')..createSync();
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(dir.path);
+      await controller.createNote(title: 'N');
+      expect(controller.notes.single.title, 'N');
+
+      await dir.delete(recursive: true);
+
+      // Must not throw and must leave the last-good list untouched.
+      await expectLater(controller.refresh(), completes);
+      expect(controller.notes.single.title, 'N');
+    });
+
+    test('refresh tolerates the vault being removed mid-scan', () async {
+      // Enough entries that the recursive listing spans several awaits, so a
+      // delete landing a tick after refresh() starts hits the listing rather
+      // than the pre-flight existsSync guard — the exact race that surfaced
+      // as an uncaught PathNotFoundException under parallel test runs.
+      final dir = Directory('${tempDir.path}/mid')..createSync();
+      Future<void> pop() async {
+        for (var i = 0; i < 300; i++) {
+          File('${dir.path}/n${i.toString().padLeft(4, '0')}.md').writeAsStringSync('x');
+        }
+      }
+
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await pop();
+      await controller.openVault(dir.path);
+      expect(controller.notes.length, 300);
+
+      // 25 attempts pump the race hard; any one must not throw or hang.
+      for (var attempt = 0; attempt < 25; attempt++) {
+        final f = controller.refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 1));
+        dir.deleteSync(recursive: true);
+        await expectLater(f, completes).then((_) {});
+        dir.createSync();
+        await pop();
+      }
+    });
+  });
 }

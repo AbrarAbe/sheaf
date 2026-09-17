@@ -143,13 +143,13 @@ Four UX fixes addressing confirmation gaps, palette visual glitches, missing not
 
 ### Phase 4 — Editor auto-scroll on last-line Enter
 
-- [ ] **Task 8: Auto-scroll editor viewport when Enter creates a new blank line at end of document**
+- [x] **Task 8: Auto-scroll editor viewport when Enter creates a new blank line at end of document**
   **Description:** After pressing Enter at the very end of the editor text, schedule a post-frame scroll to `maxScrollExtent`.
   **Acceptance criteria:**
-  - [ ] In `_handleEnter()`, after setting `_body.value`, schedule `addPostFrameCallback` that checks if caret is at `_body.text.length` and scrolls to `maxScrollExtent` with zero duration.
-  - [ ] Does not fire for mid-document Enter or list continuation.
+  - [x] In `_handleEnter()`, after setting `_body.value`, schedule `addPostFrameCallback` that checks if caret is at `_body.text.length` and scrolls to `maxScrollExtent` with zero duration.
+  - [x] Does not fire for mid-document Enter or list continuation.
   **Verification:**
-  - [ ] `flutter test test/ui/editor/editor_pane_test.dart`
+  - [x] `flutter test test/ui/editor/editor_pane_test.dart`
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`
   - `test/ui/editor/editor_pane_test.dart`
