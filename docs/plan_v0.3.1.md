@@ -190,7 +190,7 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 ### Checkpoint: v0.3.1 complete
 - [x] `flutter analyze` clean
 - [x] `flutter test` green (new cases: nested folders, find focus, tight selection + unbounded column, tag chips, scrollbar hover) — 44/44 across `editor_pane_test.dart` + `hover_scrollbar_test.dart`
-- [ ] Manual smoke: (a) `a/b/c` nested, (b) `Ctrl+F` focus stays in editor, (c) tag chips scroll with editor, (d) scrollbar hand cursor + padded gutter in editor/preview, (e) multi-line selection hugs text, (f) no ActionBar fiction in docs
+- [x] Manual smoke: (a) `a/b/c` nested, (b) `Ctrl+F` focus stays in editor, (c) tag chips scroll with editor, (d) scrollbar hand cursor + padded gutter in editor/preview, (e) multi-line selection hugs text, (f) no ActionBar fiction in docs
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |

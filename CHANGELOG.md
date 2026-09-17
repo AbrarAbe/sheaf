@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2026-09-17
+
+### Added
+
+- Add confirmation dialogs for note and trash delete with restore toast
+- Add confirmation dialog for folder delete with strong warning
+- Add metadata dialog via note context menu
+
+### Changed
+
+- Split context menu into Trash (soft) and Delete (permanent)
+- Refactor(note-row): rename delete methods, add permanent delete with
+- Ignore all AppImage build targets
+- Improve scrolling and list layout in command palette
+- Ignore AppDir directory in gitignore
+- Auto-scroll on last-line Enter
+
+### Fixed
+
+- Move body padding into editor modes
+- No-op refresh when vault vanishes mid-scan
+
 ## [0.3.1] - 2026-09-11
 
 ### Added
@@ -10,6 +32,7 @@ All notable changes to this project will be documented in this file.
 - Docs(plan): add v0.3.1 paper cuts — nested folders, find, chips,
 - Add in-editor TagChipBar
 - Add AppImage support for Linux distribution
+- Add key param to public widgets
 
 ### Changed
 
@@ -23,6 +46,7 @@ All notable changes to this project will be documented in this file.
 - Merged expand/collapse folder button
 - Select new folder, sticky header, platform label
 - Own padded scrollbar with hand cursor, drop 680 cap
+- V0.3.1
 
 ### Fixed
 
@@ -33,6 +57,7 @@ All notable changes to this project will be documented in this file.
 - Focus find bar when opened
 - Constrain command palette height
 - Fix(editor): constrain selection to prose column and use tight selection
+- Make AppImage script executable and invoke via bash
 
 ### Removed
 
@@ -201,6 +226,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.2]: https://github.com/AbrarAbe/sheaf/compare/v0.3.1..v0.3.2
 [0.3.1]: https://github.com/AbrarAbe/sheaf/compare/v0.3.0..v0.3.1
 [0.3.0]: https://github.com/AbrarAbe/sheaf/compare/v0.2.0..v0.3.0
 [0.2.0]: https://github.com/AbrarAbe/sheaf/compare/v0.1.0..v0.2.0

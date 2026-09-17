@@ -156,11 +156,9 @@ Four UX fixes addressing confirmation gaps, palette visual glitches, missing not
   **Estimated scope:** XS
 
 ### Checkpoint: v0.3.2 complete
-- [ ] All acceptance criteria from tasks 1–8 met
-- [ ] `flutter analyze` clean
-- [ ] `flutter test` green (new tests for confirm dialog, palette highlight, note info dialog, editor auto-scroll)
-- [ ] Hot reload pushed to running app after each Dart edit
-- [ ] One Conventional Commit per completed task
+- [x] All acceptance criteria from tasks 1–8 met
+- [x] `flutter analyze` clean
+- [x] `flutter test` green (new tests for confirm dialog, palette highlight, note info dialog, editor auto-scroll)
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |

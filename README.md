@@ -39,8 +39,8 @@ shipped as a self-contained tarball.
   them relatively, with Obsidian-compatible width syntax:
   `![alt|400](attachments/img.png)`. The insert-image picker button is
   **deferred** (round 6) until the file-chooser flow is ready.
-- **Trash** — deletions land in `.trash/`; restore returns notes to their
-  original folder, or delete forever; each entry shows when it was trashed.
+- **Trash** — deletions ask first (note, folder, and delete-forever each show a confirmation dialog; folder delete warns the whole tree moves), then land in `.trash/`; restore returns notes to their original folder with a toast, or delete forever; each entry shows when it was trashed.
+- **Note info** — the note context menu has an Info entry showing file name, full path, created/modified dates, and word/character counts.
 - **Auto-refresh** — external changes to the vault appear live via a file
   watcher.
 
@@ -51,7 +51,7 @@ shipped as a self-contained tarball.
 | New note | `Ctrl+N` |
 | Move selection | `↑` / `↓` |
 | Open selected | `Enter` |
-| Delete selected | `Del` (corner toast with Undo) |
+| Delete selected | `Del` (confirm dialog, corner toast with Undo) |
 | Find/filter list | `Ctrl+F`, dismiss with `Esc` |
 | Show/hide sidebar | `Ctrl+\` |
 | Cycle theme mode | `Ctrl+Shift+L` |
@@ -70,9 +70,9 @@ shipped as a self-contained tarball.
 Download and install to `~/.local/share/sheaf` (keep the `sheaf/` folder intact — `lib/` and `data/` must stay beside the binary):
 
 ```
-curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/sheaf-v0.3.1-linux-x64.tar.gz
+curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/sheaf-v0.3.2-linux-x64.tar.gz
 mkdir -p ~/.local/share
-tar xzf sheaf-v0.3.1-linux-x64.tar.gz -C ~/.local/share
+tar xzf sheaf-v0.3.2-linux-x64.tar.gz -C ~/.local/share
 ~/.local/share/sheaf/sheaf
 ```
 
@@ -92,7 +92,7 @@ chmod +x Sheaf-x86_64.AppImage
 ```
 
 GTK 3 is the only runtime expectation, and it ships with virtually every
-desktop distribution. Download a specific version by replacing `latest` with `download/v0.3.1` in the URL, or pick a tarball from [Releases](https://github.com/AbrarAbe/sheaf/releases).
+desktop distribution. Download a specific version by replacing `latest` with `download/v0.3.2` in the URL, or pick a tarball from [Releases](https://github.com/AbrarAbe/sheaf/releases).
 
 ## Build from source
 
@@ -118,3 +118,4 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/plan_v0.2.md`](docs/plan_v0.2.md) — v0.2 implementation plan (editor, modes, pinning, appearance)
 - [`docs/plan_v0.3.md`](docs/plan_v0.3.md) — v0.3 implementation plan (polish & multi-directory)
 - [`docs/plan_v0.3.1.md`](docs/plan_v0.3.1.md) — v0.3.1 implementation plan (paper cuts)
+- [`docs/plan_v0.3.2.md`](docs/plan_v0.3.2.md) — v0.3.2 implementation plan (no surprises)
