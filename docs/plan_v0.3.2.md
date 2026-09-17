@@ -101,40 +101,40 @@ Four UX fixes addressing confirmation gaps, palette visual glitches, missing not
 
 ### Phase 3 — Note info (EXIF) dialog
 
-- [ ] **Task 5: Add Info entry to note context menu**
+- [x] **Task 5: Add Info entry to note context menu**
   **Description:** Every `NoteRow` context menu gains an Info item.
   **Acceptance criteria:**
-  - [ ] `NoteRow._menu` gains `menuItem('Info', value: 'info', icon: Icons.info_outline)`.
-  - [ ] `NoteRow` gains `VoidCallback? onInfoTap`.
-  - [ ] `ListPane._rowFor` passes `onInfoTap`.
+  - [x] `NoteRow._menu` gains `menuItem('Info', value: 'info', icon: Icons.info_outline)`.
+  - [x] `NoteRow` gains `VoidCallback? onInfoTap`.
+  - [x] `ListPane._rowFor` passes `onInfoTap`.
   **Verification:**
-  - [ ] `flutter test test/ui/note_list/note_row_test.dart`
+  - [x] `flutter test test/ui/note_list/note_row_test.dart`
   **Dependencies:** Task 6
   **Files likely touched:**
   - `lib/ui/note_list/widgets/note_row.dart`
   - `lib/ui/note_list/list_pane.dart`
   **Estimated scope:** XS
 
-- [ ] **Task 6: Build NoteInfoDialog**
+- [x] **Task 6: Build NoteInfoDialog**
   **Description:** Non-modal dialog showing file name, full path, created/modified dates, word and character counts.
   **Acceptance criteria:**
-  - [ ] New `NoteInfoDialog` in `lib/ui/dialogs/note_info.dart`.
-  - [ ] Layout: header "Note Info" with `Icons.info_outline`, rows of label:value pairs (Path, Created, Modified, Words, Characters), Close button.
-  - [ ] Reads `File.statSync()` at open time via `controller.fileOf(note.path)`.
+  - [x] New `NoteInfoDialog` in `lib/ui/dialogs/note_info.dart`.
+  - [x] Layout: header "Note Info" with `Icons.info_outline`, rows of label:value pairs (Path, Created, Modified, Words, Characters), Close button.
+  - [x] Reads `File.statSync()` at open time via `controller.fileOf(note.path)`.
   **Verification:**
-  - [ ] `flutter test test/ui/dialogs/note_info_test.dart`
+  - [x] `flutter test test/ui/dialogs/note_info_test.dart`
   **Dependencies:** Task 5 + Task 7
   **Files likely touched:**
   - `lib/ui/dialogs/note_info.dart` (new)
   - `test/ui/dialogs/note_info_test.dart` (new)
   **Estimated scope:** S
 
-- [ ] **Task 7: Wire VaultController.fileOf**
+- [x] **Task 7: Wire VaultController.fileOf**
   **Description:** Expose `VaultController.fileOf(relPath)` for stat access.
   **Acceptance criteria:**
-  - [ ] `VaultController.fileOf(String relPath)` delegates to `_requireVault().fileOf(relPath)`.
+  - [x] `VaultController.fileOf(String relPath)` delegates to `_requireVault().fileOf(relPath)`.
   **Verification:**
-  - [ ] `flutter test test/logic/vault_controller_test.dart`
+  - [x] `flutter test test/logic/vault_controller_test.dart`
   **Dependencies:** Task 6
   **Files likely touched:**
   - `lib/logic/vault_controller.dart`

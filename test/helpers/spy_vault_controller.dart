@@ -25,6 +25,11 @@ class SpyVaultController extends VaultController {
   @override
   VaultRepository get repository => VaultRepository(root: _vaultDir);
 
+  /// Delegates to repository so NoteInfoDialog can stat files via
+  /// controller.fileOf() even when _vault is null (FakeAsync zone).
+  @override
+  File fileOf(String relPath) => repository.fileOf(relPath);
+
   final restored = <String>[];
   final emptied = <String>[];
   final deleted = <String>[];

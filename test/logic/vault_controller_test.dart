@@ -294,4 +294,38 @@ void main() {
       expect(controller.isPinned(note.path), isFalse);
     });
   });
+
+  group('fileOf (Task 7)', () {
+    test('delegates to repository and returns absolute file', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+      final note = await controller.createNote(title: 'Stat Me');
+
+      final file = controller.fileOf(note.path);
+      expect(file.path, endsWith(note.path));
+      expect(file.existsSync(), isTrue);
+      expect(file.statSync().type, FileSystemEntityType.file);
+    });
+
+    test('throws StateError when no vault is open', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+
+      expect(() => controller.fileOf('ghost.md'), throwsStateError);
+      expect(() => controller.repository, throwsStateError);
+    });
+
+    test('rejects absolute or traversal paths via repository', () async {
+      final controller = makeController();
+      addTearDown(controller.dispose);
+      await controller.initialize();
+      await controller.openVault(vaultDir.path);
+
+      expect(() => controller.fileOf('/absolute.md'), throwsArgumentError);
+      expect(() => controller.fileOf('../escape.md'), throwsArgumentError);
+    });
+  });
 }

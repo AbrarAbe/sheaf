@@ -10,6 +10,7 @@ import '../common/corner_toast.dart';
 import '../common/widgets/hover_scrollbar.dart';
 import '../common/widgets/loading_overlay.dart';
 import '../dialogs/confirm_delete.dart';
+import '../dialogs/note_info.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/note_row.dart';
 import 'widgets/scope_chip.dart';
@@ -93,14 +94,16 @@ class _ListPaneState extends State<ListPane> {
     );
   }
 
-  ContextMenu<Object?> get _scaffoldMenu => quireMenu([
-    menuItem(
-      'New note',
-      value: 'new-note',
-      icon: Icons.note_add_outlined,
-      shortcut: newNoteActivator,
-    ),
-  ]);
+  /// Shows a non-modal note info dialog with metadata.
+  void _showNoteInfo(Note note) {
+    showDialog(
+      context: context,
+      builder: (_) => NoteInfoDialog(controller: widget.controller, note: note),
+    );
+  }
+
+  ContextMenu<Object?> get _scaffoldMenu =>
+      quireMenu([menuItem('New note', value: 'new-note', icon: Icons.note_add_outlined)]);
 
   /// Arrow-key navigation over the visible list; clamps at both ends.
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
@@ -302,6 +305,7 @@ class _ListPaneState extends State<ListPane> {
       onTogglePin: () => controller.togglePin(note.path),
       onTrash: () => _onTrash(note),
       onDelete: () => _onDelete(note),
+      onInfoTap: () => _showNoteInfo(note),
     ),
   );
 }

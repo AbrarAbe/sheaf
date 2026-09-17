@@ -51,6 +51,9 @@ class VaultController extends ChangeNotifier {
     return vault;
   }
 
+  /// Returns a [File] for the given vault-relative [relPath], for stat access.
+  File fileOf(String relPath) => _requireVault().fileOf(relPath);
+
   /// Notes passing the active folder + tag filters, pinned notes floated to
   /// the top (recency order preserved within each group — spec story 13).
   Iterable<Note> get visibleNotes {
