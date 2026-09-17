@@ -67,32 +67,34 @@ shipped as a self-contained tarball.
 
 ## Install (Linux x64)
 
-Download and install to `~/.local/share/sheaf` (keep the `sheaf/` folder intact — `lib/` and `data/` must stay beside the binary):
+Requires `curl` and `grep` (preinstalled on virtually every desktop distribution).
+The commands below always fetch the latest release — no version to type.
+The app folder lives in `~/.local/share/sheaf`, the binary is linked into
+`~/.local/bin` (keep the `sheaf/` folder intact, `lib/` and `data/` must stay
+beside the binary):
 
 ```
-curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/sheaf-v0.3.2-linux-x64.tar.gz
-mkdir -p ~/.local/share
-tar xzf sheaf-v0.3.2-linux-x64.tar.gz -C ~/.local/share
-~/.local/share/sheaf/sheaf
-```
-
-Optional — add to `PATH`:
-
-```
-mkdir -p ~/.local/bin
+URL=$(curl -fsSL https://api.github.com/repos/AbrarAbe/sheaf/releases/latest | grep -o '"browser_download_url": *"[^"]*linux-x64.tar.gz[^"]*"' | head -n1 | cut -d'"' -f4)
+curl -LO "$URL"
+mkdir -p ~/.local/share ~/.local/bin
+tar xzf "${URL##*/}" -C ~/.local/share
 ln -sf ~/.local/share/sheaf/sheaf ~/.local/bin/sheaf
+sheaf
 ```
 
 AppImage alternative (portable, no install):
 
 ```
-curl -LO https://github.com/AbrarAbe/sheaf/releases/latest/download/Sheaf-x86_64.AppImage
-chmod +x Sheaf-x86_64.AppImage
-./Sheaf-x86_64.AppImage
+URL=$(curl -fsSL https://api.github.com/repos/AbrarAbe/sheaf/releases/latest | grep -o '"browser_download_url": *"[^"]*AppImage[^"]*"' | head -n1 | cut -d'"' -f4)
+curl -LO "$URL"
+chmod +x "${URL##*/}"
+"./${URL##*/}"
 ```
 
 GTK 3 is the only runtime expectation, and it ships with virtually every
-desktop distribution. Download a specific version by replacing `latest` with `download/v0.3.2` in the URL, or pick a tarball from [Releases](https://github.com/AbrarAbe/sheaf/releases).
+desktop distribution. To pin a specific version, replace `releases/latest`
+with `releases/tags/vX.Y.Z` in the API URL above, or pick a file from
+[Releases](https://github.com/AbrarAbe/sheaf/releases).
 
 ## Build from source
 
