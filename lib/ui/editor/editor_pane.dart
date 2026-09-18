@@ -470,7 +470,22 @@ class _EditorState extends State<_Editor> {
     _body.text = note.body;
     _title.text = note.title;
     if (_bodyScroll.hasClients) _bodyScroll.jumpTo(0);
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      // Spec story 44: opening a note places the caret in the body so typing
+      // starts immediately. Post-frame because the text field is not attached
+      // yet during initState. In Preview the preview segment is focused; the
+      // sticky intent restores the caret when the user returns to an edit mode.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (widget.controller.mode == EditorMode.preview) {
+          _previewFocus.requestFocus();
+        } else {
+          _wantBodyFocus = true;
+          _bodyFocus.requestFocus();
+        }
+      });
+    }
   }
 
   @override

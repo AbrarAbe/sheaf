@@ -202,6 +202,10 @@ void _registerTests() {
     final note = await tester.runAsync(() => controller.createNote(title: 'Gone'));
     controller.selectNote(note!);
     await tester.pump();
+    // Opening a note auto-focuses the body (story 44); deliberately move focus
+    // back out so Del means "trash the note", exercising the outside-editor path.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
 
     // No editable holds focus here — the shell-root focus wins.
     await tester.runAsync(() async {
@@ -227,6 +231,10 @@ void _registerTests() {
     final (controller, _) = await pumpShell(tester);
     final note = await tester.runAsync(() => controller.createNote(title: 'Gone'));
     controller.selectNote(note!);
+    await tester.pump();
+    // Opening a note auto-focuses the body (story 44); move focus out so the
+    // Del path is the shell's note-deletion, not character deletion.
+    FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
 
     // No editable holds focus here — the shell-root focus wins.

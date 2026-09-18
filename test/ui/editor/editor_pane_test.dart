@@ -80,6 +80,28 @@ void main() {
     expect(find.widgetWithText(TextField, ''), findsOneWidget); // empty body
   });
 
+  testWidgets('opening a note auto-focuses the body for immediate typing', (tester) async {
+    final note = await real(
+      () => vaultController.createNote(title: 'Focus', body: 'hello world'),
+      tester,
+    );
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+    await tester.pump(); // flush the post-frame focus request
+
+    final editable = tester.state<EditableTextState>(
+      find.descendant(
+        of: find.byKey(const Key('editor-body')),
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(
+      editable.widget.focusNode.hasFocus,
+      isTrue,
+      reason: 'opening a note should place the caret in the body so typing starts immediately',
+    );
+  });
+
   testWidgets('typing marks the note dirty; flush persists to disk', (tester) async {
     final note = await real(() => vaultController.createNote(title: 'Draft'), tester);
     await real(() => editorController.open(note), tester);

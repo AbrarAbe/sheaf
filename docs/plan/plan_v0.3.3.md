@@ -34,16 +34,13 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 - [ ] **Task 1: Auto-focus the body when a note is opened (list + quick-switcher)**
   **Description:** When a note opens from the note list or the command-palette quick-switcher, the body editor gains focus with a visible caret so typing can begin immediately.
   **Acceptance criteria:**
-  - [ ] On note open, set the sticky body-focus intent and `requestFocus()` the body in a post-frame callback.
-  - [ ] Works in Normal and Markdown edit modes. In Preview the preview segment is focused instead; returning to an edit mode restores the caret via the existing `_wantBodyFocus` path.
-  - [ ] Does not steal focus while the title is being edited.
+  - [x] On note open, set the sticky body-focus intent and `requestFocus()` the body in a post-frame callback.
+  - [x] Works in Normal and Markdown edit modes. In Preview the preview segment is focused instead; returning to an edit mode restores the caret via the existing `_wantBodyFocus` path.
+  - [x] Does not steal focus while the title is being edited.
   **Verification:**
-  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — open a note, assert the body `EditableText` has focus.
-  **Dependencies:** None
-  **Files likely touched:**
-  - `lib/ui/editor/editor_pane.dart`
-  - `test/ui/editor/editor_pane_test.dart`
-  **Estimated scope:** S
+  - [x] `flutter test test/ui/editor/editor_pane_test.dart` — open a note, assert the body `EditableText` has focus.
+  **Follow-ups:**
+  - Auto-focus changes the premise of `Del outside editors` in `test/ui/shell/shortcut_test.dart` — those two tests now unfocus the body first (committed). They cannot be validated green here because the Shell-rendering tests depend on live network to `fonts.gstatic.com`; making them hermetic is a logged follow-up.
 
 ### Phase 2 — Title autosave on blur
 
