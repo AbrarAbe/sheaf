@@ -116,8 +116,8 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/spec.md`](docs/spec.md) — what Sheaf is (living spec)
 - [`docs/design/`](docs/design) — design docs (theming, layout, voice)
 - [`docs/adr/`](docs/adr) — architecture decision records
-- [`docs/plan_v0.1.md`](docs/plan_v0.1.md) — v0.1 implementation plan
-- [`docs/plan_v0.2.md`](docs/plan_v0.2.md) — v0.2 implementation plan (editor, modes, pinning, appearance)
-- [`docs/plan_v0.3.md`](docs/plan_v0.3.md) — v0.3 implementation plan (polish & multi-directory)
-- [`docs/plan_v0.3.1.md`](docs/plan_v0.3.1.md) — v0.3.1 implementation plan (paper cuts)
-- [`docs/plan_v0.3.2.md`](docs/plan_v0.3.2.md) — v0.3.2 implementation plan (no surprises)
+- [`docs/plan/plan_v0.1.md`](docs/plan/plan_v0.1.md) — v0.1 implementation plan
+- [`docs/plan/plan_v0.2.md`](docs/plan/plan_v0.2.md) — v0.2 implementation plan (editor, modes, pinning, appearance)
+- [`docs/plan/plan_v0.3.md`](docs/plan/plan_v0.3.md) — v0.3 implementation plan (polish & multi-directory)
+- [`docs/plan/plan_v0.3.1.md`](docs/plan/plan_v0.3.1.md) — v0.3.1 implementation plan (paper cuts)
+- [`docs/plan/plan_v0.3.2.md`](docs/plan/plan_v0.3.2.md) — v0.3.2 implementation plan (no surprises)

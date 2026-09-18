@@ -352,7 +352,7 @@ Two regressions reported after rounds 8–9:
   archive plan, final gates + coverage report.
   - Acceptance: docs merged; all gates green.
   - Verify: `flutter analyze && flutter test --coverage`.
-  - Files: `docs/adr/*`, `README.md`, `docs/plan_v0.2.md`.
+  - Files: `docs/adr/*`, `README.md`, `docs/plan/plan_v0.2.md`.
   - Scope: S
 
 ## Risks and Mitigations

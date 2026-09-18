@@ -1,6 +1,6 @@
 # Implementation Plan: Sheaf v0.3.1 — "paper cuts"
 
-Derived from `docs/spec.md` v0.2 + `docs/plan_v0.3.md` audit and user brief for next iteration (6 asks). Ordered by dependency; each task lands as its own Conventional Commit behind `flutter analyze` + `flutter test`. No new dependencies.
+Derived from `docs/spec.md` v0.2 + `docs/plan/plan_v0.3.md` audit and user brief for next iteration (6 asks). Ordered by dependency; each task lands as its own Conventional Commit behind `flutter analyze` + `flutter test`. No new dependencies.
 
 ## Overview
 
@@ -11,7 +11,7 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 - **In-editor tag chip — reuse existing `extractTags` + chip style.** The chips currently live in a `Container` above the body (`editor_pane.dart:591-632`). v0.3.1 moves them into the editor column as a dedicated `TagChipBar` widget under the title row (same `Wrap` + `secondaryContainer` pill style) but *inside* the scrollable editor surface so they scroll with content and are reachable in focus mode. No new parsing; just placement + a tap callback that inserts `#tag ` at caret or filters (defer filter to later — tap copies to clipboard for now, keeps scope S).
 - **Scrollbar cursor + hover animation — overlay + owned scrollbar.** `ScrollbarThemeData` already exists in `quire_theme.dart:459` (thumb `alpha 0.28 → 0.45 → 0.6` for idle/hover/dragged). `HoverScrollbar` supplies only the cursor via a translucent overlay positioned from the scrollable's own `ScrollMetrics` (cursor = `click`, `grabbing` while dragging), so the editor body's I-beam still wins elsewhere. Each editor mode kills the built-in overlay scrollbar with `_NoScrollbarBehavior` and drives its own interactive `Scrollbar` from a shared `_bodyScroll` controller, with the gutter reserved inside the content (`TextField` `contentPadding right 18`, preview scroll view `padding right 24`).
 - **Word-only selection — tight boxes, unbounded column.** The multi-line bleed came from `EditableText.defaultSelectionWidthStyle = BoxWidthStyle.max` padding every line out to the widest line — fixed with `selectionWidthStyle: tight` so highlights hug each line's glyph run. The body prose column is unbounded in non-focus mode (`double.infinity`, `740` in focus mode).
-- **Task 11 docs — delete untested fiction.** `docs/plan_v0.3.md:127-135` describes `EditorActionBar`/`ListKind`/`list_formatting.dart`/`action_bar.dart`/`link_bar.dart` that either never shipped or have no tests. v0.3.1 removes those doc blocks and leaves the real list-continuation behavior (Task 3) as the only list story. No code delete needed if files do not exist; if they do, remove the untested widgets and keep `continueList` logic.
+- **Task 11 docs — delete untested fiction.** `docs/plan/plan_v0.3.md:127-135` describes `EditorActionBar`/`ListKind`/`list_formatting.dart`/`action_bar.dart`/`link_bar.dart` that either never shipped or have no tests. v0.3.1 removes those doc blocks and leaves the real list-continuation behavior (Task 3) as the only list story. No code delete needed if files do not exist; if they do, remove the untested widgets and keep `continueList` logic.
 ## Task List
 
 ### Phase 1 — Data-visible correctness
@@ -109,7 +109,7 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
 - [x] **Task 6: Remove untested Task 11 action-bar fiction**
   **Description:** Delete the `EditorActionBar`/`ListKind`/`link_formatting` docs that describe unshipped/untested code and keep only the real list behavior.
   **Acceptance criteria:**
-  - [x] `docs/plan_v0.3.md:127-144` (Task 11 & Task 12 blocks) edited: if `lib/ui/editor/action_bar.dart` / `lib/logic/list_formatting.dart` / `link_bar.dart` have no tests and are not wired, remove those Task sections and replace with a one-line note: "List action bar deferred — list continuation (Task 3) is the shipped list behavior."
+  - [x] `docs/plan/plan_v0.3.md:127-144` (Task 11 & Task 12 blocks) edited: if `lib/ui/editor/action_bar.dart` / `lib/logic/list_formatting.dart` / `link_bar.dart` have no tests and are not wired, remove those Task sections and replace with a one-line note: "List action bar deferred — list continuation (Task 3) is the shipped list behavior."
   - [x] No code left that is both untested and unreferenced; `flutter analyze` clean, `grep -R ActionBar lib` empty after the doc cut (or file deleted).
   - [x] `docs/spec.md` not re-adding a spec story for the bar; deferred list lives in Spec's deferred list if needed.
   **Verification:**
@@ -117,7 +117,7 @@ Six paper-cut fixes that block the polished feel of v0.3.0: nested folders silen
   - [x] `flutter analyze` + `flutter test` still green.
   **Dependencies:** Tasks 1-5 (so grep scope is final)
   **Files likely touched:**
-  - `docs/plan_v0.3.md`
+  - `docs/plan/plan_v0.3.md`
   - `lib/ui/editor/action_bar.dart` (delete if exists)
   - `lib/logic/list_formatting.dart` (delete if exists & untested)
   **Estimated scope:** XS (1-2 files)
