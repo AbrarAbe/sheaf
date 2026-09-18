@@ -164,6 +164,28 @@ for Enter on the last line.
     last line of the document scrolls the editor to keep the new blank line
     visible before any character is typed, not after.
 
+### User stories — v0.3.3 "type-first"
+
+Indentation follows markdownformatting.com/indent: use spaces, not tabs;
+indentation is structural (list nesting), never a visual paragraph indent.
+
+44. **Editor auto-focus on open** — opening a note from the note list or the
+    quick-switcher places the caret in the body editor immediately, so typing
+    starts on open without a click. In Normal/Markdown modes the body is
+    focused; in Preview the preview segment is focused and the caret returns
+    on mode switch via the sticky focus intent.
+45. **Title autosave on blur** — editing the note title and leaving the field
+    (clicking away, Tab, opening another note) commits the rename immediately;
+    Enter is no longer required. Empty or unchanged titles are left as-is.
+46. **Tab indent / Shift+Tab outdent** — Tab indents the current line (or every
+    line of a selection) by two spaces; Shift+Tab removes up to two leading
+    spaces. Bound in Normal and Markdown edit modes; inert in Preview.
+    Space-based per markdownformatting.com; indentation is structural (nests
+    lists), never a visual paragraph indent.
+47. **Indent is not code in preview** — leading-space indentation on non-list
+    lines never renders as an indented code block; indentation displays only as
+    list structure. Fenced code blocks still render as code.
+
 Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
 `ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list
 behavior and the untested scaffolding was removed in v0.3.1; open-notes editor
@@ -317,6 +339,16 @@ v0.1–v0.2 criteria remain true (regression gate). v0.3 / v0.3.1 / v0.3.2 add:
 - [ ] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
       data+logic ≥80%
 
+v0.3.3 adds:
+
+- [ ] Opening from the note list or quick-switcher focuses the editor (caret
+      visible and ready to type)
+- [ ] Editing the title then unfocusing renames the note without Enter
+- [ ] `Tab`/`Shift+Tab` indent/outdent lines by two spaces (spaces, not tabs)
+- [ ] Preview renders indents as list structure only — never as an indented
+      code block
+- [ ] `flutter analyze` clean; `flutter test` green
+
 ## Decisions
 
 Resolved 2026-08-24 (v0.2):
@@ -351,3 +383,8 @@ Resolved during v0.3 / v0.3.1:
     intentionally unbounded, no reading-measure cap.
 13. **Linux packaging** — AppImage via `linuxdeploy` + GTK plugin, driven by a
     checked-in script.
+14. **Indentation policy (v0.3.3)** — Tab/Shift+Tab insert/remove spaces (two
+    per level), per markdownformatting.com; indentation is structural, never a
+    visual paragraph indent. The preview disables `IndentedCodeSyntax` so
+    2–4-space indented prose renders as prose, while nested lists and fenced
+    code keep their structure.
