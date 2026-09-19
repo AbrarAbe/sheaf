@@ -116,6 +116,83 @@ Four UX fixes that remove friction between clicking a note and actually typing i
   - `test/ui/editor/markdown_preview_test.dart`
   **Estimated scope:** S
 
+### Phase 5 — Bug: caret ignores a trailing space at the end of a heading
+
+- [ ] **Task 6: Fix heading caret collapsing across a trailing space**
+  **Description:** In Normal mode (highlight on), after typing a heading like
+  `# Heading` and then a space at the end, the caret paints *before* the
+  trailing space instead of after it: `# Heading|<space>`. Typing a word then
+  places it correctly (`# Heading<space>word|`), but deleting that word snaps
+  the caret back in front of the space again, ignoring it.
+  **Analysis / likely root cause:** `HighlightingController.buildTextSpan`
+  hides markers and the separator space with a `_hidden` style of
+  `fontSize: 0` when the selection is elsewhere on the line (F5 reveal rule)
+  — see the `!touches(...)` branch in `lib/ui/editor/highlighting_controller.dart`
+  lines ~88–92. A zero-advance space at the line's end makes the caret for a
+  trailing-space position collapse onto the previous character, so the caret
+  both fails to advance on the way in and snaps back when the word is deleted.
+  Note: a standalone `TextField`+`HighlightingController` harness reproduces
+  correct placement, so the exact trigger must be pinned inside the live
+  `EditorPane` flow (body style + reveal-rule interplay) before the fix lands.
+  **Acceptance criteria:**
+  - [ ] Caret placed after a trailing space stays visually after it while
+        typing/deleting at the end of a heading (no collapse onto the last
+        word character).
+  - [ ] Normal-mode headings with and without trailing spaces behave
+        identically for caret navigation; no regression to the marker
+        reveal/dim behavior.
+  - [ ] Happy-path (marker hidden when caret elsewhere, dimmed when touched)
+        is preserved.
+  **Verification:**
+  - [ ] A regression widget test in `test/ui/editor/editor_pane_test.dart`
+        types `# Heading <space>` then deletes, asserting the caret stays
+        after the space.
+  - [ ] `flutter analyze` clean; `flutter test` green.
+  **Dependencies:** None (independent; pairs with Task 1's editor focus)
+  **Files likely touched:**
+  - `lib/ui/editor/highlighting_controller.dart`
+  - `test/ui/editor/editor_pane_test.dart`
+  **Estimated scope:** S
+
+### Phase 6 — Remember the caret position per note
+
+- [ ] **Task 7: Cache and restore the caret position per note (in-memory)**
+  **Description:** When a note is reopened or cycled to, the caret should return
+  to where the user last left off instead of resetting. Cache the last caret
+  offset per note **in memory only** (never written to the note file), so
+  returning to a note restores the caret (and scroll) to the last position.
+  **Analysis / reported symptom:** Opening or `Ctrl+Tab`-cycling a note places
+  the caret somewhere unhelpful — reported as "always at the last line/bottom,
+  no matter where I was." `_load()` sets `_body.text = note.body`, which drops
+  any record of the prior caret. Additionally, Task 8's post-frame
+  `jumpTo(maxScrollExtent)` on last-line Enter means the previous note often
+  sits scrolled to the bottom when you switch away, so the next note can feel
+  as though the caret "was at the bottom." There is today no caret memory at
+  all (`EditorController` tracks only `_current`, `_body`, `_status`).
+  **Acceptance criteria:**
+  - [ ] Record the body caret offset for the current note on edit / focus-loss /
+        note switch into an in-memory map keyed by note path (clamped to body
+        length). Cache lives on `EditorController`; nothing is written to disk
+        or the note file.
+  - [ ] On `_load()` for a cached note, restore the caret offset and reveal it
+        in the viewport (scroll only as needed); uncached notes fall back to
+        offset 0 (top).
+  - [ ] Task 8 auto-scroll still fires only when the user actually presses Enter
+        on the last line — not on a caret restore.
+  - [ ] Works across Normal/Markdown and across `Ctrl+Tab` cycling.
+  **Verification:**
+  - [ ] Editor widget test: open note A, move caret to offset X, cycle to B then
+        back to A; assert the caret is restored to X and the viewport reveals
+        it. Assert no note file write changed caret position.
+  - [ ] `flutter analyze` clean; `flutter test` green.
+  **Dependencies:** Task 1 (focus-on-open); coordinates with Task 6 (caret) and
+  Task 8's Enter auto-scroll (v0.3.2).
+  **Files likely touched:**
+  - `lib/logic/editor_controller.dart`
+  - `lib/ui/editor/editor_pane.dart`
+  - `test/ui/editor/editor_pane_test.dart`
+  **Estimated scope:** S
+
 ### Checkpoint: v0.3.3 complete
 - [ ] All acceptance criteria from tasks 1–5 met
 - [ ] `flutter analyze` clean
