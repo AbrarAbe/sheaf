@@ -124,38 +124,31 @@ Four UX fixes that remove friction between clicking a note and actually typing i
   trailing space instead of after it: `# Heading|<space>`. Typing a word then
   places it correctly (`# Heading<space>word|`), but deleting that word snaps
   the caret back in front of the space again, ignoring it.
-  **Status (investigated):** a regression test in `editor_pane_test.dart`
-  types a trailing space in a heading and asserts the caret sits after it; it
-  passes, and both the standalone `HighlightingController` and the full
-  `EditorPane` harness render the trailing space at full width. The reported
-  collapse could **not** be reproduced in the test harness, so no fix to
-  `HighlightingController` is shipped yet — the guard test pins the correct
-  behaviour while the trigger awaits a concrete reproduction (live app, IME)
-  or a screencap.
-  **Analysis / likely root cause:** `HighlightingController.buildTextSpan`
-  hides markers and the separator space with a `_hidden` style of
-  `fontSize: 0` when the selection is elsewhere on the line (F5 reveal rule)
-  — see the `!touches(...)` branch in `lib/ui/editor/highlighting_controller.dart`
-  lines ~88–92. A zero-advance space at the line's end makes the caret for a
-  trailing-space position collapse onto the previous character, so the caret
-  both fails to advance on the way in and snaps back when the word is deleted.
-  Note: a standalone `TextField`+`HighlightingController` harness reproduces
-  correct placement, so the exact trigger must be pinned inside the live
-  `EditorPane` flow (body style + reveal-rule interplay) before the fix lands.
+  **Status (fixed):** the collapse reproduces only when the heading is followed
+  by more lines — a styled trailing space at a line end collapses onto the last
+  word. `HighlightingController._heading` now emits trailing whitespace of the
+  heading content as a base-style span (not the larger heading span) so the
+  caret keeps its width. Covered by a multi-line regression test in
+  `editor_pane_test.dart`.
   **Acceptance criteria:**
-  - [ ] Caret placed after a trailing space stays visually after it while
-        typing/deleting at the end of a heading (no collapse onto the last
-        word character).
-  - [ ] Normal-mode headings with and without trailing spaces behave
+  - [x] Caret placed after a trailing space stays visually after it while
+        typing/deleting at the end of a heading followed by more lines.
+  - [x] Normal-mode headings with and without trailing spaces behave
         identically for caret navigation; no regression to the marker
-        reveal/dim behavior.
-  - [ ] Happy-path (marker hidden when caret elsewhere, dimmed when touched)
+        reveal/dim behavior (F4a/F5b still pass).
+  - [x] Happy-path (marker hidden when caret elsewhere, dimmed when touched)
         is preserved.
   **Verification:**
-  - [ ] A regression widget test in `test/ui/editor/editor_pane_test.dart`
-        types `# Heading <space>` then deletes, asserting the caret stays
-        after the space.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] Regression widget test types `# Heading \nnext line`, moves the caret
+        after the trailing space, and asserts it stays after it.
+  - [x] `flutter analyze` clean; `flutter test` green.
+  **Analysis / root cause:** `HighlightingController.buildTextSpan` renders
+  heading content in a larger span, so a trailing space at the end of the
+  heading line (when more lines follow) collapses to zero advance — Flutter
+  lays it out so the caret for the after-space position falls back onto the
+  last word (the F5 reveal rule's `_hidden`/`fontSize: 0` markers are a
+  related but distinct mechanism). The fix emits trailing whitespace of the
+  heading content as a base-style span so the caret keeps real width.
   **Dependencies:** None (independent; pairs with Task 1's editor focus)
   **Files likely touched:**
   - `lib/ui/editor/highlighting_controller.dart`

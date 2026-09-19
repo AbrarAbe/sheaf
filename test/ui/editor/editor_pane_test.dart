@@ -102,7 +102,7 @@ void main() {
     );
   });
 
-  testWidgets('type a trailing space in a heading keeps the caret after it (Task 6)', (
+  testWidgets('caret stays after a trailing space in a heading followed by lines (Task 6)', (
     tester,
   ) async {
     final note = await real(() => vaultController.createNote(title: 'H', body: ''), tester);
@@ -110,9 +110,12 @@ void main() {
     await pumpEditor(tester);
     // Normal mode = highlighting on.
 
-    await tester.enterText(find.byKey(const Key('editor-body')), '# Heading');
+    // The bug only manifests when there are lines below the heading: a styled
+    // trailing space at a line end collapses the caret onto the last word.
+    await tester.enterText(find.byKey(const Key('editor-body')), '# Heading \nnext line');
     await tester.pump();
-    await tester.enterText(find.byKey(const Key('editor-body')), '# Heading ');
+    final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    field.controller!.selection = const TextSelection.collapsed(offset: 10); // after the space
     await tester.pump();
 
     final editable = tester.state<EditableTextState>(
@@ -122,12 +125,12 @@ void main() {
       ),
     );
     final re = editable.renderEditable;
-    final caretAfterWord = re.getLocalRectForCaret(const TextPosition(offset: 9)).left;
     final caretAfterSpace = re.getLocalRectForCaret(const TextPosition(offset: 10)).left;
+    final caretAfterWord = re.getLocalRectForCaret(const TextPosition(offset: 9)).left;
     expect(
       caretAfterSpace,
       greaterThan(caretAfterWord),
-      reason: 'a trailing space in a heading must keep real width so the caret sits after it',
+      reason: 'a trailing space at the end of a heading line must keep width so the caret sits after it',
     );
     await real(editorController.flush, tester);
   });

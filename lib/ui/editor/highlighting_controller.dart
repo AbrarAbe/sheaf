@@ -30,11 +30,7 @@ class HighlightingController extends TextEditingController {
   }) {
     final base = style ?? const TextStyle();
     if (!highlight) {
-      return super.buildTextSpan(
-        context: context,
-        style: style,
-        withComposing: withComposing,
-      );
+      return super.buildTextSpan(context: context, style: style, withComposing: withComposing);
     }
 
     final children = <InlineSpan>[];
@@ -53,8 +49,7 @@ class HighlightingController extends TextEditingController {
       selHi = -1;
     }
     bool touches(int start, int end) => selLo <= end && selHi >= start;
-    TextStyle markerStyle(int start, int end) =>
-        touches(start, end) ? _dim(base) : _hidden(base);
+    TextStyle markerStyle(int start, int end) => touches(start, end) ? _dim(base) : _hidden(base);
 
     void plain(int start, int end) {
       if (end > start) {
@@ -74,39 +69,36 @@ class HighlightingController extends TextEditingController {
         final hashEnd = hashStart + heading.group(1)!.length;
         final spaceEnd = hashEnd + heading.group(2)!.length;
         final contentStart =
-            lineStart +
-            heading.start +
-            heading.group(1)!.length +
-            heading.group(2)!.length;
+            lineStart + heading.start + heading.group(1)!.length + heading.group(2)!.length;
         plain(lineStart, hashStart);
-        children.add(
-          TextSpan(
-            text: heading.group(1),
-            style: markerStyle(lineStart, lineEnd),
-          ),
-        );
+        children.add(TextSpan(text: heading.group(1), style: markerStyle(lineStart, lineEnd)));
         if (!touches(lineStart, lineEnd)) {
           // Swallow the separator space too so nothing precedes the heading.
           children.add(TextSpan(text: ' ', style: _hidden(base)));
         } else {
           plain(hashEnd, spaceEnd);
         }
-        children.add(
-          TextSpan(
-            text: text.substring(contentStart, lineEnd),
-            style: _headingStyle(base, heading.group(1)!.length),
-          ),
-        );
+        // Heading content. Trailing whitespace is emitted at the base size/appearance
+        // (not the larger heading span): a styled trailing space at a line end makes
+        // Flutter collapse the caret onto the last word character (Task 6 bug when
+        // lines follow the heading). Keeping it plain keeps the caret after the space.
+        var contentEnd = lineEnd;
+        while (contentEnd > contentStart && _isWhitespace(text.codeUnitAt(contentEnd - 1))) {
+          contentEnd--;
+        }
+        if (contentEnd > contentStart) {
+          children.add(
+            TextSpan(
+              text: text.substring(contentStart, contentEnd),
+              style: _headingStyle(base, heading.group(1)!.length),
+            ),
+          );
+        }
+        if (lineEnd > contentEnd) {
+          children.add(TextSpan(text: text.substring(contentEnd, lineEnd), style: base));
+        }
       } else {
-        _emitInline(
-          children,
-          base,
-          text,
-          lineStart,
-          lineEnd,
-          touches,
-          markerStyle,
-        );
+        _emitInline(children, base, text, lineStart, lineEnd, touches, markerStyle);
       }
 
       if (!hadBreak) break;
@@ -133,9 +125,7 @@ class HighlightingController extends TextEditingController {
         continue; // already consumed by previous longer match
       }
       if (m.start > cursor) {
-        children.add(
-          TextSpan(text: region.substring(cursor, m.start), style: base),
-        );
+        children.add(TextSpan(text: region.substring(cursor, m.start), style: base));
       }
       final markerLen = _markerLen(m);
       final inner = m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5]!;
@@ -145,10 +135,7 @@ class HighlightingController extends TextEditingController {
       final absEnd = from + m.end;
 
       children.add(
-        TextSpan(
-          text: region.substring(m.start, innerStart),
-          style: markerStyle(absStart, absEnd),
-        ),
+        TextSpan(text: region.substring(m.start, innerStart), style: markerStyle(absStart, absEnd)),
       );
       // Recursively parse inner for nested styles (e.g., **<u>word</u>** or ***<u>...</u>***)
       final innerBase = _innerStyle(base, m);
@@ -156,23 +143,12 @@ class HighlightingController extends TextEditingController {
       final absInnerEnd = absInnerStart + inner.length;
       if (_inline.hasMatch(inner)) {
         // Parse inner recursively with combined style
-        _emitInline(
-          children,
-          innerBase,
-          text,
-          absInnerStart,
-          absInnerEnd,
-          touches,
-          markerStyle,
-        );
+        _emitInline(children, innerBase, text, absInnerStart, absInnerEnd, touches, markerStyle);
       } else {
         children.add(TextSpan(text: inner, style: innerBase));
       }
       children.add(
-        TextSpan(
-          text: region.substring(innerEnd, m.end),
-          style: markerStyle(absStart, absEnd),
-        ),
+        TextSpan(text: region.substring(innerEnd, m.end), style: markerStyle(absStart, absEnd)),
       );
       cursor = m.end;
     }
@@ -180,6 +156,8 @@ class HighlightingController extends TextEditingController {
       children.add(TextSpan(text: region.substring(cursor), style: base));
     }
   }
+
+  bool _isWhitespace(int unit) => unit == 0x20 || unit == 0x09; // space | tab
 
   int _markerLen(RegExpMatch m) {
     if (m[1] != null) return 3; // ***
@@ -189,24 +167,16 @@ class HighlightingController extends TextEditingController {
     return 1; // `
   }
 
-  TextStyle _dim(TextStyle base) =>
-      base.copyWith(color: base.color?.withValues(alpha: 0.35));
+  TextStyle _dim(TextStyle base) => base.copyWith(color: base.color?.withValues(alpha: 0.35));
 
   /// Zero-width, invisible rendering for markers hidden from view. The
   /// characters stay in the buffer — only their paint collapses.
-  TextStyle _hidden(TextStyle base) => base.copyWith(
-    fontSize: 0,
-    height: 1,
-    letterSpacing: 0,
-    color: const Color(0x00000000),
-  );
+  TextStyle _hidden(TextStyle base) =>
+      base.copyWith(fontSize: 0, height: 1, letterSpacing: 0, color: const Color(0x00000000));
 
   TextStyle _innerStyle(TextStyle base, RegExpMatch m) {
     if (m[1] != null) {
-      return base.copyWith(
-        fontWeight: FontWeight.w700,
-        fontStyle: FontStyle.italic,
-      );
+      return base.copyWith(fontWeight: FontWeight.w700, fontStyle: FontStyle.italic);
     }
     if (m[2] != null) return base.copyWith(fontWeight: FontWeight.w700);
     if (m[3] != null) return base.copyWith(fontStyle: FontStyle.italic);
@@ -227,10 +197,6 @@ class HighlightingController extends TextEditingController {
       2 => 18.5,
       _ => 17.0,
     };
-    return base.copyWith(
-      fontSize: size,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.3,
-    );
+    return base.copyWith(fontSize: size, fontWeight: FontWeight.w700, letterSpacing: -0.3);
   }
 }
