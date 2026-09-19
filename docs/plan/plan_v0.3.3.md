@@ -192,6 +192,32 @@ Four UX fixes that remove friction between clicking a note and actually typing i
   - `test/ui/editor/editor_pane_test.dart`
   **Estimated scope:** S
 
+### Phase 7 — File name is the title
+
+- [x] **Task 8: A `# Heading` never changes the note title**
+  **Description:** The note title is always its file name (the title row
+  field). A `# Heading` at the top of the body no longer overrides the title,
+  so the editor title field, the note list, and note-info stop disagreeing once
+  a heading is added to the body.
+  **Acceptance criteria:**
+  - [x] `extractTitle` returns only the file-name stem and ignores body
+        headings (`_heading1` rule removed).
+  - [x] Editor title field, note list, and note-info all show the file-name
+        title regardless of body headings.
+  - [x] Renaming via the title field still renames the file and updates the
+        title everywhere.
+  **Verification:**
+  - [x] `test/data/markdown_parser_test.dart` — heading no longer overrides the
+        stem.
+  - [x] `flutter analyze` clean; `flutter test` green.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/data/markdown_parser.dart`
+  - `test/data/markdown_parser_test.dart`
+  - `test/data/vault_repository_test.dart`
+  - `test/logic/vault_controller_test.dart`
+  **Estimated scope:** S
+
 ### Checkpoint: v0.3.3 complete
 - [ ] All acceptance criteria from tasks 1–5 met
 - [ ] `flutter analyze` clean

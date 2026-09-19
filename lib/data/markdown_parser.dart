@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 
 final _fenceLine = RegExp(r'^\s{0,3}(```|~~~)');
 final _inlineCode = RegExp('`[^`]*`');
-final _heading1 = RegExp(r'^#\s+(.+)$');
 final _tagToken = RegExp(r'#([A-Za-z_][A-Za-z0-9_/-]*)');
 final _imageRef = RegExp(r'!\[([^\]]*)\]\(\s*(?:<([^>]*)>|([^)\s]+))(?:\s+"[^"]*")?\s*\)');
 
@@ -27,12 +26,9 @@ String stripCode(String body) {
   return out.toString().replaceAll(_inlineCode, '');
 }
 
-/// The note title: first H1 outside code fences, else the file-name stem.
+/// The note title: the file-name stem. A `# Heading` in the body does NOT
+/// override it — the title row field / file name is authoritative (v0.3.3).
 String extractTitle(String body, String fileName) {
-  for (final line in stripCode(body).split('\n')) {
-    final m = _heading1.firstMatch(line);
-    if (m != null) return m.group(1)!.trim();
-  }
   final dot = fileName.lastIndexOf('.');
   final stem = dot > 0 ? fileName.substring(0, dot) : fileName;
   return stem;

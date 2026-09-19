@@ -189,6 +189,10 @@ indentation is structural (list nesting), never a visual paragraph indent.
     written to disk), the last body caret offset for each note and restores it
     when the note is reopened or cycled to, so writing resumes where it left
     off.
+49. **File-name title is authoritative** — a `# Heading` in the note body never
+    changes the note title; the title is always the note's file name (set via
+    the title row field), and the editor title field, the note list, and the
+    note-info dialog always agree.
 
 Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
 `ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list

@@ -51,10 +51,10 @@ void main() {
       expect(reread.title, 'Draft');
     });
 
-    test('readNote extracts title from H1 over filename stem', () async {
+    test('readNote title is the filename stem (heading does not override)', () async {
       await vault.createNote(title: 'Stem', body: '# Real Title\n');
       final note = await vault.readNote('Stem.md');
-      expect(note.title, 'Real Title');
+      expect(note.title, 'Stem');
     });
 
     test('renameNote moves the file and keeps content', () async {

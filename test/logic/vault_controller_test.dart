@@ -46,7 +46,7 @@ void main() {
 
     expect(controller.hasVault, isTrue);
     expect(controller.vaultPath, vaultDir.path);
-    expect(controller.notes.map((n) => n.title), containsAll(['Plan', 'loose']));
+    expect(controller.notes.map((n) => n.title), containsAll(['plan', 'loose']));
     expect(controller.folders.single.name, 'work');
   });
 

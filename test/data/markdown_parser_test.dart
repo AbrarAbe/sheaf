@@ -4,25 +4,16 @@ import 'package:sheaf/models/note.dart';
 
 void main() {
   group('extractTitle', () {
-    test('prefers the first H1', () {
-      expect(extractTitle('# Meeting notes\n\nbody', '2024.md'), 'Meeting notes');
-    });
-
-    test('ignores H2 and later headings', () {
-      expect(extractTitle('## Not this\n## Nor this', 'a.md'), 'a');
-    });
-
-    test('falls back to filename stem without extension', () {
-      expect(extractTitle('', 'grocery list.md'), 'grocery list');
+    test('uses the file-name stem, ignoring body headings', () {
+      // A # Heading never overrides the title (v0.3.3): filename is authoritative.
+      expect(extractTitle('# Meeting notes\n\nbody', '2024.md'), '2024');
+      expect(extractTitle('# Heading here', 'grocery list.md'), 'grocery list');
       expect(extractTitle('no heading here', 'ideas.md'), 'ideas');
     });
 
-    test('trims surrounding whitespace of the heading text', () {
-      expect(extractTitle('#   Spaced out   \n', 'x.md'), 'Spaced out');
-    });
-
-    test('does not treat fenced code hash lines as titles', () {
-      expect(extractTitle('```\n# comment\n```', 'code.md'), 'code');
+    test('handles files without an extension', () {
+      expect(extractTitle('# x\nbody', 'notes'), 'notes');
+      expect(extractTitle('# x\nbody', 'my.note.txt'), 'my.note');
     });
   });
 
