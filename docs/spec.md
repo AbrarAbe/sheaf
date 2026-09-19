@@ -185,6 +185,10 @@ indentation is structural (list nesting), never a visual paragraph indent.
 47. **Indent is not code in preview** — leading-space indentation on non-list
     lines never renders as an indented code block; indentation displays only as
     list structure. Fenced code blocks still render as code.
+48. **Editor caret memory** — the editor remembers, in memory only (never
+    written to disk), the last body caret offset for each note and restores it
+    when the note is reopened or cycled to, so writing resumes where it left
+    off.
 
 Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
 `ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list

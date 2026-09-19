@@ -102,6 +102,66 @@ void main() {
     );
   });
 
+  testWidgets('type a trailing space in a heading keeps the caret after it (Task 6)', (
+    tester,
+  ) async {
+    final note = await real(() => vaultController.createNote(title: 'H', body: ''), tester);
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+    // Normal mode = highlighting on.
+
+    await tester.enterText(find.byKey(const Key('editor-body')), '# Heading');
+    await tester.pump();
+    await tester.enterText(find.byKey(const Key('editor-body')), '# Heading ');
+    await tester.pump();
+
+    final editable = tester.state<EditableTextState>(
+      find.descendant(
+        of: find.byKey(const Key('editor-body')),
+        matching: find.byType(EditableText),
+      ),
+    );
+    final re = editable.renderEditable;
+    final caretAfterWord = re.getLocalRectForCaret(const TextPosition(offset: 9)).left;
+    final caretAfterSpace = re.getLocalRectForCaret(const TextPosition(offset: 10)).left;
+    expect(
+      caretAfterSpace,
+      greaterThan(caretAfterWord),
+      reason: 'a trailing space in a heading must keep real width so the caret sits after it',
+    );
+    await real(editorController.flush, tester);
+  });
+
+  testWidgets('remember and restore caret position across note switches (Task 7)', (tester) async {
+    final noteA = await real(
+      () => vaultController.createNote(
+        title: 'A',
+        body: 'line one\nline two\nline three\nline four\nline five',
+      ),
+      tester,
+    );
+    final noteB = await real(() => vaultController.createNote(title: 'B', body: 'short'), tester);
+    await real(() => editorController.open(noteA), tester);
+    await pumpEditor(tester);
+
+    // Move the caret somewhere inside note A (line three, offset 20).
+    final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    field.controller!.selection = const TextSelection.collapsed(offset: 20);
+    await tester.pump();
+
+    // Leave note A, then return to it.
+    await real(() => editorController.open(noteB), tester);
+    await tester.pump();
+    await real(() => editorController.open(noteA), tester);
+    await tester.pump();
+
+    // The caret was remembered for A and restored on return.
+    expect(editorController.lastCaretFor(noteA.path), 20);
+    final restored = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    expect(restored.controller!.selection.baseOffset, 20);
+    await real(editorController.flush, tester);
+  });
+
   testWidgets('typing marks the note dirty; flush persists to disk', (tester) async {
     final note = await real(() => vaultController.createNote(title: 'Draft'), tester);
     await real(() => editorController.open(note), tester);

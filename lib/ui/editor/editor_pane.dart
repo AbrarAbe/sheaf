@@ -466,9 +466,21 @@ class _EditorState extends State<_Editor> {
   Future<void> _load() async {
     final note = widget.controller.current;
     if (note == null || note.path == _loadedPath) return;
+    // Remember the caret in the note we're leaving (in-memory only).
+    final prevPath = _loadedPath;
+    if (prevPath != null && _body.selection.isValid && _body.selection.baseOffset >= 0) {
+      widget.controller.rememberCaret(prevPath, _body.selection.start);
+    }
     _loadedPath = note.path;
     _body.text = note.body;
     _title.text = note.title;
+    // Restore the last caret for this note (Task 7). Uncached notes stay at
+    // the untouched state (markers hidden) with the caret placed on focus;
+    // a restored caret is set explicitly so the reveal rule shows its line.
+    final restored = widget.controller.lastCaretFor(note.path);
+    if (restored != null) {
+      _body.selection = TextSelection.collapsed(offset: restored.clamp(0, _body.text.length));
+    }
     if (_bodyScroll.hasClients) _bodyScroll.jumpTo(0);
     if (mounted) {
       setState(() {});
@@ -490,6 +502,12 @@ class _EditorState extends State<_Editor> {
 
   @override
   void dispose() {
+    // Remember the caret of the note we're leaving if the pane is torn down
+    // (mode rebuilds, focus toggle) without going through a note switch.
+    final leaving = widget.controller.current;
+    if (leaving != null && _body.selection.isValid && _body.selection.baseOffset >= 0) {
+      widget.controller.rememberCaret(leaving.path, _body.selection.start);
+    }
     widget.controller.removeListener(_syncFromController);
     _bodyFocus.removeListener(_onBodyFocusChange);
     _titleFocus.removeListener(_onTitleFocusChange);

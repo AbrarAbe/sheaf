@@ -39,6 +39,11 @@ class EditorController extends ChangeNotifier {
   DateTime? _lastSavedAt;
   late EditorMode _mode = initialMode;
 
+  /// In-memory record of the last body caret offset per note path. Never
+  /// written to disk — it only survives the current session so reopening or
+  /// cycling a note can return the caret to where the user left off.
+  final Map<String, int> _caretByPath = {};
+
   Note? get current => _current;
   String get body => _body;
   EditorStatus get status => _status;
@@ -72,6 +77,12 @@ class EditorController extends ChangeNotifier {
 
   /// When the current note was last written to disk, for the mono footer.
   DateTime? get lastSavedAt => _lastSavedAt;
+
+  /// Remembers the last body caret offset for [path] (in-memory only).
+  void rememberCaret(String path, int offset) => _caretByPath[path] = offset;
+
+  /// The last remembered caret offset for [path], or null when none is known.
+  int? lastCaretFor(String path) => _caretByPath[path];
 
   Future<void> open(Note note) async {
     await flush();
