@@ -132,6 +132,21 @@ class EditorController extends ChangeNotifier {
     await open(await _vault.readNote(newPath));
   }
 
+  /// Renames the note at [path] on disk. When [path] is the note currently
+  /// being edited, the in-memory title/body are re-synced to the new file;
+  /// when it is not (a note switch raced the commit) `current` is left
+  /// alone. Used by title autosave on blur.
+  Future<void> renameNoteAt(String path, String newTitle) async {
+    await flush();
+    final newPath = await _vault.renameNote(path, newTitle);
+    if (path == _current?.path) {
+      _current = await _vault.readNote(newPath);
+      _body = _current!.body;
+      _status = EditorStatus.saved;
+      notifyListeners();
+    }
+  }
+
   Future<void> _save() async {
     final note = _current;
     if (note == null || _body == note.body) return;

@@ -15,6 +15,7 @@ import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
 import '../../logic/list_continuation.dart';
 import '../../logic/vault_controller.dart';
+import '../../models/note.dart';
 import '../../models/settings.dart';
 import '../../models/shortcut_settings.dart';
 import '../../theme/quire_colors.dart';
@@ -147,6 +148,9 @@ class _EditorState extends State<_Editor> {
   late final FocusNode _titleFocus;
   late final ScrollController _bodyScroll;
   String? _loadedPath;
+  Note? _loadedNote;
+  bool _loading = false;
+  bool _committing = false;
   EditorMode? _syncedMode;
   bool _dragging = false;
   bool _findOpen = false;
@@ -210,8 +214,16 @@ class _EditorState extends State<_Editor> {
     if (_bodyFocus.hasFocus) _wantBodyFocus = true;
   }
 
+  /// Losing focus commits the pending rename — clicking the body, Tab out, or
+  /// opening another note all commit at once instead of waiting for Enter.
+  /// Enter still commits immediately (`onSubmitted`/`onEditingComplete`); the
+  /// `_commitRename` guards make the double call after an Enter no-op.
   void _onTitleFocusChange() {
-    if (_titleFocus.hasFocus) _wantBodyFocus = false;
+    if (_titleFocus.hasFocus) {
+      _wantBodyFocus = false;
+      return;
+    }
+    _commitTitleRename();
   }
 
   /// Key map for the editing surfaces. Formatting keys are bound in both
@@ -464,16 +476,32 @@ class _EditorState extends State<_Editor> {
   }
 
   Future<void> _load() async {
+    if (_loading) return;
     final note = widget.controller.current;
     if (note == null || note.path == _loadedPath) return;
-    // Remember the caret in the note we're leaving (in-memory only).
-    final prevPath = _loadedPath;
-    if (prevPath != null && _body.selection.isValid && _body.selection.baseOffset >= 0) {
-      widget.controller.rememberCaret(prevPath, _body.selection.start);
+    _loading = true;
+    try {
+      // Remember the caret in the note we're leaving (in-memory only).
+      final prev = _loadedNote;
+      if (prev != null && _body.selection.isValid && _body.selection.baseOffset >= 0) {
+        widget.controller.rememberCaret(prev.path, _body.selection.start);
+      }
+      // Spec story 45: switching notes while a title edit is pending must
+      // not drop it. `open()` has already swapped `current` to the incoming
+      // note, so a commit routed through `current` would rename the wrong
+      // file; commit against the note the fields still hold, before
+      // overwriting them.
+      if (prev != null && _title.text != prev.title) {
+        await _commitRename(_title.text, prev);
+      }
+      if (!mounted) return;
+      _loadedPath = note.path;
+      _loadedNote = note;
+      _body.text = note.body;
+      _title.text = note.title;
+    } finally {
+      _loading = false;
     }
-    _loadedPath = note.path;
-    _body.text = note.body;
-    _title.text = note.title;
     // Restore the last caret for this note (Task 7). Uncached notes stay at
     // the untouched state (markers hidden) with the caret placed on focus;
     // a restored caret is set explicitly so the reveal rule shows its line.
@@ -523,16 +551,48 @@ class _EditorState extends State<_Editor> {
     super.dispose();
   }
 
-  Future<void> _commitRename(String newTitle) async {
-    final current = widget.controller.current;
-    if (current == null) return;
+  /// Commits the rename of [target] to [newTitle]. [target] is passed rather
+  /// than read from `current` so a commit racing a note switch still renames
+  /// the note that was actually edited (spec story 45). Idempotent: empty or
+  /// unchanged titles revert the field and skip the rename. On success the
+  /// in-memory cache is advanced to the freshly-renamed note so a later
+  /// commit — including the `_load` fired by the rename's own
+  /// `notifyListeners` — does not try to rename the now-missing file.
+  /// Guarded by `_committing`: a second commit racing the first would otherwise
+  /// try to rename a file the first already moved (PathNotFoundException on
+  /// the live vault). Both callers — Enter/blur via `_commitTitleRename` and
+  /// a note switch via `_load` — funnel through here.
+  Future<void> _commitRename(String newTitle, Note target) async {
+    if (_committing) return;
     final trimmed = newTitle.trim();
-    if (trimmed.isEmpty || trimmed == extractTitle(current.body, current.fileName)) {
-      _title.text = current.title;
+    if (trimmed.isEmpty || trimmed == extractTitle(target.body, target.fileName)) {
+      _title.text = target.title;
       return;
     }
-    await widget.controller.flush();
-    await widget.controller.renameCurrent(trimmed);
+    _committing = true;
+    try {
+      await widget.controller.flush();
+      await widget.controller.renameNoteAt(target.path, trimmed);
+      // Pull the freshly-read note back into the cache. If `current` has
+      // since moved on, keep the last cached note so the commit is still
+      // recorded against the file the user was editing.
+      if (_loadedNote?.path == target.path) {
+        _loadedNote = widget.controller.current ?? _loadedNote;
+        _loadedPath = _loadedNote?.path;
+      }
+    } finally {
+      _committing = false;
+    }
+  }
+
+  /// Enter / blur wrapper that commits against whatever the fields currently
+  /// hold. Returns immediately if the pane shows no note; re-entrance is
+  /// handled inside `_commitRename` so the same guard covers `_load`-driven
+  /// commits and a rapid Enter+blur pair.
+  Future<void> _commitTitleRename() async {
+    final target = _loadedNote;
+    if (target == null) return;
+    await _commitRename(_title.text, target);
   }
 
   Future<void> _insertDroppedImages(List<dynamic> items) async {
@@ -629,8 +689,8 @@ class _EditorState extends State<_Editor> {
                                 contentPadding: EdgeInsets.zero,
                                 isDense: true,
                               ),
-                              onSubmitted: _commitRename,
-                              onEditingComplete: () => _commitRename(_title.text),
+                              onSubmitted: (_) => _commitTitleRename(),
+                              onEditingComplete: _commitTitleRename,
                             ),
                           ),
                           ModeSwitch(mode: controller.mode, onSelected: controller.setMode),
@@ -670,8 +730,8 @@ class _EditorState extends State<_Editor> {
                             contentPadding: EdgeInsets.zero,
                             isDense: true,
                           ),
-                          onSubmitted: _commitRename,
-                          onEditingComplete: () => _commitRename(_title.text),
+                          onSubmitted: (_) => _commitTitleRename(),
+                          onEditingComplete: _commitTitleRename,
                         ),
                       ),
                       ModeSwitch(mode: controller.mode, onSelected: controller.setMode),

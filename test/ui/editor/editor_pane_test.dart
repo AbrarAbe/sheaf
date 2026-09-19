@@ -102,6 +102,81 @@ void main() {
     );
   });
 
+  testWidgets('committing the title on blur renames the note without Enter (Task 2)', (
+    tester,
+  ) async {
+    final note = await real(() => vaultController.createNote(title: 'Draft', body: ''), tester);
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    final titleFinder = find.widgetWithText(TextField, 'Draft');
+    await tester.enterText(titleFinder, 'Renamed');
+    await tester.pump();
+    expect(File('${tempDir.path}/vault/${note.path}').existsSync(), isTrue);
+
+    // Clicking away from the title commits the rename — no Enter needed.
+    await tester.showKeyboard(find.byKey(const Key('editor-body')));
+    await tester.pump();
+    await real(editorController.flush, tester);
+    await tester.pump();
+
+    expect(File('${tempDir.path}/vault/Renamed.md').existsSync(), isTrue);
+    expect(File('${tempDir.path}/vault/${note.path}').existsSync(), isFalse);
+  });
+
+  testWidgets('opening another note while editing the title commits the rename', (tester) async {
+    final noteA = await real(() => vaultController.createNote(title: 'First'), tester);
+    final noteB = await real(() => vaultController.createNote(title: 'Second'), tester);
+    await real(() => editorController.open(noteA), tester);
+    await pumpEditor(tester);
+    await tester.pump();
+
+    final titleFinder = find.widgetWithText(TextField, 'First');
+    await tester.enterText(titleFinder, 'Renamed');
+    await tester.pump();
+
+    // Unfocusing the title via a note switch commits before the note reloads.
+    await real(() async {
+      await editorController.open(noteB);
+      await editorController.flush();
+    }, tester);
+    await tester.pump();
+
+    final names = Directory('${tempDir.path}/vault')
+        .listSync()
+        .map((e) => e.path.split('/').last)
+        .toList();
+    expect(names, contains('Renamed.md'));
+    expect(names, contains('Second.md'));
+    expect(names.contains('First.md'), isFalse, reason: 'stale name must not survive');
+  });
+
+  testWidgets('unchanged or empty title on blur reverts without renaming (Task 2)', (tester) async {
+    final note = await real(() => vaultController.createNote(title: 'Kept'), tester);
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    final titleFinder = find.widgetWithText(TextField, 'Kept');
+    await tester.enterText(titleFinder, '');
+    await tester.showKeyboard(find.byKey(const Key('editor-body')));
+    await tester.pump();
+    await real(editorController.flush, tester);
+    await tester.pump();
+
+    expect(
+      titleFinder.evaluate().length,
+      1,
+      reason: 'field must hold the original title after an empty blur commit',
+    );
+    expect(
+      tester.widget<TextField>(titleFinder).controller!.text,
+      'Kept',
+      reason: 'empty edit reverts to the loaded note title',
+    );
+    expect(File('${tempDir.path}/vault/Kept.md').existsSync(), isTrue);
+    expect(File('${tempDir.path}/vault/.md').existsSync(), isFalse);
+  });
+
   testWidgets('caret stays after a trailing space in a heading followed by lines (Task 6)', (
     tester,
   ) async {

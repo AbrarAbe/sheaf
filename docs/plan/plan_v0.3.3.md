@@ -31,7 +31,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 ### Phase 1 — Editor auto-focus on open
 
-- [ ] **Task 1: Auto-focus the body when a note is opened (list + quick-switcher)**
+- [x] **Task 1: Auto-focus the body when a note is opened (list + quick-switcher)**
   **Description:** When a note opens from the note list or the command-palette quick-switcher, the body editor gains focus with a visible caret so typing can begin immediately.
   **Acceptance criteria:**
   - [x] On note open, set the sticky body-focus intent and `requestFocus()` the body in a post-frame callback.
@@ -44,14 +44,14 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 ### Phase 2 — Title autosave on blur
 
-- [ ] **Task 2: Commit the title rename on focus loss**
+- [x] **Task 2: Commit the title rename on focus loss**
   **Description:** Renaming a note by editing its title currently saves only on Enter (`onSubmitted`/`onEditingComplete`). Commit the rename when the title field loses focus instead.
   **Acceptance criteria:**
-  - [ ] Editing the title then unfocusing (clicking the body, Tab out, opening another note) calls the existing `_commitRename(_title.text)`.
-  - [ ] Enter still commits; empty or unchanged titles revert the field without renaming (existing `_commitRename` guards).
-  - [ ] No double rename when Enter and blur both fire (guards are idempotent).
+  - [x] Editing the title then unfocusing (clicking the body, Tab out, opening another note) calls the existing `_commitRename(_title.text)`.
+  - [x] Enter still commits; empty or unchanged titles revert the field without renaming (existing `_commitRename` guards).
+  - [x] No double rename when Enter and blur both fire (guards are idempotent).
   **Verification:**
-  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — edit title, unfocus, assert rename committed.
+  - [x] `flutter test test/ui/editor/editor_pane_test.dart` — edit title, unfocus, assert rename committed.
   **Dependencies:** None (independent of Task 1)
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`
@@ -118,7 +118,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 ### Phase 5 — Bug: caret ignores a trailing space at the end of a heading
 
-- [ ] **Task 6: Fix heading caret collapsing across a trailing space**
+- [x] **Task 6: Fix heading caret collapsing across a trailing space**
   **Description:** In Normal mode (highlight on), after typing a heading like
   `# Heading` and then a space at the end, the caret paints *before* the
   trailing space instead of after it: `# Heading|<space>`. Typing a word then
@@ -157,7 +157,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 ### Phase 6 — Remember the caret position per note
 
-- [ ] **Task 7: Cache and restore the caret position per note (in-memory)**
+- [x] **Task 7: Cache and restore the caret position per note (in-memory)**
   **Description:** When a note is reopened or cycled to, the caret should return
   to where the user last left off instead of resetting. Cache the last caret
   offset per note **in memory only** (never written to the note file), so

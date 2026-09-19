@@ -2,8 +2,9 @@
 
 Milestone history: v0.1 ("the desk") shipped as `v0.1.0`; v0.2
 ("the editor") shipped; v0.3 ("polish & power") shipped; v0.3.1
-("paper cuts") shipped; v0.3.2 ("no surprises") is the current release.
-This revision brings the spec up to v0.3.2 and records the deferred items still open.
+("paper cuts") shipped; v0.3.2 ("no surprises") shipped; v0.3.3
+("type-first") is the current release. This revision brings the spec up to
+v0.3.3 and records the deferred items still open.
 
 ## Objective
 
@@ -145,7 +146,7 @@ for Enter on the last line.
     release build via `linuxdeploy` + `linuxdeploy-plugin-gtk`, fails clearly
     when prerequisites are missing, and runs on a clean Ubuntu 22.04.
 
-### User stories — v0.3.2 "no surprises"
+### User stories — v0.3.2 "no surprises" (shipped)
 
 40. **Delete confirmation** — deleting a note shows a confirmation dialog
     before the undo-toast path; deleting a folder shows a confirmation dialog
@@ -164,7 +165,7 @@ for Enter on the last line.
     last line of the document scrolls the editor to keep the new blank line
     visible before any character is typed, not after.
 
-### User stories — v0.3.3 "type-first"
+### User stories — v0.3.3 "type-first" (in progress)
 
 Indentation follows markdownformatting.com/indent: use spaces, not tabs;
 indentation is structural (list nesting), never a visual paragraph indent.
@@ -347,11 +348,11 @@ v0.1–v0.2 criteria remain true (regression gate). v0.3 / v0.3.1 / v0.3.2 add:
 - [ ] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
       data+logic ≥80%
 
-v0.3.3 adds:
+v0.3.3 adds (partial; in progress):
 
-- [ ] Opening from the note list or quick-switcher focuses the editor (caret
+- [x] Opening from the note list or quick-switcher focuses the editor (caret
       visible and ready to type)
-- [ ] Editing the title then unfocusing renames the note without Enter
+- [x] Editing the title then unfocusing renames the note without Enter
 - [ ] `Tab`/`Shift+Tab` indent/outdent lines by two spaces (spaces, not tabs)
 - [ ] Preview renders indents as list structure only — never as an indented
       code block
