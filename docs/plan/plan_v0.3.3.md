@@ -60,24 +60,24 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 ### Phase 3 — Tab indent / Shift+Tab outdent
 
-- [ ] **Task 3: Line-edit primitives — indent / outdent**
+- [x] **Task 3: Line-edit primitives — indent / outdent**
   **Description:** Add headless line-range editing primitives for two-space
   indent and outdent, designed as the first of a family of per-line block
   transforms so future code-formatting and blockquote toggles reuse the same
   line indexing and text+selection contract.
   **Acceptance criteria:**
-  - [ ] A reusable line-range helper maps selection offsets to the line(s)
+  - [x] A reusable line-range helper maps selection offsets to the line(s)
         being edited; transforms operate per line.
-  - [ ] `indentBlock(text, selStart, selEnd)` indents every touched line by two
+  - [x] `indentBlock(text, selStart, selEnd)` indents every touched line by two
         spaces; returns new text + selection.
-  - [ ] `outdentBlock(...)` removes up to two leading spaces per touched line;
+  - [x] `outdentBlock(...)` removes up to two leading spaces per touched line;
         no-op on lines with no leading space.
-  - [ ] Collapsed caret and multi-line selection both handled; spaces only,
+  - [x] Collapsed caret and multi-line selection both handled; spaces only,
         never a tab character.
-  - [ ] Functions are pure (no Flutter imports), unit-testable headlessly like
+  - [x] Functions are pure (no Flutter imports), unit-testable headlessly like
         `continueList`.
   **Verification:**
-  - [ ] `flutter test test/logic/line_edit_test.dart` — single-line,
+  - [x] `flutter test test/logic/line_edit_test.dart` — single-line,
         multi-line, no-indent outdent, mixed indent, selection preservation.
   **Dependencies:** None
   **Files likely touched:**
