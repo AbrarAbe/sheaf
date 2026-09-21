@@ -85,14 +85,14 @@ Four UX fixes that remove friction between clicking a note and actually typing i
   - `test/logic/line_edit_test.dart` (new)
   **Estimated scope:** S
 
-- [ ] **Task 4: Wire Tab / Shift+Tab into the editor**
+- [x] **Task 4: Wire Tab / Shift+Tab into the editor**
   **Description:** Bind Tab → indent, Shift+Tab → outdent in editing modes so the keys act on the body instead of moving focus.
   **Acceptance criteria:**
-  - [ ] `IndentIntent`/`OutdentIntent` bound to `Tab` and `Shift+Tab` in `_editShortcuts` (hard-coded, like `Ctrl+B/I/U`), consumed so Tab no longer moves focus out of the field.
-  - [ ] Works in Normal and Markdown modes; inert in Preview (no editable body).
-  - [ ] Selection collapses/extends sensibly and auto-scrolls to the caret.
+  - [x] `IndentIntent`/`OutdentIntent` bound to `Tab` and `Shift+Tab` in `_editShortcuts` (hard-coded, like `Ctrl+B/I/U`), consumed so Tab no longer moves focus out of the field.
+  - [x] Works in Normal and Markdown modes; inert in Preview (no editable body).
+  - [x] Selection collapses/extends sensibly and auto-scrolls to the caret.
   **Verification:**
-  - [ ] `flutter test test/ui/editor/editor_pane_test.dart` — Tab indents, Shift+Tab outdents, focus stays in the field.
+  - [x] `flutter test test/ui/editor/editor_pane_test.dart` — Tab indents, Shift+Tab outdents, focus stays in the field.
   **Dependencies:** Task 3
   **Files likely touched:**
   - `lib/ui/editor/intents.dart`

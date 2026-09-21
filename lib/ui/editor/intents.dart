@@ -8,6 +8,17 @@ class FormatIntent extends Intent {
   final FormatKind kind;
 }
 
+/// Tab / Shift+Tab — indent or outdent the current line (or every line of
+/// a selection) by two spaces. Hard-coded like `Ctrl+B/I/U`; excluded from
+/// the settings-driven shortcut surface.
+
+class IndentIntent extends Intent {
+  const IndentIntent({required this.indentIn});
+
+  /// `true` = Tab (indent), `false` = Shift+Tab (outdent).
+  final bool indentIn;
+}
+
 /// Enter pressed inside an editing surface; handled as list continuation.
 
 class ContinueListIntent extends Intent {

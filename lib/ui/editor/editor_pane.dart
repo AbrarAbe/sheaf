@@ -13,6 +13,7 @@ import '../../logic/editor_controller.dart';
 import '../../logic/find_controller.dart';
 import '../../logic/formatting.dart';
 import '../../logic/image_link.dart';
+import '../../logic/line_edit.dart';
 import '../../logic/list_continuation.dart';
 import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
@@ -275,6 +276,10 @@ class _EditorState extends State<_Editor> {
         const SingleActivator(LogicalKeyboardKey.keyU, control: true): const FormatIntent(
           FormatKind.underline,
         ),
+        const SingleActivator(LogicalKeyboardKey.tab): const IndentIntent(indentIn: true),
+        const SingleActivator(LogicalKeyboardKey.tab, shift: true): const IndentIntent(
+          indentIn: false,
+        ),
       },
     };
   }
@@ -300,6 +305,20 @@ class _EditorState extends State<_Editor> {
         color: theme.colorScheme.onSurface,
       ),
     );
+  }
+
+  void _applyIndent(IndentIntent intent) {
+    final selection = _body.selection;
+    if (!selection.isValid) return;
+    final result = intent.indentIn
+        ? indentBlock(text: _body.text, selStart: selection.start, selEnd: selection.end)
+        : outdentBlock(text: _body.text, selStart: selection.start, selEnd: selection.end);
+    if (result.text == _body.text) return;
+    final next = result.selStart == result.selEnd
+        ? TextSelection.collapsed(offset: result.selStart)
+        : TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd);
+    _body.value = TextEditingValue(text: result.text, selection: next);
+    widget.controller.updateBody(result.text);
   }
 
   void _applyFormat(FormatIntent intent) {
@@ -851,6 +870,9 @@ class _EditorState extends State<_Editor> {
                       actions: {
                         FormatIntent: CallbackAction<FormatIntent>(
                           onInvoke: (intent) => _applyFormat(intent),
+                        ),
+                        IndentIntent: CallbackAction<IndentIntent>(
+                          onInvoke: (intent) => _applyIndent(intent),
                         ),
                         ContinueListIntent: CallbackAction<ContinueListIntent>(
                           onInvoke: (intent) => _handleEnter(),

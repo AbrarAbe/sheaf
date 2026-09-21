@@ -1102,6 +1102,133 @@ void main() {
       });
     });
   });
+
+  group('Tab indent / Shift+Tab outdent (spec story 46)', () {
+    Future<void> openNormal(
+      WidgetTester tester, {
+      String body = 'hello world',
+      EditorMode mode = EditorMode.normal,
+    }) async {
+      final note = await real(() => vaultController.createNote(title: 'Tab', body: body), tester);
+      await real(() => editorController.open(note), tester);
+      if (mode != EditorMode.normal) editorController.setMode(mode);
+      await pumpEditor(tester);
+    }
+
+    void setCaret(WidgetTester tester, int offset) {
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = TextSelection.collapsed(offset: offset);
+    }
+
+    void selectRange(WidgetTester tester, int start, int end) {
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      state.widget.controller.selection = TextSelection(baseOffset: start, extentOffset: end);
+    }
+
+    Future<void> pressTab(WidgetTester tester) async {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+    }
+
+    Future<void> pressShiftTab(WidgetTester tester) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
+    }
+
+    FocusNode? bodyFocus(WidgetTester tester) {
+      final state = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      return state.widget.focusNode;
+    }
+
+    testWidgets('Tab indents a single line by two spaces', (tester) async {
+      await openNormal(tester, body: 'hello world');
+      setCaret(tester, 11);
+      await tester.pump();
+      final focusedBefore = bodyFocus(tester)?.hasFocus ?? false;
+      await pressTab(tester);
+
+      expect(editorController.body, '  hello world');
+      expect(
+        bodyFocus(tester)?.hasFocus ?? false,
+        focusedBefore,
+        reason: 'Tab should not steal focus from the body field',
+      );
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Shift+Tab outdents a single line by two spaces', (tester) async {
+      await openNormal(tester, body: '  hello world');
+      setCaret(tester, 0);
+      await tester.pump();
+      final focusedBefore = bodyFocus(tester)?.hasFocus ?? false;
+      await pressShiftTab(tester);
+
+      expect(editorController.body, 'hello world');
+      expect(
+        bodyFocus(tester)?.hasFocus ?? false,
+        focusedBefore,
+        reason: 'Shift+Tab should not steal focus from the body field',
+      );
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Tab indents every line of a multi-line selection', (tester) async {
+      await openNormal(tester, body: 'first\nsecond\nthird');
+      selectRange(tester, 0, 18);
+      await tester.pump();
+      await pressTab(tester);
+
+      expect(editorController.body, '  first\n  second\n  third');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Shift+Tab outdents every line of a multi-line selection', (tester) async {
+      await openNormal(tester, body: '  first\n  second\n  third');
+      selectRange(tester, 0, 24);
+      await tester.pump();
+      await pressShiftTab(tester);
+
+      expect(editorController.body, 'first\nsecond\nthird');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Shift+Tab on a line with no leading space is a no-op', (tester) async {
+      await openNormal(tester, body: 'hello');
+      setCaret(tester, 5);
+      await tester.pump();
+      await pressShiftTab(tester);
+
+      expect(editorController.body, 'hello');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('Tab indents in Markdown mode too', (tester) async {
+      await openNormal(tester, body: 'hello', mode: EditorMode.markdown);
+      setCaret(tester, 5);
+      await tester.pump();
+      await pressTab(tester);
+
+      expect(editorController.body, '  hello');
+      await real(editorController.flush, tester);
+    });
+  });
 }
 
 /// Collects every TextSpan the body field paints (via its RenderEditable).
