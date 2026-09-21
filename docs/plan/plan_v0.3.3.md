@@ -25,7 +25,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
   index), so each future transform supplies only its per-line prefix logic.
   Task 3 delivers this layer; later features plug in without new architecture.
 - **Tab/Shift+Tab are native editor keys** (like `Ctrl+B/I/U`), hard-coded and not part of the rebindable `ShortcutAction` surface — indentation is core editing, not a user shortcut.
-- **Preview suppresses indented-code blocks via a custom extension set.** `MarkdownGenerator` accepts an `extensionSet`; passing a gitHubFlavored-derived set minus `IndentedCodeSyntax` makes `Document` treat 2–4-space leading indents as prose while nested-list and fenced-code parsing is untouched.
+- **Preview strips any leading whitespace from non-list lines via a custom `BlockSyntax` registered through `MarkdownGenerator.blockSyntaxList`.** `CodeBlockSyntax` (the default 4-space-indented-code parser) lives in `BlockParser.standardBlockSyntaxes`, not in any `ExtensionSet`, so `extensionSet` cannot disable it; 1–3-space indents leak into paragraphs as visual indent. Registering a custom `BlockSyntax` that matches `^[ \t]+` (any leading whitespace) and produces a `<p>` with stripped content runs before the standard syntaxes (document syntaxes are tried first in `BlockParser.parseLines`), so no indent shows unless it's part of a list marker; nested-list and fenced-code parsing is untouched.
 
 ## Task List
 
@@ -102,15 +102,14 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 ### Phase 4 — Indent is not code in preview
 
-- [ ] **Task 5: Suppress indented-code-block rendering in preview**
-  **Description:** The preview currently renders 4-space-indented lines as code. Disable `IndentedCodeSyntax` so tab/prose indentation shows as prose, while list indentation and fenced code keep their structure.
+- [x] **Task 5: Suppress indented-code-block rendering in preview**
+  **Description:** The preview currently renders 4-space-indented lines as `<pre>` code, and 1–3-space indents leak into paragraphs as visible indent. Register a custom `BlockSyntax` via `MarkdownGenerator.blockSyntaxList` that matches any leading whitespace (`^[ \t]+`) and produces a `<p>` with stripped content, running before the standards (document syntaxes are tried first in `BlockParser.parseLines`).
   **Acceptance criteria:**
-  - [ ] `MarkdownPreview._generator()` passes an `extensionSet` built from gitHubFlavored minus `IndentedCodeSyntax`.
-  - [ ] A 2- or 4-space-indented non-list line renders as prose, not a code block.
-  - [ ] Nested lists still nest by indentation; fenced ``` code blocks still render as code.
+  - [x] `MarkdownPreview._generator()` passes a custom `BlockSyntax` via `blockSyntaxList` that matches any leading whitespace and emits a `<p>` with stripped content.
+  - [x] Any-space- or tab-indented non-list line renders as prose with no visible indent.
+  - [x] Nested lists still nest by indentation; fenced ``` code blocks still render as code.
   **Verification:**
-  - [ ] `flutter test test/ui/editor/markdown_preview_test.dart` — indented prose → no `RichText` pre block; nested list + fenced code still render.
-  **Dependencies:** None (independent of Tasks 3–4)
+  - [x] `flutter test test/ui/editor/markdown_preview_test.dart` — indented prose → paragraph text; nested list + fenced code still render.
   **Files likely touched:**
   - `lib/ui/editor/markdown_preview.dart`
   - `test/ui/editor/markdown_preview_test.dart`
@@ -232,7 +231,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 | Title blur-save double-commits with Enter | Low | `_commitRename` is idempotent (unchanged title reverts, no rename). |
 | Tab binding breaks focus traversal in the editor | Low | Bind via `_editShortcuts` so `Shortcuts` consumes Tab only while an editable surface is focused; verify focus stays in body. |
 | Disabling indented-code blocks surprises users who hand-indent code | Low | Fenced ``` is the app's code style; guide recommends fences; call out in the spec decision. |
-| markdown_widget `extensionSet` override drops needed syntaxes | Low | Build from `ExtensionSet.gitHubFlavored` and remove only `IndentedCodeSyntax`; covered by preview tests. |
+| markdown package custom `BlockSyntax` over-captures | Low | Custom syntax gates on `parentSyntax == null` and dedents the line; covered by preview tests for lists, fenced code, and nested lists. |
 
 ## Confirmed Decisions
 - **Auto-focus scope** — resolved: focus on every note open, including

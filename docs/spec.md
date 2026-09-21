@@ -392,8 +392,16 @@ Resolved during v0.3 / v0.3.1:
     intentionally unbounded, no reading-measure cap.
 13. **Linux packaging** — AppImage via `linuxdeploy` + GTK plugin, driven by a
     checked-in script.
-14. **Indentation policy (v0.3.3)** — Tab/Shift+Tab insert/remove spaces (two
+14. **Indentation policy (v0.3.3)** — Tab/Shift+Tab insert/remove spaces (four
     per level), per markdownformatting.com; indentation is structural, never a
-    visual paragraph indent. The preview disables `IndentedCodeSyntax` so
-    2–4-space indented prose renders as prose, while nested lists and fenced
-    code keep their structure.
+    visual paragraph indent. The preview registers a custom `BlockSyntax` via
+    `MarkdownGenerator.blockSyntaxList` that matches any leading whitespace
+    (`^[ 	]+`) and emits a `<p>` with stripped content. Document syntaxes are
+    tried before standard ones in `BlockParser.parseLines`, so the custom
+    syntax wins over `CodeBlockSyntax` (which would otherwise turn 4-space+
+    indents into a `<pre>` code block, and leave 1–3-space indents as visual
+    indent). Nested lists and fenced code keep their structure.
+
+
+
+

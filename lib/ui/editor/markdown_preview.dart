@@ -20,6 +20,58 @@ class _UnderlineSyntax extends md.InlineSyntax {
   }
 }
 
+/// Strips leading whitespace from any indented block so it renders as
+/// prose, not `<pre>` code, and never shows a visible indent.
+///
+/// The markdown package's default `CodeBlockSyntax` (a *standard* block
+/// syntax, not in any `ExtensionSet`) turns 4-space+ indentation into a
+/// code block, and 1–3-space indents leak into the paragraph as visual
+/// leading whitespace. We can't disable either via `extensionSet` — the
+/// 4-space parser lives in `BlockParser.standardBlockSyntaxes`. This
+/// custom syntax runs *before* the standards (document syntaxes are tried
+/// first in `BlockParser.parseLines`) and strips *all* leading spaces and
+/// tabs, so no indent shows unless it's part of a list marker. Fenced
+/// ``` code still wins because the fences must open at column 0 and are
+/// matched earlier by `CodeFenceSyntax`.
+class _IndentedParagraphSyntax extends md.BlockSyntax {
+  static final _pattern = RegExp(r'^[ \t]+');
+
+  @override
+  RegExp get pattern => _pattern;
+
+  @override
+  bool canEndBlock(md.BlockParser parser) => false;
+
+  const _IndentedParagraphSyntax();
+
+  static String _stripIndent(String line) {
+    final m = _pattern.firstMatch(line);
+    return m == null ? line : line.substring(m.end);
+  }
+
+  @override
+  bool canParse(md.BlockParser parser) {
+    // Never override a list/quote parent — list-item continuation and
+    // nested-list indentation are the only place indent is *semantic*.
+    if (parser.parentSyntax != null) return false;
+    // Never touch a fence opener — must open at column 0.
+    final line = parser.current.content;
+    if (line.startsWith('```') || line.startsWith('~~~')) return false;
+    return _pattern.hasMatch(line);
+  }
+
+  @override
+  md.Node? parse(md.BlockParser parser) {
+    final lines = <String>[_stripIndent(parser.current.content)];
+    parser.advance();
+    while (!parser.isDone && _pattern.hasMatch(parser.current.content)) {
+      lines.add(_stripIndent(parser.current.content));
+      parser.advance();
+    }
+    return md.Element('p', [md.UnparsedContent(lines.join('\n'))]);
+  }
+}
+
 class _UnderlineNode extends SpanNode {
   _UnderlineNode(this._element);
 
@@ -182,6 +234,7 @@ class MarkdownPreview extends StatelessWidget {
 
   MarkdownGenerator _generator() => MarkdownGenerator(
     linesMargin: const EdgeInsets.symmetric(vertical: 7),
+    blockSyntaxList: const [_IndentedParagraphSyntax()],
     inlineSyntaxList: [_UnderlineSyntax()],
     generators: [
       SpanNodeGeneratorWithTag(tag: 'u', generator: (e, config, visitor) => _UnderlineNode(e)),

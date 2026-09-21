@@ -33,11 +33,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: MarkdownPreview(
-            body: body,
-            vaultRoot: tempDir,
-            scrollController: scrollController,
-          ),
+          body: MarkdownPreview(body: body, vaultRoot: tempDir, scrollController: scrollController),
         ),
       ),
     );
@@ -104,6 +100,53 @@ code line
     await pumpPreview(tester, '<script>alert(1)</script>');
 
     expect(_visibleText(tester), contains('<script>'));
+  });
+
+  testWidgets('any leading-space indent on non-list lines is stripped from prose', (tester) async {
+    // 1, 2, 3, 4, 5 spaces and a tab all render as a dedented paragraph.
+    // None of them should render as a `<pre>` code block, and the raw
+    // leading spaces must not appear in the visible text.
+    for (final indent in [
+      ' ',
+      '  ',
+      '   ',
+      '    ',
+      '     ',
+      '        ',
+      '\t',
+      '\t\t',
+    ]) {
+      final body = 'before\n\n${indent}indented line one\n${indent}indented line two\n\nafter';
+      await pumpPreview(tester, body);
+
+      // The indented block becomes one paragraph containing both lines,
+      // with no residual leading whitespace.
+      final visible = _visibleText(tester);
+      expect(visible, contains('indented line one'));
+      expect(visible, contains('indented line two'));
+      // Surrounding prose still renders.
+      expect(find.text('before', findRichText: true), findsOneWidget);
+      expect(find.text('after', findRichText: true), findsOneWidget);
+      // No RichText should carry the raw indentation prefix.
+      expect(visible, isNot(contains('${indent}indented')));
+    }
+  });
+
+  testWidgets('nested lists still nest by indentation', (tester) async {
+    await pumpPreview(tester, '- parent\n  - child\n    - grandchild');
+
+    // Nested list items render as part of a composite TextSpan tree, so
+    // match on the accumulated visible text rather than exact-match spans.
+    final body = _visibleText(tester);
+    expect(body, contains('parent'));
+    expect(body, contains('child'));
+    expect(body, contains('grandchild'));
+  });
+
+  testWidgets('fenced code blocks still render as code', (tester) async {
+    await pumpPreview(tester, '```\nvoid main() {}\n```');
+
+    expect(find.text('void main() {}', findRichText: true), findsOneWidget);
   });
 }
 
