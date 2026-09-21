@@ -179,7 +179,7 @@ indentation is structural (list nesting), never a visual paragraph indent.
     (clicking away, Tab, opening another note) commits the rename immediately;
     Enter is no longer required. Empty or unchanged titles are left as-is.
 46. **Tab indent / Shift+Tab outdent** — Tab indents the current line (or every
-    line of a selection) by two spaces; Shift+Tab removes up to two leading
+    line of a selection) by four spaces; Shift+Tab removes up to four leading
     spaces. Bound in Normal and Markdown edit modes; inert in Preview.
     Space-based per markdownformatting.com; indentation is structural (nests
     lists), never a visual paragraph indent.
@@ -353,7 +353,7 @@ v0.3.3 adds (partial; in progress):
 - [x] Opening from the note list or quick-switcher focuses the editor (caret
       visible and ready to type)
 - [x] Editing the title then unfocusing renames the note without Enter
-- [ ] `Tab`/`Shift+Tab` indent/outdent lines by two spaces (spaces, not tabs)
+- [ ] `Tab`/`Shift+Tab` indent/outdent lines by four spaces (spaces, not tabs)
 - [ ] Preview renders indents as list structure only — never as an indented
       code block
 - [ ] `flutter analyze` clean; `flutter test` green

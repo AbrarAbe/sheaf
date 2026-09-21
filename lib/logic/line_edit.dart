@@ -1,4 +1,4 @@
-/// Two-space indent / outdent primitives for the editor (spec story 46).
+/// Four-space indent / outindent primitives for the editor (spec story 46).
 ///
 /// Pure string/offset math — no Flutter imports. The editor calls these when
 /// Tab / Shift+Tab is pressed; they return the new text with the selection
@@ -9,46 +9,33 @@ library;
 
 import 'formatting.dart';
 
-const String _indentUnit = '  ';
+const String _indentUnit = '    ';
 
-/// Indents every touched line by two spaces. Touched = from the selection's
+/// Indents every touched line by four spaces. Touched = from the selection's
 /// start line to its end line, inclusive. Returns [FormatEdit] with the new
 /// text and the selection remapped.
-FormatEdit indentBlock({
-  required String text,
-  required int selStart,
-  required int selEnd,
-}) {
-  return _mapLinePrefixes(
-    text,
-    selStart,
-    selEnd,
-    (line) => _indentUnit + line,
-  );
+FormatEdit indentBlock({required String text, required int selStart, required int selEnd}) {
+  return _mapLinePrefixes(text, selStart, selEnd, (line) => _indentUnit + line);
 }
 
-/// Removes up to two leading spaces from every touched line. No-op on lines
-/// with no leading space (or fewer than two). Returns [FormatEdit] with the
-/// new text and the selection remapped.
-FormatEdit outdentBlock({
-  required String text,
-  required int selStart,
-  required int selEnd,
-}) {
-  return _mapLinePrefixes(
-    text,
-    selStart,
-    selEnd,
-    (line) {
-      if (line.length >= 2 && line[0] == ' ' && line[1] == ' ') {
-        return line.substring(2);
+/// Removes up to four leading spaces from every touched line. If a line has
+/// four or more leading spaces, exactly four are removed. If it has fewer
+/// (one to three), all of them are stripped. Lines with no leading space are
+/// left alone. Returns [FormatEdit] with the new text and selection remapped.
+FormatEdit outdentBlock({required String text, required int selStart, required int selEnd}) {
+  return _mapLinePrefixes(text, selStart, selEnd, (line) {
+    if (line.length >= 4 && line[0] == ' ' && line[1] == ' ' && line[2] == ' ' && line[3] == ' ') {
+      return line.substring(4);
+    }
+    if (line.isNotEmpty && line[0] == ' ') {
+      var cut = 0;
+      while (cut < line.length && line[cut] == ' ') {
+        cut++;
       }
-      if (line.isNotEmpty && line[0] == ' ') {
-        return line.substring(1);
-      }
-      return line;
-    },
-  );
+      return line.substring(cut);
+    }
+    return line;
+  });
 }
 
 /// Shared line-boundary walk for [indentBlock] / [outdentBlock].
@@ -83,8 +70,7 @@ FormatEdit _mapLinePrefixes(
     final lineEnd = text.indexOf('\n', lineStart);
     final end = lineEnd == -1 ? text.length : lineEnd;
     final line = text.substring(lineStart, end);
-    final transformed =
-        (i >= startLine && i <= endLine) ? lineFn(line) : line;
+    final transformed = (i >= startLine && i <= endLine) ? lineFn(line) : line;
     deltas.add(transformed.length - line.length);
     buf.write(transformed);
     if (end < text.length) buf.write('\n');
@@ -93,14 +79,8 @@ FormatEdit _mapLinePrefixes(
   }
 
   final newText = buf.toString();
-  final newStart = _shiftAnchor(text, deltas, start, startLine).clamp(
-    0,
-    newText.length,
-  );
-  final newEnd = _shiftAnchor(text, deltas, stop, endLine).clamp(
-    0,
-    newText.length,
-  );
+  final newStart = _shiftAnchor(text, deltas, start, startLine).clamp(0, newText.length);
+  final newEnd = _shiftAnchor(text, deltas, stop, endLine).clamp(0, newText.length);
   return FormatEdit(newText, newStart, newEnd, newStart);
 }
 

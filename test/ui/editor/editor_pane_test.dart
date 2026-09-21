@@ -1157,14 +1157,14 @@ void main() {
       return state.widget.focusNode;
     }
 
-    testWidgets('Tab indents a single line by two spaces', (tester) async {
+    testWidgets('Tab indents a single line by four spaces', (tester) async {
       await openNormal(tester, body: 'hello world');
       setCaret(tester, 11);
       await tester.pump();
       final focusedBefore = bodyFocus(tester)?.hasFocus ?? false;
       await pressTab(tester);
 
-      expect(editorController.body, '  hello world');
+      expect(editorController.body, '    hello world');
       expect(
         bodyFocus(tester)?.hasFocus ?? false,
         focusedBefore,
@@ -1173,8 +1173,8 @@ void main() {
       await real(editorController.flush, tester);
     });
 
-    testWidgets('Shift+Tab outdents a single line by two spaces', (tester) async {
-      await openNormal(tester, body: '  hello world');
+    testWidgets('Shift+Tab outdents a single line by four spaces', (tester) async {
+      await openNormal(tester, body: '    hello world');
       setCaret(tester, 0);
       await tester.pump();
       final focusedBefore = bodyFocus(tester)?.hasFocus ?? false;
@@ -1195,12 +1195,12 @@ void main() {
       await tester.pump();
       await pressTab(tester);
 
-      expect(editorController.body, '  first\n  second\n  third');
+      expect(editorController.body, '    first\n    second\n    third');
       await real(editorController.flush, tester);
     });
 
     testWidgets('Shift+Tab outdents every line of a multi-line selection', (tester) async {
-      await openNormal(tester, body: '  first\n  second\n  third');
+      await openNormal(tester, body: '    first\n    second\n    third');
       selectRange(tester, 0, 24);
       await tester.pump();
       await pressShiftTab(tester);
@@ -1225,7 +1225,7 @@ void main() {
       await tester.pump();
       await pressTab(tester);
 
-      expect(editorController.body, '  hello');
+      expect(editorController.body, '    hello');
       await real(editorController.flush, tester);
     });
   });

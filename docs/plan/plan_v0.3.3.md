@@ -8,12 +8,12 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 
 - **Auto-focus the editor on open.** Opening a note from the note list or the quick-switcher places the caret in the body immediately, so the user can start typing without a click.
 - **Title autosave on blur.** Editing the note title and leaving the field (clicking away, Tab, opening another note) commits the rename at once — Enter is no longer required.
-- **Tab indent / Shift+Tab outdent.** Tab indents the current line (or every line of a selection) with two spaces; Shift+Tab removes up to two leading spaces. Indentation is structural, per markdownformatting.com — it nests lists, never a visual paragraph indent.
+- **Tab indent / Shift+Tab outdent.** Tab indents the current line (or every line of a selection) with four spaces; Shift+Tab removes up to four leading spaces. Indentation is structural, per markdownformatting.com — it nests lists, never a visual paragraph indent.
 - **Indent is not code in preview.** The preview no longer turns leading-space-indented prose into an indented code block; indentation renders only as list structure. Fenced code blocks still render as code.
 
 ## Architecture Decisions
 
-- **Indentation unit = two spaces, from Tab/Shift+Tab.** The existing list-continuation logic preserves arbitrary existing indent but defines no unit; there is no indentation convention in the codebase yet. Following markdownformatting.com, indentation uses spaces (never the tab character) and two spaces is the standard nested-list increment. (spec decision 14)
+- **Indentation unit = four spaces, from Tab/Shift+Tab.** The existing list-continuation logic preserves arbitrary existing indent but defines no unit; there is no indentation convention in the codebase yet. Following markdownformatting.com, indentation uses spaces (never the tab character) and four spaces is the standard increment. (spec decision 14)
 - **Indent/outdent is a pure, headless transform** in `lib/logic/` (like
   `continueList` and the formatting toggles), returning text + selection; the
   editor layer maps it onto `TextEditingController`.
@@ -61,7 +61,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 ### Phase 3 — Tab indent / Shift+Tab outdent
 
 - [x] **Task 3: Line-edit primitives — indent / outdent**
-  **Description:** Add headless line-range editing primitives for two-space
+  **Description:** Add headless line-range editing primitives for four-space
   indent and outdent, designed as the first of a family of per-line block
   transforms so future code-formatting and blockquote toggles reuse the same
   line indexing and text+selection contract.
@@ -70,7 +70,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
         being edited; transforms operate per line.
   - [x] `indentBlock(text, selStart, selEnd)` indents every touched line by two
         spaces; returns new text + selection.
-  - [x] `outdentBlock(...)` removes up to two leading spaces per touched line;
+  - [x] `outdentBlock(...)` removes up to four leading spaces per touched line;
         no-op on lines with no leading space.
   - [x] Collapsed caret and multi-line selection both handled; spaces only,
         never a tab character.
@@ -237,7 +237,7 @@ Four UX fixes that remove friction between clicking a note and actually typing i
 ## Confirmed Decisions
 - **Auto-focus scope** — resolved: focus on every note open, including
   relaunch into the last-open note (confirmed default).
-- **Tab step** — resolved: two spaces per Tab (confirmed).
+- **Tab step** — resolved: four spaces per Tab (confirmed).
 - **Future line edits** — code formatting and blockquote are anticipated in the
   extensible line-edit contract Task 3 establishes; no separate design is
   needed until those stories are specified.
