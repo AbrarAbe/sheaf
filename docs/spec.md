@@ -343,9 +343,8 @@ v0.1–v0.2 criteria remain true (regression gate). v0.3 / v0.3.1 / v0.3.2 add:
 - [x] Folder creation selects the new folder and shows a loading affordance
 - [x] Sticky folder header; "DIRECTORIES" label on Linux
 - [x] `scripts/build_appimage.sh` produces a runnable `Sheaf.AppImage`
-- [ ] Open cleanup: drop the beta SDK constraint / confirm
-      `dynamic_color` + `material_ui` removal (not verified done)
-- [ ] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
+- [ ] Open cleanup: research `dynamic_color` + `material_ui` removal
+- [x] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
       data+logic ≥80%
 
 v0.3.3 adds (partial; in progress):
@@ -353,10 +352,10 @@ v0.3.3 adds (partial; in progress):
 - [x] Opening from the note list or quick-switcher focuses the editor (caret
       visible and ready to type)
 - [x] Editing the title then unfocusing renames the note without Enter
-- [ ] `Tab`/`Shift+Tab` indent/outdent lines by four spaces (spaces, not tabs)
-- [ ] Preview renders indents as list structure only — never as an indented
+- [x] `Tab`/`Shift+Tab` indent/outdent lines by four spaces (spaces, not tabs)
+- [x] Preview renders indents as list structure only — never as an indented
       code block
-- [ ] `flutter analyze` clean; `flutter test` green
+- [x] `flutter analyze` clean; `flutter test` green
 
 ## Decisions
 

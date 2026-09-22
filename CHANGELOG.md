@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-09-22
+
+### Added
+
+- Add caret bug fixes to v0.3.3 plan
+- Add two-space indent / outdent line-edit primitives
+
+### Changed
+
+- Docs(readme): install binary via ~/.local/bin symlink, fix AppImage
+- Spec + plan for v0.3.3 "type-first"
+- Auto-focus the body when a note is opened
+- Remember and restore the caret per note
+- Commit the title rename on focus loss
+- Wire Tab / Shift+Tab into the body editor
+- Use four-space indent unit
+- Strip leading whitespace from non-list prose
+- Survey preview + editor overrides against the libraries
+
+### Fixed
+
+- Split publish into its own job for rebuild-free retry
+- Move plan docs to its own directory
+- Keep caret width after a trailing space in a heading
+- Note title is the file name, not the first # heading
+
 ## [0.3.2] - 2026-09-17
 
 ### Added
@@ -226,6 +252,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.3]: https://github.com/AbrarAbe/sheaf/compare/v0.3.2..v0.3.3
 [0.3.2]: https://github.com/AbrarAbe/sheaf/compare/v0.3.1..v0.3.2
 [0.3.1]: https://github.com/AbrarAbe/sheaf/compare/v0.3.0..v0.3.1
 [0.3.0]: https://github.com/AbrarAbe/sheaf/compare/v0.2.0..v0.3.0

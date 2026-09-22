@@ -218,11 +218,9 @@ Four UX fixes that remove friction between clicking a note and actually typing i
   **Estimated scope:** S
 
 ### Checkpoint: v0.3.3 complete
-- [ ] All acceptance criteria from tasks 1–5 met
-- [ ] `flutter analyze` clean
-- [ ] `flutter test` green (new tests for editor auto-focus, title blur-save, tab indent/outdent, preview indent-as-code)
-- [ ] Hot reload pushed to running app after each Dart edit
-- [ ] One Conventional Commit per completed task
+- [x] All acceptance criteria from tasks 1–5 met
+- [x] `flutter analyze` clean
+- [x] `flutter test` green (new tests for editor auto-focus, title blur-save, tab indent/outdent, preview indent-as-code)
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |

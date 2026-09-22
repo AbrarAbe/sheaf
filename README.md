@@ -20,7 +20,8 @@ shipped as a self-contained tarball.
 - **Three editor modes** — Normal renders formatting live with markers hidden
   until touched; Markdown shows raw monospace source; Preview renders the GFM
   subset read-only. Autosave (~1 s) behaves identically everywhere.
-- **Keyboard-complete editing** — `Ctrl+B/I/U` toggle bold/italic/underline (combinable, nesting `***`/`**<u>`; word-aware Unicode `café naïve` at bare caret), Enter continues lists (`- `, `* `, `1. `, `- [ ] `), `Ctrl+F` finds inside the note (recomputes on edit), `Ctrl+D` selects word, `Ctrl+Shift+C/V` copy/paste, `Ctrl+Tab` cycles notes.
+- **Keyboard-complete editing** — `Ctrl+B/I/U` toggle bold/italic/underline (combinable, nesting `***`/`**<u>`; word-aware Unicode `café naïve` at bare caret), Enter continues lists (`- `, `* `, `1. `, `- [ ] `), `Tab`/`Shift+Tab` indent/outdent the current line or selection by four spaces, `Ctrl+F` finds inside the note (recomputes on edit), `Ctrl+D` selects word, `Ctrl+Shift+C/V` copy/paste, `Ctrl+Tab` cycles notes.
+- **Type-first editing** — opening a note (list or `Ctrl+K`) drops the caret straight into the body; the title saves on blur (click away, `Tab`, or switching notes) without pressing Enter; the caret and scroll are remembered per note across switches. The preview never turns indented prose into a code block — indentation only nests lists, so use fenced code blocks for code. A note's title is always its file name; a `# Heading` in the body never overrides it.
 - **Nested folders** — folder tree renders recursively with chevron expand/collapse; indent per depth; collapsed state hides subtree without selecting.
 - **Sticky DIRECTORIES header** — FOLDERS header (DIRECTORIES on Linux) stays pinned above the scrollable folder list.
 - **In-editor tags** — `#tag` chips live inside the editor column under the title, scroll with content; tap copies `#tag ` at caret.
@@ -61,6 +62,7 @@ shipped as a self-contained tarball.
 | Find in note | `Ctrl+F` inside the editor, `Esc` closes |
 | Copy/paste (terminal-style) | `Ctrl+Shift+C` / `Ctrl+Shift+V` |
 | Cycle editor mode | `Ctrl+Shift+M` |
+| Indent / outdent line(s) | `Tab` / `Shift+Tab` |
 | Zoom | `Ctrl+=` / `Ctrl+-`, reset `Ctrl+0` |
 | Focus mode | `F10` |
 | Fullscreen | `F11` |
@@ -121,3 +123,4 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/plan/plan_v0.3.md`](docs/plan/plan_v0.3.md) — v0.3 implementation plan (polish & multi-directory)
 - [`docs/plan/plan_v0.3.1.md`](docs/plan/plan_v0.3.1.md) — v0.3.1 implementation plan (paper cuts)
 - [`docs/plan/plan_v0.3.2.md`](docs/plan/plan_v0.3.2.md) — v0.3.2 implementation plan (no surprises)
+- [`docs/plan/plan_v0.3.3.md`](docs/plan/plan_v0.3.3.md) — v0.3.3 implementation plan (type-first)
