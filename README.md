@@ -5,7 +5,30 @@ folders of plain `.md` files — no database, no lock-in. Add multiple vault
 directories in Settings; notes merge newest-first. Built with Flutter + GTK,
 shipped as a self-contained tarball.
 
+<img alt="image" src="assets/260923_22h41m46s_screenshot.png">
+</br>
+
+<table align="center"
+    <tr>
+        <td align="center" width=400>Ligth Mode !</td>
+        <td align="center" width=400>Dark Mode !</td>
+    </tr>
+    <tr>
+        <td><img width="400" alt="image" align="center" src="assets/260923_23h00m39s_screenshot.png" /></td>
+        <td><img width="400" alt="image" align="center" src="assets/260923_22h37m36s_screenshot.png" /></td>
+    </tr>
+</table>
+
 ## Features
+
+<table align="right"
+    <tr>
+        <td align="center" width=400>Format Ready !</td>
+    </tr>
+    <tr>
+        <td><img width="400" align="right" alt="image" src="assets/260923_23h25m37s_screenshot.png" /></td>
+    </tr>
+</table>
 
 - **Multi-vaults** — add multiple vault folders in Settings; notes merge newest-first, scoped by `vaultIndex`/`folderPath`. Each vault keeps its own `.trash/` and `.sheaf/meta.json` pins.
 - **Plain-file vaults** — notes are standard Markdown you can open anywhere. Folder create/rename/delete included; dot-directories are left alone.
@@ -26,6 +49,16 @@ shipped as a self-contained tarball.
 - **Sticky DIRECTORIES header** — FOLDERS header (DIRECTORIES on Linux) stays pinned above the scrollable folder list.
 - **In-editor tags** — `#tag` chips live inside the editor column under the title, scroll with content; tap copies `#tag ` at caret.
 - **Tight selection & scrollbar** — multi-line selection hugs glyphs (`BoxWidthStyle.tight`); interactive scrollbar shows hand cursor and padded gutter (`right 18/24`) without covering text.
+
+<table align="right"
+    <tr>
+        <td align="center" width=450>Live Preview !</td>
+    </tr>
+    <tr>
+        <td><img width="450" align="right" alt="image" src="assets/260923_23h19m05s_screenshot.png" /></td>
+    </tr>
+</table>
+
 - **Live preview** — GFM subset (headings, emphasis, lists, task lists,
   quotes, fenced code, links, tables, `<u>` underline) rendered with your
   chosen theme world; System mode follows your desktop.
@@ -36,6 +69,16 @@ shipped as a self-contained tarball.
 - **Focus & fullscreen** — `F10` collapses to an editor-only surface;
   `F11` true native fullscreen; optional traffic-light window controls in
   the header (hideable in settings).
+
+<table align="right"
+    <tr>
+        <td align="center" width=450>Image Support !</td>
+    </tr>
+    <tr>
+        <td><img width="450" align="right" alt="image" src="assets/260923_23h17m30s_screenshot.png" /></td>
+    </tr>
+</table>
+
 - **Images** — drag & drop images into `<vault>/attachments/` and reference
   them relatively, with Obsidian-compatible width syntax:
   `![alt|400](attachments/img.png)`. The insert-image picker button is
@@ -66,6 +109,16 @@ shipped as a self-contained tarball.
 | Zoom | `Ctrl+=` / `Ctrl+-`, reset `Ctrl+0` |
 | Focus mode | `F10` |
 | Fullscreen | `F11` |
+
+>Shortcuts can be customized in the settings panel
+<table>
+    <tr>
+        <td><img width="450" align="right" alt="image" src="assets/260923_23h34m45s_screenshot.png" /></td>
+    </tr>
+    <tr>
+        <td align="center" width=450>More Customizations Coming Soon !</td>
+    </tr>
+</table>
 
 ## Install (Linux x64)
 
