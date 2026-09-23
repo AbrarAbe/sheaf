@@ -1,4 +1,5 @@
 # Sheaf
+[![Release (Linux)](https://github.com/AbrarAbe/sheaf/actions/workflows/release.yml/badge.svg)](https://github.com/AbrarAbe/sheaf/actions/workflows/release.yml)
 
 A local-first Markdown notes desk for the Linux desktop. Your vaults are just
 folders of plain `.md` files — no database, no lock-in. Add multiple vault
