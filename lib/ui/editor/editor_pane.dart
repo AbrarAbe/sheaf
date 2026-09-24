@@ -234,6 +234,7 @@ class _EditorState extends State<_Editor> {
     _titleFocus = FocusNode();
     _titleFocus.addListener(_onTitleFocusChange);
     _bodyScroll = ScrollController();
+    _bodyScroll.addListener(_onBodyScroll);
     _load();
   }
 
@@ -250,6 +251,16 @@ class _EditorState extends State<_Editor> {
   void _syncFromController() {
     if (_loadedPath != widget.controller.current?.path) _load();
     if (_syncedMode != widget.controller.mode) {
+      final fromPreview = _syncedMode == EditorMode.preview;
+      final toPreview = widget.controller.mode == EditorMode.preview;
+      final path = widget.controller.current?.path;
+      // Spec story 51: capture the live preview scroll offset BEFORE the
+      // rebuild unmounts the ScrollView — after that the position object is
+      // detached from _bodyScroll and forcePixels (used by jumpTo) doesn't
+      // fire scroll listeners, so we'd never see it via _onBodyScroll.
+      if (fromPreview && !toPreview && path != null && _bodyScroll.hasClients) {
+        widget.controller.savePreviewScroll(_bodyScroll.offset);
+      }
       _syncedMode = widget.controller.mode;
       _body.highlight = _syncedMode == EditorMode.normal;
       final editable = _syncedMode != EditorMode.preview;
@@ -266,12 +277,38 @@ class _EditorState extends State<_Editor> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _previewFocus.requestFocus();
         });
+        // Spec story 51: restore the preview scroll offset for this note,
+        // if one was cached. Post-frame because the ScrollView isn't
+        // attached during the mode-switch rebuild; uncached notes
+        // (previewScrollFor returns null) start at 0 as before.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_bodyScroll.hasClients) return;
+          final p = widget.controller.current?.path;
+          if (p == null) return;
+          final cached = widget.controller.previewScrollFor(p);
+          if (cached == null || cached == _bodyScroll.offset) return;
+          _bodyScroll.jumpTo(cached);
+        });
       }
     }
   }
 
   void _onBodyFocusChange() {
     if (_bodyFocus.hasFocus) _wantBodyFocus = true;
+  }
+
+  /// Saves the current preview scroll offset to the per-note cache when
+  /// the user scrolls in preview mode. Uncached offsets (edit-mode
+  /// scrolls) are ignored — the cache is preview-only. Note that
+  /// programmatic [ScrollPosition.jumpTo] uses forcePixels and does not
+  /// notify listeners, so this listener covers user-driven scrolls;
+  /// `_syncFromController` captures the offset on leaving preview for
+  /// programmatic jumps.
+  void _onBodyScroll() {
+    if (widget.controller.mode != EditorMode.preview) return;
+    final path = widget.controller.current?.path;
+    if (path == null) return;
+    widget.controller.savePreviewScroll(_bodyScroll.offset);
   }
 
   /// Losing focus commits the pending rename — clicking the body, Tab out, or
@@ -612,6 +649,11 @@ class _EditorState extends State<_Editor> {
         if (!mounted) return;
         if (widget.controller.mode == EditorMode.preview) {
           _previewFocus.requestFocus();
+          // Spec story 51: restore the preview scroll offset for the
+          // note that just opened, if one was cached. Uncached notes
+          // (previewScrollFor returns null) start at 0.
+          final cached = widget.controller.previewScrollFor(note.path);
+          if (cached != null && cached > 0) _bodyScroll.jumpTo(cached);
         } else {
           _wantBodyFocus = true;
           _bodyFocus.requestFocus();

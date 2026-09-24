@@ -46,6 +46,25 @@ class EditorController extends ChangeNotifier {
   /// cycling a note can return the caret to where the user left off.
   final Map<String, int> _caretByPath = {};
 
+  /// In-memory record of the last preview scroll offset per note path.
+  /// Written when the user scrolls the preview surface; restored when
+  /// they return to preview (mode switch or note reopen) so the viewport
+  /// lands where they left it instead of jumping back to the top.
+  /// Uncached notes start at 0 — the default.
+  final Map<String, double> _previewScrollByPath = {};
+
+  /// Remembers the current preview scroll offset for the open note.
+  /// Called on mode switch away from Preview.
+  void savePreviewScroll(double offset) {
+    final path = _current?.path;
+    if (path == null) return;
+    _previewScrollByPath[path] = offset;
+  }
+
+  /// The last remembered preview scroll offset for [path], or null when
+  /// none is known (an uncached note starts at 0).
+  double? previewScrollFor(String path) => _previewScrollByPath[path];
+
   /// Per-note undo/redo history. Each note has an independent stack;
   /// switching notes swaps which stack is active. Histories are in-memory
   /// only — closing and reopening the app starts a fresh session.
@@ -107,11 +126,7 @@ class EditorController extends ChangeNotifier {
     final existing = _historyByPath[path];
     if (existing != null && !existing.isEmpty) return;
     _historyByPath[path] = UndoHistory()
-      ..seed(UndoEntry(
-        text,
-        TextSelection.collapsed(offset: text.length),
-        DateTime.now(),
-      ));
+      ..seed(UndoEntry(text, TextSelection.collapsed(offset: text.length), DateTime.now()));
   }
 
   /// Undoes the last edit on the current note. Returns the new entry, or
@@ -177,11 +192,7 @@ class EditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateBody(
-    String value, {
-    TextSelection? selection,
-    bool coalesce = true,
-  }) {
+  void updateBody(String value, {TextSelection? selection, bool coalesce = true}) {
     final note = _current;
     if (note == null || value == _body) return;
     _body = value;
@@ -195,10 +206,9 @@ class EditorController extends ChangeNotifier {
     // (format, indent, list continuation) so they don't merge into the
     // user's typing run.
     if (selection != null) {
-      _historyByPath.putIfAbsent(note.path, () => UndoHistory()).setState(
-            UndoEntry(value, selection, DateTime.now()),
-            coalesce: coalesce,
-          );
+      _historyByPath
+          .putIfAbsent(note.path, () => UndoHistory())
+          .setState(UndoEntry(value, selection, DateTime.now()), coalesce: coalesce);
     }
     notifyListeners();
   }

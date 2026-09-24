@@ -67,7 +67,7 @@ scroll position, and small rendering nits:
 
 ### Phase 1 — Undo history persists
 
-- [ ] **Task 1: Cache undo/redo per note and restore on open**
+- [x] **Task 1: Cache undo/redo per note and restore on open**
   **Description:** Add a per-note undo/redo history to `EditorController`,
   following the same in-memory pattern as `_caretByPath`. Switching notes
   archives the current note's history and loads the target note's. Ctrl+Z
@@ -77,25 +77,25 @@ scroll position, and small rendering nits:
   Ctrl+Z inside `EditableText` is left alone — the custom handler only
   fires when the native stack is empty (cross-note/mode cases).
   **Acceptance criteria:**
-  - [ ] `EditorController` gains a `_historyByPath: Map<String, UndoStack>`
+  - [x] `EditorController` gains a `_historyByPath: Map<String, UndoStack>`
         field alongside `_caretByPath`.
-  - [ ] `_pushHistory(notePath, text, selection)` called on every
+  - [x] `_pushHistory(notePath, text, selection)` called on every
         `updateBody` (and after each `FormatIntent` / `IndentIntent` /
         `continueList` apply, so formatting toggles and indent changes are
         undoable too).
-  - [ ] `open(note)` archives the current note's stack to the cache and
+  - [x] `open(note)` archives the current note's stack to the cache and
         loads the target note's stack.
-  - [ ] `close()` archives before clearing.
-  - [ ] `undoCurrent()` / `redoCurrent()` pop/push from the active stack;
+  - [x] `close()` archives before clearing.
+  - [x] `undoCurrent()` / `redoCurrent()` pop/push from the active stack;
         return the restored text and selection to the caller.
-  - [ ] Stack depth capped at 50 (older entries evicted FIFO).
-  - [ ] Ctrl+Z fires the custom undo when the native stack is empty
+  - [x] Stack depth capped at 50 (older entries evicted FIFO).
+  - [x] Ctrl+Z fires the custom undo when the native stack is empty
         (cross-note/mode); otherwise passes through to native.
-  - [ ] Ctrl+Shift+Z always fires the custom redo.
+  - [x] Ctrl+Shift+Z always fires the custom redo.
   **Verification:**
-  - [ ] `test/logic/editor_controller_test.dart` — type text, undo, redo;
+  - [x] `test/logic/editor_controller_test.dart` — type text, undo, redo;
         switch notes and verify each note's history is independent.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/logic/editor_controller.dart`
@@ -103,25 +103,25 @@ scroll position, and small rendering nits:
   - `test/logic/editor_controller_test.dart`
   **Estimated scope:** M
 
-- [ ] **Task 2: Preserve undo history across mode switches**
+- [x] **Task 2: Preserve undo history across mode switches**
   **Description:** Mode switches (Normal ↔ Markdown ↔ Preview) drop the
   undo stack because the `EditableText` widget unmounts/remounts. Keep
   the history alive across mode switches by archiving it into the per-note
   cache on unmount and restoring it on remount.
   **Acceptance criteria:**
-  - [ ] `_EditorState` (or equivalent) calls
+  - [x] `_EditorState` (or equivalent) calls
         `EditorController.archiveCurrent()` when the editable body is
         unmounted (mode → Preview) and `EditorController.restoreCurrent()`
         when remounted (Preview → edit mode).
-  - [ ] After mode switch round-trip, Ctrl+Z still undoes the original
+  - [x] After mode switch round-trip, Ctrl+Z still undoes the original
         edit.
-  - [ ] Undoing past a mode boundary is a no-op (not allowed to cross
+  - [x] Undoing past a mode boundary is a no-op (not allowed to cross
         into the prior mode's stack).
-  - [ ] Redoing past a mode boundary is a no-op.
+  - [x] Redoing past a mode boundary is a no-op.
   **Verification:**
-  - [ ] Widget test: type text in Normal, switch to Preview, switch back,
+  - [x] Widget test: type text in Normal, switch to Preview, switch back,
         press Ctrl+Z, assert the original text is restored.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task 1
   **Files likely touched:**
   - `lib/logic/editor_controller.dart`
@@ -131,26 +131,26 @@ scroll position, and small rendering nits:
 
 ### Phase 2 — Preview scroll position
 
-- [ ] **Task 3: Cache preview scroll offset per note across mode switches**
+- [x] **Task 3: Cache preview scroll offset per note across mode switches**
   **Description:** The shared `_bodyScroll` controller is dropped between
   edit and preview modes, so returning to preview always starts at the
   top. Cache the preview scroll offset per note in
   `EditorController._previewScrollByPath`; restore it on mode return.
   **Acceptance criteria:**
-  - [ ] `EditorController` gains a
+  - [x] `EditorController` gains a
         `_previewScrollByPath: Map<String, double>` field.
-  - [ ] `_savePreviewScroll(offset)` / `previewScrollFor(path)` accessed
+  - [x] `_savePreviewScroll(offset)` / `previewScrollFor(path)` accessed
         by `_EditorState` on mode switch.
-  - [ ] On mode switch away from Preview, capture the current offset and
+  - [x] On mode switch away from Preview, capture the current offset and
         write to cache.
-  - [ ] On mode switch to Preview, read the cached offset and
+  - [x] On mode switch to Preview, read the cached offset and
         `ScrollController.jumpTo` after a post-frame callback (scrollbar
         needs to be attached).
-  - [ ] Uncached notes start at 0 (no jump).
+  - [x] Uncached notes start at 0 (no jump).
   **Verification:**
-  - [ ] Widget test: scroll preview, switch to Normal, switch back to
+  - [x] Widget test: scroll preview, switch to Normal, switch back to
         Preview, assert the preview is at the cached offset.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/logic/editor_controller.dart`

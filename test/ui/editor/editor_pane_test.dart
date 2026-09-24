@@ -1226,6 +1226,85 @@ void main() {
     });
   });
 
+
+
+
+
+
+
+
+
+  group('preview scroll cache per note (spec story 51)', () {
+    String longBody() => List.generate(200, (i) => 'paragraph number $i').join('\n\n');
+
+    ScrollPosition previewPosition(WidgetTester tester) {
+      return tester.state<ScrollableState>(
+        find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
+      ).position;
+    }
+
+    testWidgets(
+      'preview scroll survives a Normal → Preview → Normal round-trip',
+      (tester) async {
+        final note = await real(
+          () => vaultController.createNote(title: 'Preview', body: longBody()),
+          tester,
+        );
+        await real(() => editorController.open(note), tester);
+        await pumpEditor(tester);
+
+        editorController.setMode(EditorMode.preview);
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
+
+        final pos = previewPosition(tester);
+        expect(pos.maxScrollExtent, greaterThan(0));
+
+        const target = 32.0;
+        pos.jumpTo(target);
+        await tester.pump();
+        expect(pos.pixels, closeTo(target, 0.5));
+
+        editorController.setMode(EditorMode.normal);
+        await tester.pumpAndSettle();
+        editorController.setMode(EditorMode.preview);
+        await tester.pumpAndSettle();
+
+        expect(previewPosition(tester).pixels, closeTo(target, 1.0));
+      },
+    );
+
+    testWidgets('preview scroll cache is per-note, not shared', (tester) async {
+      final a = await real(
+        () => vaultController.createNote(title: 'A', body: longBody()),
+        tester,
+      );
+      final b = await real(
+        () => vaultController.createNote(title: 'B', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(a), tester);
+      await pumpEditor(tester);
+
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      final posA = previewPosition(tester);
+      expect(posA.maxScrollExtent, greaterThan(0));
+      posA.jumpTo(64.0);
+      await tester.pump();
+
+      await real(() => editorController.open(b), tester);
+      await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      expect(previewPosition(tester).pixels, closeTo(0, 1.0));
+    });
+  });
+
   group('Tab indent / Shift+Tab outdent (spec story 46)', () {
     Future<void> openNormal(
       WidgetTester tester, {
