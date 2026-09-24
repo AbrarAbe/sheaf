@@ -165,7 +165,7 @@ for Enter on the last line.
     last line of the document scrolls the editor to keep the new blank line
     visible before any character is typed, not after.
 
-### User stories — v0.3.3 "type-first" (in progress)
+### User stories — v0.3.3 "type-first" (shipped)
 
 Indentation follows markdownformatting.com/indent: use spaces, not tabs;
 indentation is structural (list nesting), never a visual paragraph indent.
@@ -194,6 +194,48 @@ indentation is structural (list nesting), never a visual paragraph indent.
     changes the note title; the title is always the note's file name (set via
     the title row field), and the editor title field, the note list, and the
     note-info dialog always agree.
+Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
+`ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list
+behavior and the untested scaffolding was removed in v0.3.1; open-notes editor
+tabs (see `docs/adr/0007-open-notes-tabs.md`); global hotkeys
+(`Ctrl+Alt+N`); reminders; sync/mobile polish; true marker-hiding WYSIWYG;
+parsing local GTK themes' CSS into color worlds; bundling additional Google
+Fonts as offline assets; local font loading (removed).
+
+## User stories — v0.3.4 "sticky state"
+
+50. **Undo history persists across notes and modes** — undo/redo (Ctrl+Z /
+    Ctrl+Shift+Z) survives switching notes (Ctrl+Tab) and cycling modes
+    (Normal ↔ Markdown ↔ Preview). Each note has an independent, in-memory
+    undo stack; cross-note undo is not allowed. The stack is capped at 50
+    entries per note. Undo/redo work identically within a single note's
+    session as they did before; the change is that switching notes or modes
+    no longer wipes the stack. Typing within ~800 ms of the previous
+    keystroke coalesces into a single undo step (word-level undo);
+    formatting, indent, list-continuation, and image-insert edits always
+    record their own step regardless of timing.
+51. **Preview scroll position survives mode cycles** — moving Normal →
+    Preview → Normal preserves the preview's scroll position, so the
+    reading position does not reset to the top each time you cycle modes.
+    The offset is cached per note, in memory only.
+52. **Preview "go to top" button** — a floating action button in the
+    preview's bottom-right corner (arrow-up icon, accent-tinted) appears
+    when the preview is scrolled past 50 px and disappears near the top.
+    Tapping it animates the preview back to the top.
+53. **Wrapped list text aligns with the content, not the marker** — a list
+    item's wrapped continuation lines indent to align with the first
+    character of the item's content (a hanging indent), not the marker
+    column. Matches Obsidian/Typora behavior and what the preview already
+    renders; the editor is brought into line. Applies to both the editor
+    (Normal/Markdown modes) and the preview. List continuation and
+    multi-line selection are unaffected.
+54. **Vault attachments directory is hidden** — the vault's attachments
+    directory is renamed from `attachments/` to `.attachments/` so it does
+    not appear in file browsers or OS searches. Existing `attachments/`
+    directories are migrated on first vault open.
+55. **Markdown link color uses the theme accent** — links in the preview
+    render with `theme.colorScheme.primary` and an underline, matching the
+    rest of the preview's Quire theming.
 
 Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
 `ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list

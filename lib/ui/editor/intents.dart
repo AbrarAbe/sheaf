@@ -8,6 +8,20 @@ class FormatIntent extends Intent {
   final FormatKind kind;
 }
 
+/// Undo the last recorded body change (Ctrl+Z). Routed through our own
+/// per-note [UndoHistory] in [EditorController], not the TextField's built-in
+/// stack — that way undo survives note switches and mode cycles.
+
+class UndoIntent extends Intent {
+  const UndoIntent();
+}
+
+/// Redo the last undone body change (Ctrl+Shift+Z).
+
+class RedoIntent extends Intent {
+  const RedoIntent();
+}
+
 /// Tab / Shift+Tab — indent or outdent the current line (or every line of
 /// a selection) by two spaces. Hard-coded like `Ctrl+B/I/U`; excluded from
 /// the settings-driven shortcut surface.

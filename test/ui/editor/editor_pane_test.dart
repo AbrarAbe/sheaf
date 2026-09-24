@@ -240,6 +240,49 @@ void main() {
     await real(editorController.flush, tester);
   });
 
+  testWidgets('first load after a fresh pane mount places the caret at the top (spec story 44)', (
+    tester,
+  ) async {
+    // A long document whose caret would otherwise default to the end.
+    final longBody = List.generate(200, (i) => 'line $i').join('\n');
+    final noteA = await real(
+      () => vaultController.createNote(title: 'Long', body: longBody),
+      tester,
+    );
+    final noteB = await real(() => vaultController.createNote(title: 'Short'), tester);
+    await real(() => editorController.open(noteA), tester);
+    await pumpEditor(tester);
+
+    // Move the caret into the middle of note A.
+    var field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    field.controller!.selection = const TextSelection.collapsed(offset: 500);
+    await tester.pump();
+    await real(() => editorController.flush(), tester);
+
+    // Switch away and back — the caret should be restored to 500 (mid-session).
+    await real(() => editorController.open(noteB), tester);
+    await tester.pump();
+    await real(() => editorController.open(noteA), tester);
+    await tester.pump();
+    field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    expect(field.controller!.selection.baseOffset, 500, reason: 'mid-session restore still works');
+
+    // Now simulate an app restart: dispose the pane (which clears the
+    // controller state) and rebuild a fresh EditorPane. The caret should
+    // NOT come back to 500 — it should be at 0 (top of the note).
+    await tester.pumpWidget(Container());
+    // Pump one more frame to let the dispose listener finish.
+    await tester.pump();
+    await real(() => editorController.open(noteA), tester);
+    await pumpEditor(tester);
+    field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+    expect(
+      field.controller!.selection.baseOffset,
+      0,
+      reason: 'caret resets to the top after a fresh pane mount',
+    );
+  });
+
   testWidgets('typing marks the note dirty; flush persists to disk', (tester) async {
     final note = await real(() => vaultController.createNote(title: 'Draft'), tester);
     await real(() => editorController.open(note), tester);
@@ -917,6 +960,13 @@ void main() {
       await real(() => editorController.open(note), tester);
       await pumpEditor(tester);
 
+      // The caret starts at offset 0, so the bold markers at 0-2 are
+      // touched and rendered dimmed. To exercise the "untouched" rule we
+      // move the caret past the markers first.
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      field.controller!.selection = const TextSelection.collapsed(offset: 12);
+      await tester.pump();
+
       final spans = _bodySpans(tester);
       expect(
         spans.any(
@@ -966,15 +1016,16 @@ void main() {
       await pumpEditor(tester);
 
       List<TextSpan> hashSpans() => _bodySpans(tester).where((ts) => ts.text == '#').toList();
+      // The caret starts at offset 0 (on the heading line), so hashes are
+      // dimmed. Move the caret to the second line to exercise the "hidden"
+      // state.
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      field.controller!.selection = const TextSelection.collapsed(offset: 8);
+      await tester.pump();
       expect(hashSpans().every((ts) => ts.style?.fontSize == 0), isTrue);
 
-      final state = tester.state<EditableTextState>(
-        find.descendant(
-          of: find.byKey(const Key('editor-body')),
-          matching: find.byType(EditableText),
-        ),
-      );
-      state.widget.controller.selection = const TextSelection.collapsed(offset: 3);
+      // Move back onto the heading line: hashes reappear dimmed.
+      field.controller!.selection = const TextSelection.collapsed(offset: 3);
       await tester.pump();
       expect(hashSpans().every((ts) => (ts.style?.fontSize ?? 0) > 0), isTrue);
     });

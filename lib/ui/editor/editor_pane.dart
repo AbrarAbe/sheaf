@@ -161,6 +161,65 @@ class _EditorState extends State<_Editor> {
   String _lastQuery = '';
   bool _caseSensitive = false;
 
+  /// Suppresses undo-history recording while the pane is programmatically
+  /// applying text (undo/redo). See [_undo]/[_redo].
+  bool _suppressHistory = false;
+
+  /// When true, the next [_load] skips restoring the cached caret — the
+  /// note opens at offset 0. Used on the first load after a fresh pane
+  /// mount (i.e. right after app start) so a long document's caret doesn't
+  /// land at the bottom from a previous session. Mid-session note switches
+  /// still restore the caret to where the user left off.
+  bool _skipCaretRestoreOnNextLoad = true;
+
+  /// Records a body change and its current selection into the per-note
+  /// undo history. Called from the TextField's onChanged and from every
+  /// programmatic body change (format, indent, list continuation, image
+  /// insert). Skipped when [_suppressHistory] is set — that's the
+  /// undo/redo path, which already has the history to restore.
+  ///
+  /// [coalesce] lets the caller decide whether this edit may merge into
+  /// the user's preceding typing run (default true — typing). Programmatic
+  /// edits (format, indent, list, image) pass false so each one is its
+  /// own undo step.
+  void _recordBodyChange({bool coalesce = true}) {
+    if (_suppressHistory) return;
+    widget.controller.updateBody(
+      _body.value.text,
+      selection: _body.selection,
+      coalesce: coalesce,
+    );
+  }
+
+  /// Undo handler. Restores the previous text and caret position; suppresses
+  /// further recording so the undo itself doesn't pollute the stack.
+  void _undo() {
+    final entry = widget.controller.undoCurrent();
+    if (entry == null) return;
+    _suppressHistory = true;
+    _body.value = TextEditingValue(
+      text: entry.text,
+      selection: entry.selection.isValid
+          ? entry.selection
+          : TextSelection.collapsed(offset: entry.text.length),
+    );
+    _suppressHistory = false;
+  }
+
+  /// Redo handler. Mirror of [_undo].
+  void _redo() {
+    final entry = widget.controller.redoCurrent();
+    if (entry == null) return;
+    _suppressHistory = true;
+    _body.value = TextEditingValue(
+      text: entry.text,
+      selection: entry.selection.isValid
+          ? entry.selection
+          : TextSelection.collapsed(offset: entry.text.length),
+    );
+    _suppressHistory = false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -265,6 +324,12 @@ class _EditorState extends State<_Editor> {
       a(ShortcutAction.selectWord): const SelectWordIntent(),
       a(ShortcutAction.copySelection): CopySelectionTextIntent.copy,
       a(ShortcutAction.pasteSelection): const PasteTextIntent(SelectionChangedCause.keyboard),
+      // Undo/redo: bound explicitly here so they dispatch to the pane's
+      // custom UndoHistory (per-note cache). Flutter's default text editing
+      // shortcuts bind Ctrl+Z / Ctrl+Shift+Z to the TextField's own internal
+      // stack; overriding at this scope gives our intent priority.
+      const SingleActivator(LogicalKeyboardKey.keyZ, control: true): const UndoIntent(),
+      const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true): const RedoIntent(),
       if (widget.controller.mode != EditorMode.preview) ...{
         // Formatting (Ctrl+B/I/U) excluded from customization.
         const SingleActivator(LogicalKeyboardKey.keyB, control: true): const FormatIntent(
@@ -318,7 +383,7 @@ class _EditorState extends State<_Editor> {
         ? TextSelection.collapsed(offset: result.selStart)
         : TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd);
     _body.value = TextEditingValue(text: result.text, selection: next);
-    widget.controller.updateBody(result.text);
+    _recordBodyChange(coalesce: false);
   }
 
   void _applyFormat(FormatIntent intent) {
@@ -339,7 +404,7 @@ class _EditorState extends State<_Editor> {
         ? TextSelection.collapsed(offset: result.caret)
         : TextSelection(baseOffset: result.selStart, extentOffset: result.selEnd);
     _body.value = TextEditingValue(text: result.text, selection: next);
-    widget.controller.updateBody(result.text);
+    _recordBodyChange(coalesce: false);
   }
 
   /// Enter handler: continues markdown lists (story 15); outside lists a
@@ -355,7 +420,7 @@ class _EditorState extends State<_Editor> {
         text: result.text,
         selection: TextSelection.collapsed(offset: result.selStart),
       );
-      widget.controller.updateBody(_body.text);
+      _recordBodyChange(coalesce: false);
       return;
     }
     if (start != end) {
@@ -372,7 +437,7 @@ class _EditorState extends State<_Editor> {
         selection: TextSelection.collapsed(offset: caret + 1),
       );
     }
-    widget.controller.updateBody(_body.text);
+    _recordBodyChange(coalesce: false);
     // Spec story 43: a plain newline whose caret lands at the very end of the
     // document must reveal the blank line before any character is typed. List
     // continuation is excluded (returns above). Post-frame so maxScrollExtent
@@ -521,13 +586,21 @@ class _EditorState extends State<_Editor> {
     } finally {
       _loading = false;
     }
-    // Restore the last caret for this note (Task 7). Uncached notes stay at
-    // the untouched state (markers hidden) with the caret placed on focus;
-    // a restored caret is set explicitly so the reveal rule shows its line.
-    final restored = widget.controller.lastCaretFor(note.path);
-    if (restored != null) {
-      _body.selection = TextSelection.collapsed(offset: restored.clamp(0, _body.text.length));
-    }
+    // Restore the last caret for this note (Task 7). When there is no
+    // cached caret (or the first-load flag is set on a fresh pane mount),
+    // place the caret at offset 0 so long documents open at the top —
+    // EditableText would otherwise default to the end on focus.
+    final skipRestore = _skipCaretRestoreOnNextLoad;
+    _skipCaretRestoreOnNextLoad = false;
+    final restored = skipRestore ? null : widget.controller.lastCaretFor(note.path);
+    final caretOffset = restored != null
+        ? restored.clamp(0, _body.text.length)
+        : 0;
+    _body.value = TextEditingValue(
+      text: _body.text,
+      selection: TextSelection.collapsed(offset: caretOffset),
+      composing: TextRange.empty,
+    );
     if (_bodyScroll.hasClients) _bodyScroll.jumpTo(0);
     if (mounted) {
       setState(() {});
@@ -640,7 +713,7 @@ class _EditorState extends State<_Editor> {
       text: result.text,
       selection: TextSelection.collapsed(offset: result.caret),
     );
-    widget.controller.updateBody(result.text);
+    _recordBodyChange(coalesce: false);
   }
 
   @override
@@ -874,6 +947,18 @@ class _EditorState extends State<_Editor> {
                         IndentIntent: CallbackAction<IndentIntent>(
                           onInvoke: (intent) => _applyIndent(intent),
                         ),
+                        UndoIntent: CallbackAction<UndoIntent>(
+                          onInvoke: (intent) {
+                            _undo();
+                            return null;
+                          },
+                        ),
+                        RedoIntent: CallbackAction<RedoIntent>(
+                          onInvoke: (intent) {
+                            _redo();
+                            return null;
+                          },
+                        ),
                         ContinueListIntent: CallbackAction<ContinueListIntent>(
                           onInvoke: (intent) => _handleEnter(),
                         ),
@@ -934,7 +1019,7 @@ class _EditorState extends State<_Editor> {
                                   controller: _body,
                                   focusNode: _bodyFocus,
                                   scrollController: _bodyScroll,
-                                  onChanged: controller.updateBody,
+                                  onChanged: (_) => _recordBodyChange(),
                                   // Quire-styled cut/copy/paste menu (round 6):
                                   // defer into our own overlay route; the inline
                                   // toolbar slot stays empty. The gate keeps
