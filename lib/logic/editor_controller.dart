@@ -53,6 +53,14 @@ class EditorController extends ChangeNotifier {
   /// Uncached notes start at 0 — the default.
   final Map<String, double> _previewScrollByPath = {};
 
+  /// In-memory record of the last edit-mode scroll offset per note path.
+  /// Written when the user leaves Normal or Markdown; restored on return
+  /// so the editor lands where they left it. Preview and edit caches are
+  /// independent — a Normal → Preview → Normal cycle restores the edit
+  /// scroll, and a Preview → Normal → Preview cycle restores the preview
+  /// scroll. Uncached notes start at 0.
+  final Map<String, double> _editScrollByPath = {};
+
   /// Remembers the current preview scroll offset for the open note.
   /// Called on mode switch away from Preview.
   void savePreviewScroll(double offset) {
@@ -64,6 +72,18 @@ class EditorController extends ChangeNotifier {
   /// The last remembered preview scroll offset for [path], or null when
   /// none is known (an uncached note starts at 0).
   double? previewScrollFor(String path) => _previewScrollByPath[path];
+
+  /// Remembers the current edit-mode scroll offset for the open note.
+  /// Called on mode switch away from Normal or Markdown.
+  void saveEditScroll(double offset) {
+    final path = _current?.path;
+    if (path == null) return;
+    _editScrollByPath[path] = offset;
+  }
+
+  /// The last remembered edit-mode scroll offset for [path], or null when
+  /// none is known (an uncached note starts at 0).
+  double? editScrollFor(String path) => _editScrollByPath[path];
 
   /// Per-note undo/redo history. Each note has an independent stack;
   /// switching notes swaps which stack is active. Histories are in-memory
