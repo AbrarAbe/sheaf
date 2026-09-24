@@ -1154,6 +1154,78 @@ void main() {
     });
   });
 
+  group('undo history across modes (spec story 50)', () {
+    Future<void> openAndPump(WidgetTester tester, {String body = 'start'}) async {
+      final note = await real(() => vaultController.createNote(title: 'Mode', body: body), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+    }
+
+    testWidgets('undo survives a Normal → Preview → Normal round-trip', (tester) async {
+      await openAndPump(tester);
+      await tester.enterText(find.byKey(const Key('editor-body')), 'start!');
+      await tester.pump();
+      expect(editorController.body, 'start!');
+      expect(editorController.currentHistory!.canUndo, isTrue);
+
+      // Switch to Preview (unmounts the body TextField).
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      expect(editorController.mode, EditorMode.preview);
+      expect(find.byKey(const Key('editor-body')), findsNothing);
+
+      // Switch back to Normal (remounts the body TextField).
+      editorController.setMode(EditorMode.normal);
+      await tester.pumpAndSettle();
+      expect(editorController.mode, EditorMode.normal);
+      expect(find.byKey(const Key('editor-body')), findsOneWidget);
+
+      // The undo history is intact — undo returns to 'start', redo to 'start!'.
+      final undone = editorController.undoCurrent();
+      expect(undone, isNotNull);
+      expect(undone!.text, 'start');
+      expect(editorController.body, 'start');
+      final redone = editorController.redoCurrent();
+      expect(redone, isNotNull);
+      expect(redone!.text, 'start!');
+      expect(editorController.body, 'start!');
+      await real(editorController.flush, tester);
+    });
+
+    testWidgets('undo on a note never traverses into another note\'s history', (tester) async {
+      final a = await real(() => vaultController.createNote(title: 'A', body: 'a'), tester);
+      final b = await real(() => vaultController.createNote(title: 'B', body: 'b'), tester);
+      await real(() => editorController.open(a), tester);
+      await pumpEditor(tester);
+      await tester.pump(const Duration(milliseconds: 900));
+      await tester.enterText(find.byKey(const Key('editor-body')), 'a-edit');
+      await tester.pump();
+      expect(editorController.currentHistory!.canUndo, isTrue);
+
+      // Switch to B — B has a seeded baseline but no edits yet.
+      await real(() => editorController.open(b), tester);
+      await tester.pump();
+      expect(editorController.currentHistory!.canUndo, isFalse);
+
+      // Cycle B through modes (Preview → Markdown → Normal).
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.markdown);
+      await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.normal);
+      await tester.pumpAndSettle();
+
+      // Return to A — its history is still intact and undo is scoped to A.
+      await real(() => editorController.open(a), tester);
+      await tester.pumpAndSettle();
+      final undone = editorController.undoCurrent();
+      expect(undone, isNotNull);
+      expect(undone!.text, 'a');
+      expect(editorController.body, 'a');
+      await real(editorController.flush, tester);
+    });
+  });
+
   group('Tab indent / Shift+Tab outdent (spec story 46)', () {
     Future<void> openNormal(
       WidgetTester tester, {
