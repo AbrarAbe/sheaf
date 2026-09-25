@@ -173,6 +173,15 @@ class MarkdownPreview extends StatelessWidget {
           language: '',
         ),
         BlockquoteConfig(sideColor: theme.colorScheme.primary, textColor: onSurface),
+        LinkConfig(
+          style: safeHanken(
+            TextStyle(
+              color: theme.colorScheme.primary,
+              decoration: TextDecoration.underline,
+              decorationColor: theme.colorScheme.primary,
+            ),
+          ),
+        ),
         TableConfig(
           headerStyle: safeHanken(
             TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: onSurface),

@@ -96,6 +96,42 @@ code line
     expect(finder, findsOneWidget);
   });
 
+  testWidgets('links use theme accent color (v0.3.4 Task 7)', (tester) async {
+    // Render with a MaterialTheme that has a distinctive primary color so the
+    // assertion is unambiguous.
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
+
+    const accent = Color(0xFF123456);
+    final theme = ThemeData(
+      colorScheme: const ColorScheme.light().copyWith(primary: accent),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: MarkdownPreview(
+            body: 'see [docs](https://example.com/docs) for more',
+            vaultRoot: tempDir,
+            scrollController: scrollController,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Walk every RichText's TextSpan tree and find the 'docs' span; assert
+    // its color matches the theme's primary color.
+    final linkFinder = find.byWidgetPredicate(
+      (w) => w is RichText && _hasSpanWithStyle(w.text, 'docs', accent),
+    );
+    expect(linkFinder, findsOneWidget, reason: 'link span with theme accent color not found');
+  });
+
   testWidgets('other raw HTML stays literal text', (tester) async {
     await pumpPreview(tester, '<script>alert(1)</script>');
 
@@ -160,6 +196,14 @@ bool _hasUnderlinedText(InlineSpan span, String needle) {
   return false;
 }
 
+bool _hasSpanWithStyle(InlineSpan span, String needle, Color color) {
+  if (span is TextSpan) {
+    if (span.text == needle && span.style?.color == color) return true;
+    return span.children?.any((c) => _hasSpanWithStyle(c, needle, color)) ?? false;
+  }
+  return false;
+}
+
 String _visibleText(WidgetTester tester) {
   final buffer = StringBuffer();
   void walk(InlineSpan span) {
@@ -173,4 +217,5 @@ String _visibleText(WidgetTester tester) {
     walk(rt.text);
   }
   return buffer.toString();
+
 }

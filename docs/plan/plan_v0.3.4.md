@@ -251,25 +251,25 @@ scroll position, and small rendering nits:
   - other tests that reference `attachments/`
   **Estimated scope:** M
 
-- [ ] **Task 7: Link color uses the theme accent**
+- [x] **Task 7: Link color uses the theme accent**
   **Description:** Markdown links in the preview currently render with
   `markdown_widget`'s default color. Add a `LinkConfig` to the
   `MarkdownConfig` that wires links to `theme.colorScheme.primary`,
   matching the rest of the preview's Quire theming.
   **Acceptance criteria:**
-  - [ ] `MarkdownPreview._generator()`'s `MarkdownConfig` adds a
+  - [x] `MarkdownPreview._generator()`'s `MarkdownConfig` adds a
         `LinkConfig` with `style: safeHanken(TextStyle(color: onSurface,
         decoration: TextDecoration.underline, decorationColor:
         colorScheme.primary))` (or a variant using
         `colorScheme.primary` directly).
-  - [ ] External links (`http://`, `https://`) and internal links
+  - [x] External links (`http://`, `https://`) and internal links
         (`[[note]]`-style, if rendered) use the accent color.
-  - [ ] Hover/click behavior is unchanged (existing `link.dart` handles
+  - [x] Hover/click behavior is unchanged (existing `link.dart` handles
         it).
   **Verification:**
-  - [ ] `test/ui/editor/markdown_preview_test.dart` — assert the link's
+  - [x] `test/ui/editor/markdown_preview_test.dart` — assert the link's
         rendered `TextStyle.color` equals `colorScheme.primary`.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/ui/editor/markdown_preview.dart`
