@@ -1305,6 +1305,71 @@ void main() {
     });
   });
 
+  group('edit scroll cache per note (spec story 52)', () {
+    String longBody() => List.generate(200, (i) => 'paragraph number $i').join('\n\n');
+
+    ScrollPosition editPosition(WidgetTester tester) {
+      final finder = find.descendant(
+        of: find.byKey(const Key('editor-body')),
+        matching: find.byType(Scrollable),
+      );
+      expect(finder, findsOneWidget);
+      return tester.state<ScrollableState>(finder).position;
+    }
+
+    testWidgets(
+      'edit scroll survives a Normal \u2192 Preview \u2192 Normal round-trip',
+      (tester) async {
+        final note = await real(
+          () => vaultController.createNote(title: 'Edit', body: longBody()),
+          tester,
+        );
+        await real(() => editorController.open(note), tester);
+        await pumpEditor(tester);
+
+        // Scroll partway down in Normal mode.
+        final pos = editPosition(tester);
+        expect(pos.maxScrollExtent, greaterThan(0));
+        const target = 32.0;
+        pos.jumpTo(target);
+        await tester.pump();
+        expect(pos.pixels, closeTo(target, 0.5));
+
+        // Switch to Preview and back \u2014 the edit offset should be restored.
+        editorController.setMode(EditorMode.preview);
+        await tester.pumpAndSettle();
+        editorController.setMode(EditorMode.normal);
+        await tester.pumpAndSettle();
+
+        expect(editPosition(tester).pixels, closeTo(target, 1.0));
+      },
+    );
+
+    testWidgets('edit scroll cache is per-note, not shared', (tester) async {
+      final a = await real(
+        () => vaultController.createNote(title: 'A', body: longBody()),
+        tester,
+      );
+      final b = await real(
+        () => vaultController.createNote(title: 'B', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(a), tester);
+      await pumpEditor(tester);
+
+      final posA = editPosition(tester);
+      expect(posA.maxScrollExtent, greaterThan(0));
+      posA.jumpTo(64.0);
+      await tester.pump();
+
+      // Open B \u2014 should start at 0 (uncached).
+      await real(() => editorController.open(b), tester);
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(editPosition(tester).pixels, closeTo(0, 1.0));
+    });
+  });
+
   group('Tab indent / Shift+Tab outdent (spec story 46)', () {
     Future<void> openNormal(
       WidgetTester tester, {

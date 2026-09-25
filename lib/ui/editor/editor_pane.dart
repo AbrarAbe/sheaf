@@ -184,11 +184,7 @@ class _EditorState extends State<_Editor> {
   /// own undo step.
   void _recordBodyChange({bool coalesce = true}) {
     if (_suppressHistory) return;
-    widget.controller.updateBody(
-      _body.value.text,
-      selection: _body.selection,
-      coalesce: coalesce,
-    );
+    widget.controller.updateBody(_body.value.text, selection: _body.selection, coalesce: coalesce);
   }
 
   /// Undo handler. Restores the previous text and caret position; suppresses
@@ -248,18 +244,47 @@ class _EditorState extends State<_Editor> {
     }
   }
 
+  /// Post-frame chain that re-asserts a scroll target each frame until
+  /// the chain exhausts. Preview mode needs only one hop; edit mode needs
+  /// a chain to win a race against EditableText's showCaretOnScreen
+  /// animation that fires on focus. The target is snapshotted at chain
+  /// start so later cache writes (e.g. the EditableText animation
+  /// re-firing scroll listeners after we bail) don't corrupt the target.
+  void _scheduleScrollRestore(String path, double target, int attemptsLeft) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_bodyScroll.hasClients || attemptsLeft <= 0) return;
+      // If the note changed mid-chain (user opened a different note
+      // while a prior note's restore was still re-asserting), bail —
+      // don't apply a stale target to the new ScrollPosition.
+      if (widget.controller.current?.path != path) return;
+      final pos = _bodyScroll.position;
+      if (pos.pixels != target) pos.jumpTo(target);
+      _scheduleScrollRestore(path, target, attemptsLeft - 1);
+    });
+  }
+
   void _syncFromController() {
     if (_loadedPath != widget.controller.current?.path) _load();
     if (_syncedMode != widget.controller.mode) {
       final fromPreview = _syncedMode == EditorMode.preview;
+      final fromEditable = _syncedMode == EditorMode.normal || _syncedMode == EditorMode.markdown;
       final toPreview = widget.controller.mode == EditorMode.preview;
+      final toEditable =
+          widget.controller.mode == EditorMode.normal ||
+          widget.controller.mode == EditorMode.markdown;
       final path = widget.controller.current?.path;
-      // Spec story 51: capture the live preview scroll offset BEFORE the
-      // rebuild unmounts the ScrollView — after that the position object is
-      // detached from _bodyScroll and forcePixels (used by jumpTo) doesn't
-      // fire scroll listeners, so we'd never see it via _onBodyScroll.
-      if (fromPreview && !toPreview && path != null && _bodyScroll.hasClients) {
-        widget.controller.savePreviewScroll(_bodyScroll.offset);
+      // Spec story 51/52: capture the live scroll offset BEFORE the
+      // rebuild unmounts the ScrollView — after that the position object
+      // is detached from _bodyScroll and forcePixels (used by jumpTo)
+      // doesn't fire scroll listeners, so we'd never see it via
+      // _onBodyScroll. Cache into preview (Task 3) or edit (Task 4)
+      // depending on which surface was live.
+      if (path != null && _bodyScroll.hasClients) {
+        if (fromPreview && !toPreview) {
+          widget.controller.savePreviewScroll(_bodyScroll.offset);
+        } else if (fromEditable && !toEditable) {
+          widget.controller.saveEditScroll(_bodyScroll.offset);
+        }
       }
       _syncedMode = widget.controller.mode;
       _body.highlight = _syncedMode == EditorMode.normal;
@@ -277,18 +302,25 @@ class _EditorState extends State<_Editor> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _previewFocus.requestFocus();
         });
-        // Spec story 51: restore the preview scroll offset for this note,
-        // if one was cached. Post-frame because the ScrollView isn't
-        // attached during the mode-switch rebuild; uncached notes
-        // (previewScrollFor returns null) start at 0 as before.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_bodyScroll.hasClients) return;
-          final p = widget.controller.current?.path;
-          if (p == null) return;
-          final cached = widget.controller.previewScrollFor(p);
-          if (cached == null || cached == _bodyScroll.offset) return;
-          _bodyScroll.jumpTo(cached);
-        });
+      }
+      // Spec story 51/52/53: restore the cached scroll offset. Preview
+      // and edit caches are independent. Preview uses a single hop;
+      // edit mode uses a short retry window because EditableText's
+      // showCaretOnScreen animation fires after our callback and
+      // animates the offset back to the caret's rect. The chain holds
+      // the offset pinned across the animation's ~100ms lifetime.
+      // Story 53: entering Preview with no cached preview offset
+      // (fresh note / first time in preview) estimates the caret's
+      // preview position so the visible text is near the caret's
+      // line. Cached preview offset (Task 3) wins over this estimate.
+      final restoredPath = widget.controller.current?.path;
+      if (restoredPath != null) {
+        final cached = _syncedMode == EditorMode.preview
+            ? widget.controller.previewScrollFor(restoredPath)
+            : widget.controller.editScrollFor(restoredPath);
+        if (cached != null) {
+          _scheduleScrollRestore(restoredPath, cached, _syncedMode == EditorMode.preview ? 1 : 12);
+        }
       }
     }
   }
@@ -305,10 +337,17 @@ class _EditorState extends State<_Editor> {
   /// `_syncFromController` captures the offset on leaving preview for
   /// programmatic jumps.
   void _onBodyScroll() {
-    if (widget.controller.mode != EditorMode.preview) return;
+    final mode = widget.controller.mode;
+    if (mode != EditorMode.preview && mode != EditorMode.normal && mode != EditorMode.markdown) {
+      return;
+    }
     final path = widget.controller.current?.path;
     if (path == null) return;
-    widget.controller.savePreviewScroll(_bodyScroll.offset);
+    if (mode == EditorMode.preview) {
+      widget.controller.savePreviewScroll(_bodyScroll.offset);
+    } else {
+      widget.controller.saveEditScroll(_bodyScroll.offset);
+    }
   }
 
   /// Losing focus commits the pending rename — clicking the body, Tab out, or
@@ -366,7 +405,8 @@ class _EditorState extends State<_Editor> {
       // shortcuts bind Ctrl+Z / Ctrl+Shift+Z to the TextField's own internal
       // stack; overriding at this scope gives our intent priority.
       const SingleActivator(LogicalKeyboardKey.keyZ, control: true): const UndoIntent(),
-      const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true): const RedoIntent(),
+      const SingleActivator(LogicalKeyboardKey.keyZ, control: true, shift: true):
+          const RedoIntent(),
       if (widget.controller.mode != EditorMode.preview) ...{
         // Formatting (Ctrl+B/I/U) excluded from customization.
         const SingleActivator(LogicalKeyboardKey.keyB, control: true): const FormatIntent(
@@ -630,9 +670,7 @@ class _EditorState extends State<_Editor> {
     final skipRestore = _skipCaretRestoreOnNextLoad;
     _skipCaretRestoreOnNextLoad = false;
     final restored = skipRestore ? null : widget.controller.lastCaretFor(note.path);
-    final caretOffset = restored != null
-        ? restored.clamp(0, _body.text.length)
-        : 0;
+    final caretOffset = restored != null ? restored.clamp(0, _body.text.length) : 0;
     _body.value = TextEditingValue(
       text: _body.text,
       selection: TextSelection.collapsed(offset: caretOffset),
@@ -647,7 +685,8 @@ class _EditorState extends State<_Editor> {
       // sticky intent restores the caret when the user returns to an edit mode.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (widget.controller.mode == EditorMode.preview) {
+        final openMode = widget.controller.mode;
+        if (openMode == EditorMode.preview) {
           _previewFocus.requestFocus();
           // Spec story 51: restore the preview scroll offset for the
           // note that just opened, if one was cached. Uncached notes
@@ -657,6 +696,10 @@ class _EditorState extends State<_Editor> {
         } else {
           _wantBodyFocus = true;
           _bodyFocus.requestFocus();
+          // Spec story 52: restore the edit scroll offset for the note
+          // that just opened, if one was cached.
+          final cached = widget.controller.editScrollFor(note.path);
+          if (cached != null && cached > 0) _bodyScroll.jumpTo(cached);
         }
       });
     }
