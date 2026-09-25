@@ -220,45 +220,7 @@ scroll position, and small rendering nits:
 
 ### Phase 3 — List wrap alignment
 
-- [ ] **Task 6: Wrapped list text aligns like preview mode**
-  **Description:** Make wrapped text in list items align with the first
-  line of the list item's content (a hanging indent), so the marker
-  doesn't visually indent the wrapped lines. Applies to both the editor
-  (Normal/Markdown modes) and the preview.
-  **NOTE: Confirmed at review.** The user wants interpretation (a): a
-  hanging indent — wrapped list text aligns with the first character of
-  the item's *content*, not the marker. This matches Obsidian/Typora
-  behavior and what the preview already renders.
-  **Acceptance criteria:**
-  - [ ] Editor (Normal and Markdown modes): wrapped list text aligns with
-        the first character of the item's content (after the marker), not
-        with the marker itself.
-  - [ ] Preview: verify the current `markdown_widget` `ListConfig`
-        already renders wrapped text with a hanging indent. If it
-        doesn't, add a custom `ListConfig` with `marker` positioning that
-        reserves a fixed-width column for the marker and indents content
-        to the marker's right edge.
-  - [ ] Multi-line selection still works in both modes; caret navigation
-        through wrapped lines is correct.
-  - [ ] No regression to list continuation (`Enter` at end of item
-        inserts a new item with the same marker).
-  **Verification:**
-  - [ ] Widget test: render a list item with a long wrapped line, assert
-        the wrapped continuation's left edge matches the first line's
-        content left edge.
-  - [ ] `flutter analyze` clean; `flutter test` green.
-  **Dependencies:** None
-  **Files likely touched:**
-  - `lib/ui/editor/markdown_preview.dart` (only if preview needs a fix)
-  - `lib/ui/editor/editor_pane.dart`
-  - `lib/ui/editor/highlighting_controller.dart`
-  - `test/ui/editor/editor_pane_test.dart`
-  - `test/ui/editor/markdown_preview_test.dart` (if preview change)
-  **Estimated scope:** M
-
-### Phase 4 — Vault housekeeping
-
-- [ ] **Task 7: Hide the attachments directory as `.attachments`**
+- [ ] **Task 6: Hide the attachments directory as `.attachments`**
   **Description:** Rename the vault attachments directory from `attachments`
   to `.attachments` so it doesn't appear in file browsers, OS searches, or
   `ls` output. Existing `attachments/` directories are migrated on first
@@ -289,7 +251,7 @@ scroll position, and small rendering nits:
   - other tests that reference `attachments/`
   **Estimated scope:** M
 
-- [ ] **Task 8: Link color uses the theme accent**
+- [ ] **Task 7: Link color uses the theme accent**
   **Description:** Markdown links in the preview currently render with
   `markdown_widget`'s default color. Add a `LinkConfig` to the
   `MarkdownConfig` that wires links to `theme.colorScheme.primary`,
@@ -343,7 +305,14 @@ scroll position, and small rendering nits:
   settings flag, no user prompt.
 - **Link color** — `colorScheme.primary` with underline; matches the rest
   of the preview's accent color usage.
-- **Task 6 semantics** — confirmed at review: interpretation (a), a
+- **Deferred list wrap alignment to v0.3.5** — preview already
+  renders a hanging indent via `Row(marker SizedBox, Flexible content)`.
+  Editor uses raw text markers in `EditableText` where wrapped lines
+  inherit the left edge; a proper hanging indent needs a custom
+  `LineBoxPainter` or paragraph-level `TextPainter` override that would
+  risk caret math, selection, and undo. Revisit in v0.3.5 with a proper
+  design.
+- **Deferred task semantics (list wrap)** — confirmed at review: interpretation (a), a
   hanging indent. Wrapped list text aligns with the first character of
   the item's content, not the marker. Matches Obsidian/Typora behavior
   and what the preview already renders.
