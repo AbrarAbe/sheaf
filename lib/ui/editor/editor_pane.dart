@@ -68,7 +68,7 @@ class EditorPane extends StatelessWidget {
   /// Null while no vault is open; renders the placeholder.
   final EditorController? controller;
 
-  /// Injectable copier into `<vault>/attachments/`; defaults to the
+  /// Injectable copier into `<vault>/.attachments/`; defaults to the
   /// controller's repository call. Tests inject a fake to stay zone-safe.
   final Future<String> Function(File file)? importImage;
 

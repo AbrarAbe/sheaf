@@ -177,7 +177,7 @@ void main() {
   });
 
   group('attachments', () {
-    test('importAttachment copies into attachments/ with dedupe', () async {
+    test('importAttachment copies into .attachments/ with dedupe', () async {
       final src = File('${tempDir.path}/_src/upload.png')
         ..createSync(recursive: true)
         ..writeAsBytesSync([1, 2, 3]);
@@ -185,9 +185,47 @@ void main() {
       final rel1 = await vault.importAttachment(src);
       final rel2 = await vault.importAttachment(src);
 
-      expect(rel1, 'attachments/upload.png');
-      expect(rel2, 'attachments/upload-2.png');
+      expect(rel1, '.attachments/upload.png');
+      expect(rel2, '.attachments/upload-2.png');
       expect(vault.fileOf(rel1).readAsBytesSync(), [1, 2, 3]);
+    });
+
+    test('renames legacy attachments/ to .attachments/ on construction', () async {
+      // Simulate an older vault that has attachments/ but no .attachments/.
+      final legacy = Directory('${tempDir.path}/attachments')..createSync();
+      File('${legacy.path}/old.png').writeAsBytesSync([9, 9, 9]);
+
+      final migrated = VaultRepository(root: tempDir);
+
+      expect(Directory('${tempDir.path}/.attachments').existsSync(), isTrue);
+      expect(Directory('${tempDir.path}/attachments').existsSync(), isFalse);
+      expect(migrated.fileOf('.attachments/old.png').readAsBytesSync(), [9, 9, 9]);
+    });
+
+    test('does not overwrite an existing .attachments/ directory', () async {
+      // If .attachments/ already exists, the migration is a no-op: the
+      // legacy attachments/ directory stays where it was (its contents
+      // are NOT merged into .attachments/ — that would clobber fresh
+      // files).
+      final legacy = Directory('${tempDir.path}/attachments')..createSync();
+      File('${legacy.path}/legacy.png').writeAsBytesSync([1]);
+
+      final current = Directory('${tempDir.path}/.attachments')..createSync();
+      File('${current.path}/fresh.png').writeAsBytesSync([2]);
+
+      final repo = VaultRepository(root: tempDir);
+
+      expect(repo.fileOf('.attachments/fresh.png').existsSync(), isTrue);
+      // Legacy content stays put — not merged, not deleted.
+      expect(File('${tempDir.path}/attachments/legacy.png').existsSync(), isTrue);
+      expect(Directory('${tempDir.path}/attachments').existsSync(), isTrue);
+      // New imports still go into .attachments/ (the current directory).
+      final src = File('${tempDir.path}/_src/new.png')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync([3]);
+      final rel = await repo.importAttachment(src);
+      expect(rel, '.attachments/new.png');
+      expect(repo.fileOf(rel).readAsBytesSync(), [3]);
     });
   });
 

@@ -220,28 +220,28 @@ scroll position, and small rendering nits:
 
 ### Phase 3 — List wrap alignment
 
-- [ ] **Task 6: Hide the attachments directory as `.attachments`**
+- [x] **Task 6: Hide the attachments directory as `.attachments`**
   **Description:** Rename the vault attachments directory from `attachments`
   to `.attachments` so it doesn't appear in file browsers, OS searches, or
   `ls` output. Existing `attachments/` directories are migrated on first
   vault open.
   **Acceptance criteria:**
-  - [ ] `VaultRepository.attachmentsDirName` is `.attachments`.
-  - [ ] `importAttachment()` writes to `.attachments/` and returns
+  - [x] `VaultRepository.attachmentsDirName` is `.attachments`.
+  - [x] `importAttachment()` writes to `.attachments/` and returns
         `.attachments/<name>` as the vault-relative path.
-  - [ ] `VaultRepository.attachmentsDir` getter returns the `.attachments`
+  - [x] `VaultRepository.attachmentsDir` getter returns the `.attachments`
         directory.
-  - [ ] On `VaultRepository` init, if `attachments/` exists and
+  - [x] On `VaultRepository` init, if `attachments/` exists and
         `.attachments/` does not, rename `attachments/` to `.attachments/`
         (non-destructive; abort silently on failure).
-  - [ ] `MarkdownPreview._image` and any other path resolution uses the
+  - [x] `MarkdownPreview._image` and any other path resolution uses the
         `.attachments` prefix.
-  - [ ] All tests that hard-code `attachments/` are updated.
+  - [x] All tests that hard-code `attachments/` are updated.
   **Verification:**
-  - [ ] `test/data/vault_repository_test.dart` — verify the directory is
+  - [x] `test/data/vault_repository_test.dart` — verify the directory is
         created as `.attachments/`, imports land in `.attachments/`,
         and the migration path works when `attachments/` already exists.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/data/vault_repository.dart`

@@ -117,7 +117,7 @@ class EditorController extends ChangeNotifier {
   /// Vault directory, for resolving vault-relative image links.
   Directory get vaultRoot => _vault.root;
 
-  /// Copies [source] into `<vault>/attachments/` and returns the
+  /// Copies [source] into `<vault>/.attachments/` and returns the
   /// vault-relative path of the copy.
   Future<String> importAttachment(File source) => _vault.importAttachment(source);
 

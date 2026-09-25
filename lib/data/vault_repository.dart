@@ -48,10 +48,13 @@ class _TrashIndex {
 /// user-hidden folders) never appear in listings, and path arguments may not
 /// escape the vault root.
 class VaultRepository {
-  VaultRepository({required Directory root}) : root = _absolute(root);
+  VaultRepository({required Directory root}) : root = _absolute(root) {
+    _migrateAttachmentsDir();
+  }
 
   static const trashDirName = '.trash';
-  static const attachmentsDirName = 'attachments';
+  static const attachmentsDirName = '.attachments';
+  static const _legacyAttachmentsDirName = 'attachments';
   static const metaDirName = '.sheaf';
   static const _indexFileName = 'index.json';
   static const _metaFileName = 'meta.json';
@@ -63,6 +66,24 @@ class VaultRepository {
   File get _indexFile => File(p.join(_trash.path, _indexFileName));
   Directory get _metaDir => Directory(p.join(root.path, metaDirName));
   File get _metaFile => File(p.join(_metaDir.path, _metaFileName));
+
+  /// Spec story 54: if the vault contains a legacy `attachments/` directory
+  /// and no `.attachments/` yet, rename it in place. Non-destructive — on
+  /// any failure the legacy directory stays put and callers continue to
+  /// create a fresh `.attachments/`.
+  void _migrateAttachmentsDir() {
+    final legacy = Directory(p.join(root.path, _legacyAttachmentsDirName));
+    final current = Directory(p.join(root.path, attachmentsDirName));
+    try {
+      if (legacy.existsSync() && !current.existsSync()) {
+        legacy.renameSync(current.path);
+      }
+    } catch (_) {
+      // Silent fallback: the fresh `.attachments/` will be created on next
+      // attachment import; any user content already in `attachments/`
+      // remains readable via its old path.
+    }
+  }
 
   // ---------- notes ----------
 
@@ -241,7 +262,7 @@ class VaultRepository {
 
   Directory get attachmentsDir => Directory(p.join(root.path, attachmentsDirName));
 
-  /// Copies [source] into `<vault>/attachments/`, deduping names.
+  /// Copies [source] into `<vault>/.attachments/`, deduping names.
   /// Returns the vault-relative path of the copy.
   Future<String> importAttachment(File source) async {
     await attachmentsDir.create(recursive: true);
@@ -249,12 +270,12 @@ class VaultRepository {
     final base = slugify(p.basenameWithoutExtension(source.path));
     var candidate = '$base$ext';
     var n = 2;
-    while (fileOf('attachments/$candidate').existsSync()) {
+    while (fileOf('$attachmentsDirName/$candidate').existsSync()) {
       candidate = '$base-${n++}$ext';
     }
-    final target = fileOf('attachments/$candidate');
+    final target = fileOf('$attachmentsDirName/$candidate');
     await source.copy(target.path);
-    return 'attachments/$candidate';
+    return '$attachmentsDirName/$candidate';
   }
 
   // ---------- helpers ----------
