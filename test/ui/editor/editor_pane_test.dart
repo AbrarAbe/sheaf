@@ -16,6 +16,7 @@ import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/editor/editor_pane.dart';
 import 'package:sheaf/ui/editor/markdown_preview.dart';
 import 'package:sheaf/ui/editor/widgets/tag_chip_bar.dart';
+import 'package:sheaf/ui/editor/widgets/go_to_top_fab.dart';
 
 /// Widget tests must route every real-I/O call through [real] because
 /// unwrapped awaits deadlock inside the tester's FakeAsync zone.
@@ -1367,6 +1368,50 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
       expect(editPosition(tester).pixels, closeTo(0, 1.0));
+    });
+  });
+
+  group('GoToTopFab appears in preview (spec story 54)', () {
+    String longBody() => List.generate(200, (i) => 'paragraph number $i').join('\n\n');
+
+    testWidgets('FAB appears past threshold, tap returns to top', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Fab', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+
+      // Scroll past the 50px threshold via the shared _bodyScroll.
+      final sc = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(Scrollbar),
+          matching: find.byType(Scrollable),
+        ).first,
+      ).position;
+      sc.jumpTo(120.0);
+      await tester.pump();
+
+      // Pump enough frames for the fade-in animation to complete.
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      final fabFinder = find.byType(GoToTopFab);
+      expect(fabFinder, findsOneWidget);
+
+      // Tap the icon inside the FAB (a stable hit target).
+      final iconFinder = find.descendant(of: fabFinder, matching: find.byIcon(Icons.arrow_upward_rounded));
+      expect(iconFinder, findsOneWidget);
+      await tester.tap(iconFinder);
+      // Pump enough frames for animateTo(0, 300ms) to finish.
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(sc.pixels, closeTo(0, 1.0));
     });
   });
 

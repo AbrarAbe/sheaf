@@ -27,6 +27,7 @@ import 'highlighting_controller.dart';
 import 'intents.dart';
 import 'markdown_preview.dart';
 import 'widgets/find_bar.dart';
+import 'widgets/go_to_top_fab.dart';
 import 'widgets/mode_switch.dart';
 import 'widgets/placeholder.dart';
 import 'widgets/status_footer.dart';
@@ -978,49 +979,55 @@ class _EditorState extends State<_Editor> {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: widget.focusMode ? 740 : double.infinity),
                 child: switch (controller.mode) {
-                  EditorMode.preview => Builder(
-                    builder: (context) {
-                      final overrides = widget.settings?.shortcutOverrides ?? const {};
-                      final cycleActivator = activatorFor(
-                        ShortcutAction.cycleEditorMode,
-                        overrides,
-                      );
-                      return Focus(
-                        focusNode: _previewFocus,
-                        autofocus: true,
-                        child: Shortcuts(
-                          shortcuts: {cycleActivator: const CycleEditorModeIntent()},
-                          child: Actions(
-                            actions: {
-                              CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
-                                onInvoke: (intent) {
-                                  widget.controller.cycleMode();
-                                  return null;
+                  EditorMode.preview => Stack(
+                    alignment: Alignment.topLeft,
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          final overrides = widget.settings?.shortcutOverrides ?? const {};
+                          final cycleActivator = activatorFor(
+                            ShortcutAction.cycleEditorMode,
+                            overrides,
+                          );
+                          return Focus(
+                            focusNode: _previewFocus,
+                            autofocus: true,
+                            child: Shortcuts(
+                              shortcuts: {cycleActivator: const CycleEditorModeIntent()},
+                              child: Actions(
+                                actions: {
+                                  CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
+                                    onInvoke: (intent) {
+                                      widget.controller.cycleMode();
+                                      return null;
+                                    },
+                                  ),
                                 },
-                              ),
-                            },
-                            child: ScrollConfiguration(
-                              behavior: const _NoScrollbarBehavior(),
-                              child: HoverScrollbar(
-                                child: Scrollbar(
-                                  interactive: true,
-                                  controller: _bodyScroll,
-                                  child: MarkdownPreview(
-                                    scrollController: _bodyScroll,
-                                    body: _body.text,
-                                    vaultRoot: controller.vaultRoot,
-                                    baseFontSize: widget.baseFontSize ?? 16,
-                                    previewPadding: widget.focusMode
-                                        ? const EdgeInsets.fromLTRB(0, 8, 24, 10)
-                                        : const EdgeInsets.fromLTRB(24, 8, 24, 10),
+                                child: ScrollConfiguration(
+                                  behavior: const _NoScrollbarBehavior(),
+                                  child: HoverScrollbar(
+                                    child: Scrollbar(
+                                      interactive: true,
+                                      controller: _bodyScroll,
+                                      child: MarkdownPreview(
+                                        scrollController: _bodyScroll,
+                                        body: _body.text,
+                                        vaultRoot: controller.vaultRoot,
+                                        baseFontSize: widget.baseFontSize ?? 16,
+                                        previewPadding: widget.focusMode
+                                            ? const EdgeInsets.fromLTRB(0, 8, 24, 10)
+                                            : const EdgeInsets.fromLTRB(24, 8, 24, 10),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                          );
+                        },
+                      ),
+                      GoToTopFab(scrollController: _bodyScroll),
+                    ],
                   ),
                   _ => Shortcuts(
                     shortcuts: _editShortcuts(),
