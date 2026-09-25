@@ -158,7 +158,39 @@ scroll position, and small rendering nits:
   - `test/ui/editor/editor_pane_test.dart`
   **Estimated scope:** M
 
-- [ ] **Task 4: Add "go to top" FAB to the preview**
+
+- [x] **Task 4: Cache edit scroll offset per note across mode switches**
+  **Description:** The shared `_bodyScroll` controller is also dropped on
+  mode switch, so returning to Normal/Markdown after Preview snaps to the
+  top. Cache the edit-surface scroll offset per note in
+  `EditorController._editScrollByPath`; restore it on mode return. Same
+  shape as Task 3, keyed by note path. Edit uses a post-frame retry chain
+  (not a single `jumpTo`) to hold the offset pinned across the ~100 ms
+  EditableText `showCaretOnScreen` animation that fires on focus.
+  **Acceptance criteria:**
+  - [x] `EditorController` gains an
+        `_editScrollByPath: Map<String, double>` field.
+  - [x] `saveEditScroll(offset)` / `editScrollFor(path)` accessed by
+        `_EditorState` on mode switch and note load.
+  - [x] On mode switch away from an editable mode (Normal/Markdown),
+        capture the current offset and write to cache.
+  - [x] On mode switch to an editable mode, restore via post-frame retry
+        chain (`addPostFrameCallback` x N) so the target survives
+        EditableText's caret-on-screen animation.
+  - [x] Uncached notes start at 0 (no jump).
+  **Verification:**
+  - [x] Widget test: scroll Normal, switch to Preview, switch back to
+        Normal, assert the offset is restored.
+  - [x] Widget test: opening note B does not inherit note A's edit cache.
+  - [x] `flutter analyze` clean; `flutter test` green.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/logic/editor_controller.dart`
+  - `lib/ui/editor/editor_pane.dart`
+  - `test/ui/editor/editor_pane_test.dart`
+  **Estimated scope:** M
+
+- [ ] **Task 5: Add "go to top" FAB to the preview**
   **Description:** Overlay a small floating action button in the
   preview pane's bottom-right corner. Arrow-up icon. Appears (with a
   short fade-in) when the user has scrolled down past a threshold;
@@ -188,7 +220,7 @@ scroll position, and small rendering nits:
 
 ### Phase 3 — List wrap alignment
 
-- [ ] **Task 5: Wrapped list text aligns like preview mode**
+- [ ] **Task 6: Wrapped list text aligns like preview mode**
   **Description:** Make wrapped text in list items align with the first
   line of the list item's content (a hanging indent), so the marker
   doesn't visually indent the wrapped lines. Applies to both the editor
@@ -226,7 +258,7 @@ scroll position, and small rendering nits:
 
 ### Phase 4 — Vault housekeeping
 
-- [ ] **Task 6: Hide the attachments directory as `.attachments`**
+- [ ] **Task 7: Hide the attachments directory as `.attachments`**
   **Description:** Rename the vault attachments directory from `attachments`
   to `.attachments` so it doesn't appear in file browsers, OS searches, or
   `ls` output. Existing `attachments/` directories are migrated on first
@@ -257,7 +289,7 @@ scroll position, and small rendering nits:
   - other tests that reference `attachments/`
   **Estimated scope:** M
 
-- [ ] **Task 7: Link color uses the theme accent**
+- [ ] **Task 8: Link color uses the theme accent**
   **Description:** Markdown links in the preview currently render with
   `markdown_widget`'s default color. Add a `LinkConfig` to the
   `MarkdownConfig` that wires links to `theme.colorScheme.primary`,
@@ -311,7 +343,7 @@ scroll position, and small rendering nits:
   settings flag, no user prompt.
 - **Link color** — `colorScheme.primary` with underline; matches the rest
   of the preview's accent color usage.
-- **Task 5 semantics** — confirmed at review: interpretation (a), a
+- **Task 6 semantics** — confirmed at review: interpretation (a), a
   hanging indent. Wrapped list text aligns with the first character of
   the item's content, not the marker. Matches Obsidian/Typora behavior
   and what the preview already renders.
