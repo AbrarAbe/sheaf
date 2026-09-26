@@ -190,27 +190,27 @@ scroll position, and small rendering nits:
   - `test/ui/editor/editor_pane_test.dart`
   **Estimated scope:** M
 
-- [ ] **Task 5: Add "go to top" FAB to the preview**
+- [x] **Task 5: Add "go to top" FAB to the preview**
   **Description:** Overlay a small floating action button in the
   preview pane's bottom-right corner. Arrow-up icon. Appears (with a
   short fade-in) when the user has scrolled down past a threshold;
   disappears when they scroll back near the top. Tapping jumps to the
   top.
   **Acceptance criteria:**
-  - [ ] New `GoToTopFab` widget in
+  - [x] New `GoToTopFab` widget in
         `lib/ui/editor/widgets/go_to_top_fab.dart`.
-  - [ ] `MarkdownPreview` (or its parent in `editor_pane.dart`) renders
+  - [x] `MarkdownPreview` (or its parent in `editor_pane.dart`) renders
         the FAB overlay when scrolled past the threshold (50 px).
-  - [ ] FAB uses `Icon(Icons.arrow_up_rounded)` with the Quire theme's
+  - [x] FAB uses `Icon(Icons.arrow_up_rounded)` with the Quire theme's
         `primaryContainer` background.
-  - [ ] Opacity animates 0 → 1 over 200 ms on appear/disappear.
-  - [ ] Tap calls `scrollController.animateTo(0, duration: 300ms,
+  - [x] Opacity animates 0 → 1 over 200 ms on appear/disappear.
+  - [x] Tap calls `scrollController.animateTo(0, duration: 300ms,
         curve: Curves.easeOut)`.
-  - [ ] FAB is `MaterialApp`-scoped so it doesn't get clipped.
+  - [x] FAB is `MaterialApp`-scoped so it doesn't get clipped.
   **Verification:**
-  - [ ] Widget test: scroll the preview, assert FAB is visible; tap it,
+  - [x] Widget test: scroll the preview, assert FAB is visible; tap it,
         assert offset is 0; scroll to top, assert FAB disappears.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task 3 (uses the same `_bodyScroll` controller)
   **Files likely touched:**
   - `lib/ui/editor/widgets/go_to_top_fab.dart` (new)

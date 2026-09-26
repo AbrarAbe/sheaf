@@ -1413,6 +1413,43 @@ void main() {
 
       expect(sc.pixels, closeTo(0, 1.0));
     });
+
+    testWidgets('FAB does not crash when the preview mounts with a cached scroll offset',
+        (tester) async {
+      // Reproduces the real-app cold start: open a note that already has a
+      // cached preview offset, enter preview, the FAB must not read
+      // scrollController.offset before the ScrollView has attached its
+      // ScrollPosition.
+      final note = await real(
+        () => vaultController.createNote(title: 'FabCold', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      // Prime the preview cache by switching to preview, scrolling, and
+      // switching away — then reopen the note from scratch so the
+      // restore path runs on first preview mount.
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      final pos = tester.state<ScrollableState>(
+        find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
+      ).position;
+      pos.jumpTo(200.0);
+      await tester.pump();
+      editorController.setMode(EditorMode.normal);
+      await tester.pumpAndSettle();
+
+      // Reopen the note in preview mode — the restore jump and the FAB
+      // constructor both run in the same frame.
+      await real(() => editorController.open(note), tester);
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+
+      // If the FAB had asserted on scrollController.offset before attach,
+      // this would have thrown. Reaching this line means it built cleanly.
+      expect(find.byType(GoToTopFab), findsOneWidget);
+    });
   });
 
   group('Tab indent / Shift+Tab outdent (spec story 46)', () {
