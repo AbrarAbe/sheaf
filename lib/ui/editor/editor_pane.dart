@@ -785,14 +785,20 @@ class _EditorState extends State<_Editor> {
   }
 
   /// Copies the image into the vault and inserts an Obsidian-style link at
-  /// the cursor (or end of the body).
+  /// the cursor (or end of the body). The vault-relative path is URL-encoded
+  /// so filenames with whitespace (e.g. `My Photo.png`) round-trip through
+  /// the markdown parser — `![x](attachments/My Photo.png)` is rejected
+  /// because spaces aren't valid in markdown URLs, but
+  /// `![x](attachments/My%20Photo.png)` is. The preview resolver decodes
+  /// the URL back to a filesystem path before lookup.
   Future<void> _insertImage(File file) async {
     final doImport = widget.importImage ?? widget.controller.importAttachment;
     final rel = await doImport(file);
+    final encoded = Uri.encodeFull(rel);
     final name = p.basenameWithoutExtension(rel);
     final result = insertImageLink(
       body: _body.text,
-      link: '![$name]($rel)',
+      link: '![$name]($encoded)',
       offset: _body.selection.baseOffset,
     );
     _body.value = TextEditingValue(

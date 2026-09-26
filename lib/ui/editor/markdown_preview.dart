@@ -265,7 +265,23 @@ class MarkdownPreview extends StatelessWidget {
       }
     }
 
-    final file = File(p.join(vaultRoot.path, url));
+    // v0.3.4 renamed the attachments directory from `attachments/` to
+    // `.attachments/`. Existing notes still reference the old path in
+    // their markdown (`![x](attachments/foo.png)`); the directory-level
+    // migration moved the files but did not rewrite the note text.
+    //
+    // Filenames with whitespace are stored on disk verbatim (e.g.
+    // `My Photo.png`) but appear in markdown as URL-encoded sequences
+    // (`My%20Photo.png`) because spaces aren't valid in markdown URLs.
+    // Decode before lookup; fall back to the legacy directory when the
+    // canonical path is missing.
+    final decodedUrl = Uri.decodeFull(url);
+    var file = File(p.join(vaultRoot.path, decodedUrl));
+    if (!file.existsSync() && !decodedUrl.startsWith('.attachments/')) {
+      final legacyUrl = decodedUrl.replaceFirst('attachments/', '.attachments/');
+      final legacyFile = File(p.join(vaultRoot.path, legacyUrl));
+      if (legacyFile.existsSync()) file = legacyFile;
+    }
 
     Widget image;
     if (!file.existsSync()) {

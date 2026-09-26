@@ -74,6 +74,19 @@ code line
     expect(box.size.width, 300);
   });
 
+  testWidgets('images with whitespace in filename render via URL encoding',
+      (tester) async {
+    // Files are stored verbatim on disk (`My Photo.png`) but appear in
+    // markdown as URL-encoded (`My%20Photo.png`) because spaces aren't
+    // valid in markdown URLs. The resolver must decode before lookup.
+    final att = Directory('${tempDir.path}/attachments')..createSync();
+    File('${att.path}/My Photo.png').writeAsBytesSync(_pngBytes);
+    await pumpPreview(tester, '![a pic|300](attachments/My%20Photo.png)');
+
+    final box = tester.renderObject<RenderBox>(find.byKey(const Key('md-img-300')));
+    expect(box.size.width, 300);
+  });
+
   testWidgets('bare images get natural size constraint', (tester) async {
     await pumpPreview(tester, '![plain](attachments/pic.png)');
 
@@ -130,6 +143,34 @@ code line
       (w) => w is RichText && _hasSpanWithStyle(w.text, 'docs', accent),
     );
     expect(linkFinder, findsOneWidget, reason: 'link span with theme accent color not found');
+  });
+
+  testWidgets('pre-migration attachments/ path resolves after rename (v0.3.4 Task 6)',
+      (tester) async {
+    // Post-migration state: the directory was renamed to `.attachments/`
+    // but old notes still say `attachments/foo.png` in their markdown.
+    // The resolver must fall back to the legacy path when the canonical
+    // path does not exist. The setUp created the file at the legacy
+    // path; move it to the new location to simulate the migration.
+    final migrated = Directory('${tempDir.path}/.attachments')..createSync();
+    File('${tempDir.path}/attachments/pic.png').copySync('${migrated.path}/pic.png');
+    await pumpPreview(tester, '![a pic|300](attachments/pic.png)');
+
+    final box = tester.renderObject<RenderBox>(find.byKey(const Key('md-img-300')));
+    expect(box.size.width, 300);
+  });
+
+  testWidgets('canonical .attachments/ path still resolves (v0.3.4 Task 6)',
+      (tester) async {
+    // Post-migration imports write to `.attachments/`. The resolver must
+    // keep finding those files (regression guard against the fallback
+    // logic above).
+    final migrated = Directory('${tempDir.path}/.attachments')..createSync();
+    File('${migrated.path}/pic.png').writeAsBytesSync(_pngBytes);
+    await pumpPreview(tester, '![a pic|300](.attachments/pic.png)');
+
+    final box = tester.renderObject<RenderBox>(find.byKey(const Key('md-img-300')));
+    expect(box.size.width, 300);
   });
 
   testWidgets('other raw HTML stays literal text', (tester) async {
