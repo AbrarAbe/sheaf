@@ -26,7 +26,7 @@ for Enter on the last line.
 4. **Tags** ✅ inline `#tag` parse → chips → sidebar → click-to-filter
 5. **Markdown** ✅ GFM-subset preview (headings, emphasis, lists, tasks,
    quotes, code, links, tables, images)
-6. **Images** ✅ `![alt|400](…)` resize syntax, insert copies into `attachments/`
+6. **Images** ✅ `![alt|400](…)` resize syntax, insert copies into `.attachments/`
 7. **Search** ✅ vault-wide filter, title-priority ranking
 8. **Shell** ✅ three tiers (≥1120 / 720–1119 / <720), draggable dividers
 9. **Theme** ✅ Daylight/Lamplight/System, `Ctrl+Shift+L`, persisted
@@ -222,13 +222,13 @@ Fonts as offline assets; local font loading (removed).
     preview's bottom-right corner (arrow-up icon, accent-tinted) appears
     when the preview is scrolled past 50 px and disappears near the top.
     Tapping it animates the preview back to the top.
-53. **Wrapped list text aligns with the content, not the marker** — a list
-    item's wrapped continuation lines indent to align with the first
-    character of the item's content (a hanging indent), not the marker
-    column. Matches Obsidian/Typora behavior and what the preview already
-    renders; the editor is brought into line. Applies to both the editor
-    (Normal/Markdown modes) and the preview. List continuation and
-    multi-line selection are unaffected.
+53. **Wrapped list text aligns with the content, not the marker** —
+    **deferred to v0.3.5.** A list item's wrapped continuation lines indent
+    to align with the first character of the item's content (a hanging
+    indent), not the marker column. Matches Obsidian/Typora behavior and
+    what the preview already renders; bringing the editor into line needs a
+    custom line-box paint that risks caret math, so it ships in v0.3.5.
+    List continuation and multi-line selection are unaffected.
 54. **Vault attachments directory is hidden** — the vault's attachments
     directory is renamed from `attachments/` to `.attachments/` so it does
     not appear in file browsers or OS searches. Existing `attachments/`
@@ -237,7 +237,8 @@ Fonts as offline assets; local font loading (removed).
     render with `theme.colorScheme.primary` and an underline, matching the
     rest of the preview's Quire theming.
 
-Explicitly **deferred**: list/link/image action bar (`EditorActionBar`,
+Explicitly **deferred**: list wrap alignment — the editor hanging indent
+(story 53) — to v0.3.5; list/link/image action bar (`EditorActionBar`,
 `ListKind`, `LinkKind`) — list continuation (story 15/23) is the shipped list
 behavior and the untested scaffolding was removed in v0.3.1; open-notes editor
 tabs (see `docs/adr/0007-open-notes-tabs.md`); global hotkeys
@@ -353,7 +354,7 @@ failing-first regression tests for bugs. Coverage targets:
 - **Ask first:** adding dependencies; changing the vault contract
   (`.sheaf/meta.json`); settings schema growth (must stay backward-compatible).
 - **Never:** hard-delete user content; hardcode colors outside `lib/theme`;
-  write outside the vault except `.trash/`, `attachments/`, `.sheaf/`;
+  write outside the vault except `.trash/`, `.attachments/`, `.sheaf/`;
   regress v0.1–v0.3 stories (existing tests stay green).
 
 ## Success Criteria
@@ -389,7 +390,7 @@ v0.1–v0.2 criteria remain true (regression gate). v0.3 / v0.3.1 / v0.3.2 add:
 - [x] `flutter analyze` clean; `flutter test` green; new logic ≥90%;
       data+logic ≥80%
 
-v0.3.3 adds (partial; in progress):
+v0.3.3 adds:
 
 - [x] Opening from the note list or quick-switcher focuses the editor (caret
       visible and ready to type)
@@ -397,6 +398,18 @@ v0.3.3 adds (partial; in progress):
 - [x] `Tab`/`Shift+Tab` indent/outdent lines by four spaces (spaces, not tabs)
 - [x] Preview renders indents as list structure only — never as an indented
       code block
+- [x] `flutter analyze` clean; `flutter test` green
+
+v0.3.4 adds:
+
+- [x] Undo/redo history survives note switches (`Ctrl+Tab`) and Normal ↔
+      Markdown ↔ Preview mode cycles; each note's stack is independent,
+      in-memory, capped at 50 entries
+- [x] Preview scroll position survives mode cycles; a go-to-top FAB appears
+      past 50 px and animates back to the top
+- [x] Attachments live in `.attachments/`; an existing `attachments/`
+      directory migrates on first vault open
+- [x] Markdown links in the preview render in the theme accent
 - [x] `flutter analyze` clean; `flutter test` green
 
 ## Decisions

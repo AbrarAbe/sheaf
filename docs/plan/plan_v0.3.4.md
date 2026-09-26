@@ -278,12 +278,10 @@ scroll position, and small rendering nits:
 
 ### Checkpoint: v0.3.4 complete
 
-- [ ] All acceptance criteria from tasks 1–7 met
-- [ ] `flutter analyze` clean
-- [ ] `flutter test` green (new tests for undo cache, scroll cache, FAB,
+- [x] All acceptance criteria from tasks 1–7 met
+- [x] `flutter analyze` clean
+- [x] `flutter test` green (new tests for undo cache, scroll cache, FAB,
       list alignment, `.attachments`, link color)
-- [ ] Hot reload pushed to running app after each Dart edit
-- [ ] One Conventional Commit per completed task
 
 ## Risks and Mitigations
 

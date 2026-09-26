@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.4] - 2026-09-26
+
+### Added
+
+- Add app screenshots and feature highlights
+- Add Linux release status badge
+- Add GoToTopFab to preview
+
+### Changed
+
+- Draft v0.3.4 "sticky state"
+- Cache undo/redo history per note
+- Cache preview scroll per note
+- Cache edit scroll per note
+- Wire edit scroll capture/restore per note
+- Renumber v0.3.4 tasks after adding edit-scroll task
+- Defer list wrap alignment to v0.3.5
+- Hide attachments directory as .attachments
+- Link color uses theme accent
+
+### Fixed
+
+- Undo survives mode switch
+- FAB icon color uses onPrimaryContainer
+- Image path URL encoding round-trip + legacy dir fallback
+- FAB survives cold-start with cached scroll offset
+
 ## [0.3.3] - 2026-09-22
 
 ### Added
@@ -20,6 +47,7 @@ All notable changes to this project will be documented in this file.
 - Use four-space indent unit
 - Strip leading whitespace from non-list prose
 - Survey preview + editor overrides against the libraries
+- V0.3.3
 
 ### Fixed
 
@@ -44,6 +72,7 @@ All notable changes to this project will be documented in this file.
 - Improve scrolling and list layout in command palette
 - Ignore AppDir directory in gitignore
 - Auto-scroll on last-line Enter
+- V0.3.2
 
 ### Fixed
 
@@ -252,6 +281,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.4]: https://github.com/AbrarAbe/sheaf/compare/v0.3.3..v0.3.4
 [0.3.3]: https://github.com/AbrarAbe/sheaf/compare/v0.3.2..v0.3.3
 [0.3.2]: https://github.com/AbrarAbe/sheaf/compare/v0.3.1..v0.3.2
 [0.3.1]: https://github.com/AbrarAbe/sheaf/compare/v0.3.0..v0.3.1
