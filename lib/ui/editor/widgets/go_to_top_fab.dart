@@ -19,10 +19,14 @@ class GoToTopFab extends StatefulWidget {
 }
 
 class _GoToTopFabState extends State<GoToTopFab> with SingleTickerProviderStateMixin {
+  /// Initialized to 0 because the scroll controller may not yet be attached
+  /// to a ScrollPosition when this state is first constructed (the FAB is
+  /// built in the same frame the preview's `ScrollView` mounts). The first
+  /// [_onScroll] listener fire after attach corrects it.
   late final AnimationController _fade = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 200),
-  )..value = widget.scrollController.offset > widget.threshold ? 1 : 0;
+  );
 
   @override
   void initState() {
@@ -73,7 +77,14 @@ class _GoToTopFabState extends State<GoToTopFab> with SingleTickerProviderStateM
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: _goToTop,
-              child: const SizedBox(width: 48, height: 48, child: Icon(Icons.arrow_upward_rounded)),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Icon(
+                  Icons.arrow_upward_rounded,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
             ),
           ),
         ),
