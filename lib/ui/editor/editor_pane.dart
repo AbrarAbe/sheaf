@@ -298,20 +298,20 @@ class _EditorState extends State<_Editor> {
         setState(() {});
         // Spec story 51/52: the new controller's initialScrollOffset honors
         // the cached value at attach time, so there's no flicker at first
-        // paint. But EditableText's showCaretOnScreen animation fires
-        // after focus is restored and can override the offset. This
+        // paint. EditableText's showCaretOnScreen animation still fires
+        // after focus is restored and can override the offset, so this
         // re-asserts the target for a bounded number of hops to win the
         // race. Preview mode needs only 1 hop (no caret animation); edit
-        // mode needs ~12 hops to span the ~100ms animation.
+        // mode needs ~12 hops to span the ~100ms animation. Cache miss
+        // coalesces to 0 (the controller's construction value), so the
+        // retry chain is a no-op for uncached notes.
         final restoredPath = widget.controller.current?.path;
         if (restoredPath != null) {
+          final targetScroll = _syncedMode == EditorMode.preview ? _previewScroll : _editScroll;
           final cached = _syncedMode == EditorMode.preview
-              ? widget.controller.previewScrollFor(restoredPath)
-              : widget.controller.editScrollFor(restoredPath);
-          if (cached != null) {
-            final targetScroll = _syncedMode == EditorMode.preview ? _previewScroll : _editScroll;
-            _scheduleScrollRestore(targetScroll, restoredPath, cached, _syncedMode == EditorMode.preview ? 1 : 12);
-          }
+              ? widget.controller.previewScrollFor(restoredPath) ?? 0.0
+              : widget.controller.editScrollFor(restoredPath) ?? 0.0;
+          _scheduleScrollRestore(targetScroll, restoredPath, cached, _syncedMode == EditorMode.preview ? 1 : 12);
         }
       }
       // Preview unmounts the body TextField, so _bodyFocus.hasFocus is already

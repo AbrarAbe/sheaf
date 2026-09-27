@@ -83,7 +83,7 @@ surface:
 
 ### Phase 1 — Scroll flicker fix
 
-- [ ] **Task 1: Separate ScrollController per mode**
+- [x] **Task 1: Separate ScrollController per mode**
   **Description:** Replace the single shared `_bodyScroll` with a pair
   of controllers (`_editScroll`, `_previewScroll`) constructed
   per-mode with `initialScrollOffset` from the per-note cache. The
@@ -123,7 +123,7 @@ surface:
     the shared controller)
   **Estimated scope:** M
 
-- [ ] **Task 2: Cache miss restores at 0**
+- [x] **Task 2: Cache miss restores at 0**
   **Description:** With separate controllers, the cache-miss case
   (first open of a note in a mode) starts at 0 by construction. No
   special handling needed; the default `initialScrollOffset` is 0.
@@ -212,6 +212,7 @@ surface:
   **Files likely touched:**
   - `test/ui/editor/markdown_preview_test.dart`
   **Estimated scope:** XS
+
 ### Phase 3 — Preview ergonomics
 
 - [ ] **Task 5: Tag chips clickable in preview mode**
@@ -296,8 +297,6 @@ surface:
         a hook for the find flow)
   - `test/ui/editor/editor_pane_test.dart`
   **Estimated scope:** M
-
-
 
 ### Checkpoint: v0.3.5 complete
 
