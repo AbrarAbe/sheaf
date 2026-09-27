@@ -62,11 +62,15 @@ class EditorController extends ChangeNotifier {
   final Map<String, double> _editScrollByPath = {};
 
   /// Remembers the current preview scroll offset for the open note.
-  /// Called on mode switch away from Preview.
-  void savePreviewScroll(double offset) {
-    final path = _current?.path;
-    if (path == null) return;
-    _previewScrollByPath[path] = offset;
+  /// Called on mode switch away from Preview. When [path] is provided
+  /// (a note switch in progress), saves to that path instead of
+  /// [_current].path - the controller is still holding the old note's
+  /// scroll, so saving under the new note's path would corrupt its
+  /// cache.
+  void savePreviewScroll(double offset, {String? path}) {
+    final key = path ?? _current?.path;
+    if (key == null) return;
+    _previewScrollByPath[key] = offset;
   }
 
   /// The last remembered preview scroll offset for [path], or null when
@@ -74,11 +78,13 @@ class EditorController extends ChangeNotifier {
   double? previewScrollFor(String path) => _previewScrollByPath[path];
 
   /// Remembers the current edit-mode scroll offset for the open note.
-  /// Called on mode switch away from Normal or Markdown.
-  void saveEditScroll(double offset) {
-    final path = _current?.path;
-    if (path == null) return;
-    _editScrollByPath[path] = offset;
+  /// Called on mode switch away from Normal or Markdown. When [path]
+  /// is provided (a note switch in progress), saves to that path
+  /// instead of [_current].path - see [savePreviewScroll] for why.
+  void saveEditScroll(double offset, {String? path}) {
+    final key = path ?? _current?.path;
+    if (key == null) return;
+    _editScrollByPath[key] = offset;
   }
 
   /// The last remembered edit-mode scroll offset for [path], or null when

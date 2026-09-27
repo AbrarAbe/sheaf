@@ -255,35 +255,40 @@ class _EditorState extends State<_Editor> {
   }
 
   void _syncFromController() {
-    if (_loadedPath != widget.controller.current?.path) _load();
-    if (_syncedMode != widget.controller.mode) {
+    final oldPath = _loadedPath;
+    final newPath = widget.controller.current?.path;
+    final noteChanged = oldPath != newPath;
+    if (noteChanged) _load();
+    if (_syncedMode != widget.controller.mode || noteChanged) {
       final fromPreview = _syncedMode == EditorMode.preview;
       final fromEditable = _syncedMode == EditorMode.normal || _syncedMode == EditorMode.markdown;
       final toPreview = widget.controller.mode == EditorMode.preview;
-      final toEditable =
-          widget.controller.mode == EditorMode.normal ||
-          widget.controller.mode == EditorMode.markdown;
-      final path = widget.controller.current?.path;
+      final path = newPath;
       // Capture the outgoing branch's live scroll offset BEFORE we
-      // dispose its controller — after dispose the position is gone
-      // and we'd lose the user's scroll for the note.
-      if (path != null) {
-        if (fromPreview && !toPreview && _previewScroll.hasClients) {
-          widget.controller.savePreviewScroll(_previewScroll.offset);
-        } else if (fromEditable && !toEditable && _editScroll.hasClients) {
-          widget.controller.saveEditScroll(_editScroll.offset);
+      // dispose its controller - after dispose the position is gone
+      // and we'd lose the user's scroll for the note. Save to the OLD
+      // note's path, not the new one: the controller still holds the
+      // old note's scroll position, and saving under the new path
+      // would corrupt the new note's cache.
+      if (oldPath != null) {
+        if (fromPreview && _previewScroll.hasClients) {
+          widget.controller.savePreviewScroll(_previewScroll.offset, path: oldPath);
+        } else if (fromEditable && _editScroll.hasClients) {
+          widget.controller.saveEditScroll(_editScroll.offset, path: oldPath);
         }
       }
       // Replace the incoming branch's controller with a fresh one
-      // seeded from the per-note cache. Cache miss defaults to 0.
-      if (toPreview && !fromPreview) {
+      // seeded from the per-note cache. Rebuild on mode change OR
+      // note change - same-mode note switch would otherwise reuse the
+      // old controller with the old scroll. Cache miss defaults to 0.
+      if (toPreview) {
         final cached =
             path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
         _previewScroll.removeListener(_onBodyScroll);
         _previewScroll.dispose();
         _previewScroll = ScrollController(initialScrollOffset: cached);
         _previewScroll.addListener(_onBodyScroll);
-      } else if (toEditable && !fromEditable) {
+      } else {
         final cached =
             path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
         _editScroll.removeListener(_onBodyScroll);
@@ -341,9 +346,6 @@ class _EditorState extends State<_Editor> {
   /// notify listeners, so this listener covers user-driven scrolls;
   /// `_syncFromController` captures the offset on leaving preview for
   /// programmatic jumps.
-  /// Suppresses [_onBodyScroll] during programmatic jumps in [_load].
-  bool _loadingBody = false;
-
   /// Re-asserts a scroll target on [scroll] for a bounded number of
   /// post-frame hops. Used to win a race against EditableText's
   /// showCaretOnScreen animation, which fires after focus is restored
@@ -373,7 +375,6 @@ class _EditorState extends State<_Editor> {
   }
 
   void _onBodyScroll() {
-    if (_loadingBody) return;
     final mode = widget.controller.mode;
     if (mode != EditorMode.preview && mode != EditorMode.normal && mode != EditorMode.markdown) {
       return;
@@ -389,9 +390,6 @@ class _EditorState extends State<_Editor> {
       widget.controller.saveEditScroll(_editScroll.offset);
     }
   }
-
-  ScrollController get _activeScroll =>
-      widget.controller.mode == EditorMode.preview ? _previewScroll : _editScroll;
 
   /// Losing focus commits the pending rename — clicking the body, Tab out, or
   /// opening another note all commit at once instead of waiting for Enter.
@@ -719,7 +717,6 @@ class _EditorState extends State<_Editor> {
       selection: TextSelection.collapsed(offset: caretOffset),
       composing: TextRange.empty,
     );
-    _loadingBody = true;
     if (mounted) {
       setState(() {});
       // Spec story 44: opening a note places the caret in the body so
@@ -728,16 +725,14 @@ class _EditorState extends State<_Editor> {
       // segment is focused; the sticky intent restores the caret when
       // the user returns to an edit mode.
       //
-      // The jumpTo(0) is here so it runs AFTER the new Scrollable is
-      // attached — calling it synchronously in _load would no-op
-      // because the old Scrollable was just detached by the body.text
-      // change and the new one isn't built yet. _loadingBody suppresses
-      // _onBodyScroll so the jump doesn't save 0 into the outgoing
-      // note's cache.
+      // No jumpTo(0): the controllers are constructed with the cached
+      // offset as initialScrollOffset (in _syncFromController), so the
+      // first paint is at the right place. EditableText's
+      // showCaretOnScreen animation then scrolls to the caret when
+      // focus is requested; the retry hop chain in _syncFromController
+      // re-asserts the cached offset to win that race.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        if (_activeScroll.hasClients) _activeScroll.jumpTo(0);
-        _loadingBody = false;
         final openMode = widget.controller.mode;
         if (openMode == EditorMode.preview) {
           _previewFocus.requestFocus();
