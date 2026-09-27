@@ -148,7 +148,8 @@ class _EditorState extends State<_Editor> {
   /// switches (Preview unmounts the TextField, so hasFocus is false on return).
   bool _wantBodyFocus = false;
   late final FocusNode _titleFocus;
-  late final ScrollController _bodyScroll;
+  late ScrollController _editScroll;
+  late ScrollController _previewScroll;
   String? _loadedPath;
   Note? _loadedNote;
   bool _loading = false;
@@ -230,8 +231,16 @@ class _EditorState extends State<_Editor> {
     _findFocus = FocusNode(debugLabel: 'find');
     _titleFocus = FocusNode();
     _titleFocus.addListener(_onTitleFocusChange);
-    _bodyScroll = ScrollController();
-    _bodyScroll.addListener(_onBodyScroll);
+    _syncedMode = widget.controller.mode;
+    final path = widget.controller.current?.path;
+    final cachedPreview =
+        path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
+    final cachedEdit =
+        path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
+    _editScroll = ScrollController(initialScrollOffset: cachedEdit);
+    _editScroll.addListener(_onBodyScroll);
+    _previewScroll = ScrollController(initialScrollOffset: cachedPreview);
+    _previewScroll.addListener(_onBodyScroll);
     _load();
   }
 
@@ -245,25 +254,6 @@ class _EditorState extends State<_Editor> {
     }
   }
 
-  /// Post-frame chain that re-asserts a scroll target each frame until
-  /// the chain exhausts. Preview mode needs only one hop; edit mode needs
-  /// a chain to win a race against EditableText's showCaretOnScreen
-  /// animation that fires on focus. The target is snapshotted at chain
-  /// start so later cache writes (e.g. the EditableText animation
-  /// re-firing scroll listeners after we bail) don't corrupt the target.
-  void _scheduleScrollRestore(String path, double target, int attemptsLeft) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_bodyScroll.hasClients || attemptsLeft <= 0) return;
-      // If the note changed mid-chain (user opened a different note
-      // while a prior note's restore was still re-asserting), bail —
-      // don't apply a stale target to the new ScrollPosition.
-      if (widget.controller.current?.path != path) return;
-      final pos = _bodyScroll.position;
-      if (pos.pixels != target) pos.jumpTo(target);
-      _scheduleScrollRestore(path, target, attemptsLeft - 1);
-    });
-  }
-
   void _syncFromController() {
     if (_loadedPath != widget.controller.current?.path) _load();
     if (_syncedMode != widget.controller.mode) {
@@ -274,23 +264,56 @@ class _EditorState extends State<_Editor> {
           widget.controller.mode == EditorMode.normal ||
           widget.controller.mode == EditorMode.markdown;
       final path = widget.controller.current?.path;
-      // Spec story 51/52: capture the live scroll offset BEFORE the
-      // rebuild unmounts the ScrollView — after that the position object
-      // is detached from _bodyScroll and forcePixels (used by jumpTo)
-      // doesn't fire scroll listeners, so we'd never see it via
-      // _onBodyScroll. Cache into preview (Task 3) or edit (Task 4)
-      // depending on which surface was live.
-      if (path != null && _bodyScroll.hasClients) {
-        if (fromPreview && !toPreview) {
-          widget.controller.savePreviewScroll(_bodyScroll.offset);
-        } else if (fromEditable && !toEditable) {
-          widget.controller.saveEditScroll(_bodyScroll.offset);
+      // Capture the outgoing branch's live scroll offset BEFORE we
+      // dispose its controller — after dispose the position is gone
+      // and we'd lose the user's scroll for the note.
+      if (path != null) {
+        if (fromPreview && !toPreview && _previewScroll.hasClients) {
+          widget.controller.savePreviewScroll(_previewScroll.offset);
+        } else if (fromEditable && !toEditable && _editScroll.hasClients) {
+          widget.controller.saveEditScroll(_editScroll.offset);
         }
+      }
+      // Replace the incoming branch's controller with a fresh one
+      // seeded from the per-note cache. Cache miss defaults to 0.
+      if (toPreview && !fromPreview) {
+        final cached =
+            path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
+        _previewScroll.removeListener(_onBodyScroll);
+        _previewScroll.dispose();
+        _previewScroll = ScrollController(initialScrollOffset: cached);
+        _previewScroll.addListener(_onBodyScroll);
+      } else if (toEditable && !fromEditable) {
+        final cached =
+            path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
+        _editScroll.removeListener(_onBodyScroll);
+        _editScroll.dispose();
+        _editScroll = ScrollController(initialScrollOffset: cached);
+        _editScroll.addListener(_onBodyScroll);
       }
       _syncedMode = widget.controller.mode;
       _body.highlight = _syncedMode == EditorMode.normal;
       final editable = _syncedMode != EditorMode.preview;
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        // Spec story 51/52: the new controller's initialScrollOffset honors
+        // the cached value at attach time, so there's no flicker at first
+        // paint. But EditableText's showCaretOnScreen animation fires
+        // after focus is restored and can override the offset. This
+        // re-asserts the target for a bounded number of hops to win the
+        // race. Preview mode needs only 1 hop (no caret animation); edit
+        // mode needs ~12 hops to span the ~100ms animation.
+        final restoredPath = widget.controller.current?.path;
+        if (restoredPath != null) {
+          final cached = _syncedMode == EditorMode.preview
+              ? widget.controller.previewScrollFor(restoredPath)
+              : widget.controller.editScrollFor(restoredPath);
+          if (cached != null) {
+            final targetScroll = _syncedMode == EditorMode.preview ? _previewScroll : _editScroll;
+            _scheduleScrollRestore(targetScroll, restoredPath, cached, _syncedMode == EditorMode.preview ? 1 : 12);
+          }
+        }
+      }
       // Preview unmounts the body TextField, so _bodyFocus.hasFocus is already
       // false when we come back from it — reading it here would never restore the
       // caret. Track intent on the FocusNode instead (feedback F29): whenever we
@@ -303,25 +326,6 @@ class _EditorState extends State<_Editor> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _previewFocus.requestFocus();
         });
-      }
-      // Spec story 51/52/53: restore the cached scroll offset. Preview
-      // and edit caches are independent. Preview uses a single hop;
-      // edit mode uses a short retry window because EditableText's
-      // showCaretOnScreen animation fires after our callback and
-      // animates the offset back to the caret's rect. The chain holds
-      // the offset pinned across the animation's ~100ms lifetime.
-      // Story 53: entering Preview with no cached preview offset
-      // (fresh note / first time in preview) estimates the caret's
-      // preview position so the visible text is near the caret's
-      // line. Cached preview offset (Task 3) wins over this estimate.
-      final restoredPath = widget.controller.current?.path;
-      if (restoredPath != null) {
-        final cached = _syncedMode == EditorMode.preview
-            ? widget.controller.previewScrollFor(restoredPath)
-            : widget.controller.editScrollFor(restoredPath);
-        if (cached != null) {
-          _scheduleScrollRestore(restoredPath, cached, _syncedMode == EditorMode.preview ? 1 : 12);
-        }
       }
     }
   }
@@ -337,19 +341,57 @@ class _EditorState extends State<_Editor> {
   /// notify listeners, so this listener covers user-driven scrolls;
   /// `_syncFromController` captures the offset on leaving preview for
   /// programmatic jumps.
+  /// Suppresses [_onBodyScroll] during programmatic jumps in [_load].
+  bool _loadingBody = false;
+
+  /// Re-asserts a scroll target on [scroll] for a bounded number of
+  /// post-frame hops. Used to win a race against EditableText's
+  /// showCaretOnScreen animation, which fires after focus is restored
+  /// and animates the offset to the caret's rect. The target is
+  /// snapshotted at call time so later cache writes don't corrupt it.
+  ///
+  /// [scroll] is captured at call time so the chain keeps targeting the
+  /// same controller even if the mode changes mid-chain — _activeScroll
+  /// would return the new mode's controller, which is wrong.
+  ///
+  /// Preview mode needs only one hop (no caret animation). Edit mode
+  /// needs enough hops to span the ~100ms caret animation.
+  void _scheduleScrollRestore(
+    ScrollController scroll,
+    String path,
+    double offset,
+    int attemptsLeft,
+  ) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || attemptsLeft <= 0) return;
+      if (_loadedPath != path) return;
+      if (!scroll.hasClients) return;
+      final pos = scroll.position;
+      if (pos.pixels != offset) pos.jumpTo(offset);
+      _scheduleScrollRestore(scroll, path, offset, attemptsLeft - 1);
+    });
+  }
+
   void _onBodyScroll() {
+    if (_loadingBody) return;
     final mode = widget.controller.mode;
     if (mode != EditorMode.preview && mode != EditorMode.normal && mode != EditorMode.markdown) {
       return;
     }
-    final path = widget.controller.current?.path;
+    // Use _loadedPath, not controller.current — a note switch advances
+    // controller.current before the outgoing note's scroll listener has
+    // settled, so a late _onBodyScroll would save under the wrong path.
+    final path = _loadedPath;
     if (path == null) return;
     if (mode == EditorMode.preview) {
-      widget.controller.savePreviewScroll(_bodyScroll.offset);
+      widget.controller.savePreviewScroll(_previewScroll.offset);
     } else {
-      widget.controller.saveEditScroll(_bodyScroll.offset);
+      widget.controller.saveEditScroll(_editScroll.offset);
     }
   }
+
+  ScrollController get _activeScroll =>
+      widget.controller.mode == EditorMode.preview ? _previewScroll : _editScroll;
 
   /// Losing focus commits the pending rename — clicking the body, Tab out, or
   /// opening another note all commit at once instead of waiting for Enter.
@@ -522,8 +564,8 @@ class _EditorState extends State<_Editor> {
     // reflects the freshly inserted newline.
     if (_body.selection.isValid && _body.selection.start >= _body.text.length) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_bodyScroll.hasClients) return;
-        _bodyScroll.jumpTo(_bodyScroll.position.maxScrollExtent);
+        if (!mounted || !_editScroll.hasClients) return;
+        _editScroll.jumpTo(_editScroll.position.maxScrollExtent);
       });
     }
   }
@@ -677,30 +719,38 @@ class _EditorState extends State<_Editor> {
       selection: TextSelection.collapsed(offset: caretOffset),
       composing: TextRange.empty,
     );
-    if (_bodyScroll.hasClients) _bodyScroll.jumpTo(0);
+    _loadingBody = true;
     if (mounted) {
       setState(() {});
-      // Spec story 44: opening a note places the caret in the body so typing
-      // starts immediately. Post-frame because the text field is not attached
-      // yet during initState. In Preview the preview segment is focused; the
-      // sticky intent restores the caret when the user returns to an edit mode.
+      // Spec story 44: opening a note places the caret in the body so
+      // typing starts immediately. Post-frame because the text field is
+      // not attached yet during initState. In Preview the preview
+      // segment is focused; the sticky intent restores the caret when
+      // the user returns to an edit mode.
+      //
+      // The jumpTo(0) is here so it runs AFTER the new Scrollable is
+      // attached — calling it synchronously in _load would no-op
+      // because the old Scrollable was just detached by the body.text
+      // change and the new one isn't built yet. _loadingBody suppresses
+      // _onBodyScroll so the jump doesn't save 0 into the outgoing
+      // note's cache.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        if (_activeScroll.hasClients) _activeScroll.jumpTo(0);
+        _loadingBody = false;
         final openMode = widget.controller.mode;
         if (openMode == EditorMode.preview) {
           _previewFocus.requestFocus();
-          // Spec story 51: restore the preview scroll offset for the
-          // note that just opened, if one was cached. Uncached notes
-          // (previewScrollFor returns null) start at 0.
-          final cached = widget.controller.previewScrollFor(note.path);
-          if (cached != null && cached > 0) _bodyScroll.jumpTo(cached);
+          // Spec story 51: the preview ScrollController is constructed
+          // with the cached offset as initialScrollOffset (see
+          // _syncFromController / initState), so the preview branch
+          // starts at the right place on first paint.
         } else {
           _wantBodyFocus = true;
           _bodyFocus.requestFocus();
-          // Spec story 52: restore the edit scroll offset for the note
-          // that just opened, if one was cached.
-          final cached = widget.controller.editScrollFor(note.path);
-          if (cached != null && cached > 0) _bodyScroll.jumpTo(cached);
+          // Spec story 52: the edit ScrollController is constructed
+          // with the cached offset as initialScrollOffset — the
+          // editor branch starts at the right place on first paint.
         }
       });
     }
@@ -724,7 +774,10 @@ class _EditorState extends State<_Editor> {
     _previewFocus.dispose();
     _findFocus.dispose();
     _titleFocus.dispose();
-    _bodyScroll.dispose();
+    _editScroll.removeListener(_onBodyScroll);
+    _editScroll.dispose();
+    _previewScroll.removeListener(_onBodyScroll);
+    _previewScroll.dispose();
     _findCtrl?.dispose();
     super.dispose();
   }
@@ -1014,9 +1067,9 @@ class _EditorState extends State<_Editor> {
                                   child: HoverScrollbar(
                                     child: Scrollbar(
                                       interactive: true,
-                                      controller: _bodyScroll,
+                                      controller: _previewScroll,
                                       child: MarkdownPreview(
-                                        scrollController: _bodyScroll,
+                                        scrollController: _previewScroll,
                                         body: _body.text,
                                         vaultRoot: controller.vaultRoot,
                                         baseFontSize: widget.baseFontSize ?? 16,
@@ -1032,7 +1085,7 @@ class _EditorState extends State<_Editor> {
                           );
                         },
                       ),
-                      GoToTopFab(scrollController: _bodyScroll),
+                      GoToTopFab(scrollController: _previewScroll),
                     ],
                   ),
                   _ => Shortcuts(
@@ -1111,12 +1164,12 @@ class _EditorState extends State<_Editor> {
                             child: HoverScrollbar(
                               child: Scrollbar(
                                 interactive: true,
-                                controller: _bodyScroll,
+                                controller: _editScroll,
                                 child: TextField(
                                   key: const Key('editor-body'),
                                   controller: _body,
                                   focusNode: _bodyFocus,
-                                  scrollController: _bodyScroll,
+                                  scrollController: _editScroll,
                                   onChanged: (_) => _recordBodyChange(),
                                   // Quire-styled cut/copy/paste menu (round 6):
                                   // defer into our own overlay route; the inline
