@@ -78,29 +78,29 @@ surface:
   cache itself (`_previewScrollByPath` / `_editScrollByPath` in
   `EditorController`) is unchanged.
   **Acceptance criteria:**
-  - [ ] `_bodyScroll` is replaced by `_editScroll` and `_previewScroll`.
-  - [ ] Each controller is constructed with
+  - [x] `_bodyScroll` is replaced by `_editScroll` and `_previewScroll`.
+  - [x] Each controller is constructed with
         `initialScrollOffset` from the corresponding cache entry for
         the note that is open.
-  - [ ] On mode switch, the outgoing controller is disposed; the
+  - [x] On mode switch, the outgoing controller is disposed; the
         incoming one is constructed with the cached offset.
-  - [ ] Uncached notes (cache miss) start at 0 (no special handling).
-  - [ ] `_onBodyScroll` writes to the matching cache on user scroll.
-  - [ ] `_syncFromController` captures the offset on mode switch away
+  - [x] Uncached notes (cache miss) start at 0 (no special handling).
+  - [x] `_onBodyScroll` writes to the matching cache on user scroll.
+  - [x] `_syncFromController` captures the offset on mode switch away
         from a mode (so programmatic jumps and `jumpTo` calls are also
         captured), then constructs the new controller.
-  - [ ] The 12-hop retry chain (`_scheduleScrollRestore`) is removed;
+  - [x] The 12-hop retry chain (`_scheduleScrollRestore`) is removed;
         the offset is now correct before first paint.
   **Verification:**
-  - [ ] Widget test: scroll Normal to a known offset, switch to
+  - [x] Widget test: scroll Normal to a known offset, switch to
         Preview, switch back to Normal; the editor's `pixels` on the
         first frame after the switch equals the cached offset (no
         post-frame dance needed).
-  - [ ] Widget test: opening a note for the first time (no cache)
+  - [x] Widget test: opening a note for the first time (no cache)
         starts at 0 in every mode.
-  - [ ] Existing scroll-cache tests still pass (Normal → Preview →
+  - [x] Existing scroll-cache tests still pass (Normal → Preview →
         Normal restores; per-note isolation holds).
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`
@@ -118,15 +118,15 @@ surface:
   This task exists to verify the behavior and remove any vestigial
   "uncached" branches from `_syncFromController`.
   **Acceptance criteria:**
-  - [ ] Removing any "if cache is null, skip restore" branches in
+  - [x] Removing any "if cache is null, skip restore" branches in
         `_syncFromController` and the retry chain.
-  - [ ] The `previewScrollFor` / `editScrollFor` getters still return
+  - [x] The `previewScrollFor` / `editScrollFor` getters still return
         `null` for uncached notes; callers must treat `null` as 0.
-  - [ ] `EditorController` gains no new public surface for this;
+  - [x] `EditorController` gains no new public surface for this;
         cache semantics are unchanged.
   **Verification:**
-  - [ ] Existing test: opening a note for the first time starts at 0.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] Existing test: opening a note for the first time starts at 0.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task 1
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`
@@ -151,15 +151,15 @@ surface:
   preview's wrapped continuation left edge equals the first line's
   content left edge, so we have a regression guard for both surfaces.
   **Acceptance criteria:**
-  - [ ] Test renders a long list item in `MarkdownPreview` and
+  - [x] Test renders a long list item in `MarkdownPreview` and
         measures the wrapped continuation's left edge.
-  - [ ] Assert the continuation aligns with the first line's content
+  - [x] Assert the continuation aligns with the first line's content
         (not the marker).
-  - [ ] No production code changes — this is test-only.
+  - [x] No production code changes — this is test-only.
   **Verification:**
-  - [ ] `test/ui/editor/markdown_preview_test.dart` gains the
+  - [x] `test/ui/editor/markdown_preview_test.dart` gains the
         alignment test.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `test/ui/editor/markdown_preview_test.dart`
@@ -178,21 +178,21 @@ surface:
   behavior; in Preview, search the rendered preview content for the
   tag text and scroll to it.
   **Acceptance criteria:**
-  - [ ] `_focusTag(String tag)` checks the current mode; in editable
+  - [x] `_focusTag(String tag)` checks the current mode; in editable
         modes it behaves as today (select the first `#tag ` occurrence,
         focus the body); in Preview it jumps the preview scroll to the
         rendered `#tag` text (or its first match).
-  - [ ] Preview hit-test: tap a chip, assert the preview's scroll
+  - [x] Preview hit-test: tap a chip, assert the preview's scroll
         offset moved to bring the matched tag into view.
-  - [ ] If the tag is not found in the rendered preview content, the
+  - [x] If the tag is not found in the rendered preview content, the
         tap is a no-op (no scroll jump).
-  - [ ] Existing tag-chip behavior in editable modes is unchanged
+  - [x] Existing tag-chip behavior in editable modes is unchanged
         (existing tests still pass).
   **Verification:**
-  - [ ] Widget test: open a note with tags in Preview, tap a chip,
+  - [x] Widget test: open a note with tags in Preview, tap a chip,
         assert the preview scroll offset changes toward the tag.
-  - [ ] Existing tag-chip tests in editable modes still pass.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] Existing tag-chip tests in editable modes still pass.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/ui/editor/editor_pane.dart`
@@ -201,7 +201,7 @@ surface:
   - `test/ui/editor/editor_pane_test.dart`
   **Estimated scope:** M
 
-- [ ] **Task 6: Find in note in preview mode**
+- [x] **Task 6: Find in note in preview mode**
   **Description:** `Ctrl+F` opens the find bar in every mode, but the
   find handlers (`_runFind`, `_nextMatch`, `_prevMatch`,
   `_jumpToCurrentMatch`) operate on `_body.text` and
@@ -211,36 +211,36 @@ surface:
   the current selection+scroll behavior; in Preview, match against the
   rendered preview text and scroll the preview to each match.
   **Acceptance criteria:**
-  - [ ] `_runFind(query)` matches against the rendered preview text
+  - [x] `_runFind(query)` matches against the rendered preview text
         when in Preview mode (the plain-text source is fine for a
         first pass; if the preview renders a different text — e.g.
         `**bold**` becomes "bold" — note the limitation in the test
         rather than over-engineering).
-  - [ ] `_nextMatch` / `_prevMatch` cycle through matches and scroll
+  - [x] `_nextMatch` / `_prevMatch` cycle through matches and scroll
         the preview to each (via `_previewScroll.animateTo` or
         `jumpTo`).
-  - [ ] `_counterLabel` reflects the match count in the rendered
+  - [x] `_counterLabel` reflects the match count in the rendered
         preview text.
-  - [ ] Case-sensitive toggle works in both modes.
-  - [ ] `Esc` closes the find bar and restores focus appropriately
+  - [x] Case-sensitive toggle works in both modes.
+  - [x] `Esc` closes the find bar and restores focus appropriately
         (in Preview, to the preview focus node; in editable modes, to
         the body — unchanged).
-  - [ ] Body-editing re-computes matches (story 24) — in Preview the
+  - [x] Body-editing re-computes matches (story 24) — in Preview the
         preview text re-renders on body change, so the listener still
         fires; in editable modes, unchanged.
-  - [ ] Highlighting current match in Preview: either skip (accept
+  - [x] Highlighting current match in Preview: either skip (accept
         the limitation — no visual highlight in the preview) or add a
         simple `TextEditingController` overlay on the preview if
         feasible; document whichever choice is made in the test.
   **Verification:**
-  - [ ] Widget test: open a note in Preview, press `Ctrl+F`, type a
+  - [x] Widget test: open a note in Preview, press `Ctrl+F`, type a
         query, assert `n/m` counter shows the match count; press `Enter`,
         assert the preview scroll moved toward the match.
-  - [ ] Widget test: cycling `Enter` / `Shift+Enter` advances/rewinds
+  - [x] Widget test: cycling `Enter` / `Shift+Enter` advances/rewinds
         through matches and scrolls the preview.
-  - [ ] Widget test: `Esc` closes the bar.
-  - [ ] Existing find-in-note tests in editable modes still pass.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] Widget test: `Esc` closes the bar.
+  - [x] Existing find-in-note tests in editable modes still pass.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task 1 (separate `_previewScroll` controller gives
   the find flow a stable scroll target in Preview)
   **Files likely touched:**
@@ -252,11 +252,11 @@ surface:
 
 ### Checkpoint: v0.3.5 complete
 
-- [ ] All acceptance criteria from tasks 1–6 met
-- [ ] `flutter analyze` clean
-- [ ] `flutter test` green
-- [ ] Hot reload pushed to running app after each Dart edit
-- [ ] One Conventional Commit per completed task
+- [x] All acceptance criteria from tasks 1–6 met
+- [x] `flutter analyze` clean
+- [x] `flutter test` green
+- [x] Hot reload pushed to running app after each Dart edit
+- [x] One Conventional Commit per completed task
 
 ## Risks and Mitigations
 

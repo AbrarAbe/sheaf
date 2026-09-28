@@ -15,8 +15,8 @@ import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/models/settings.dart';
 import 'package:sheaf/ui/editor/editor_pane.dart';
 import 'package:sheaf/ui/editor/markdown_preview.dart';
-import 'package:sheaf/ui/editor/widgets/tag_chip_bar.dart';
 import 'package:sheaf/ui/editor/widgets/go_to_top_fab.dart';
+import 'package:sheaf/ui/editor/widgets/tag_chip_bar.dart';
 
 /// Widget tests must route every real-I/O call through [real] because
 /// unwrapped awaits deadlock inside the tester's FakeAsync zone.
@@ -381,10 +381,7 @@ void main() {
     final before = 'aaa\n\n' * 200;
     final after = 'bbb\n\n' * 50;
     final body = '$before#work\n\n$after';
-    final note = await real(
-      () => vaultController.createNote(title: 'Tagged', body: body),
-      tester,
-    );
+    final note = await real(() => vaultController.createNote(title: 'Tagged', body: body), tester);
     await real(() => editorController.open(note), tester);
     await pumpEditor(tester);
 
@@ -403,16 +400,16 @@ void main() {
 
     // Tap the chip's InkWell directly (inside TagChipBar) to ensure the
     // onTap callback is triggered.
-    final chipFinder = find.descendant(
-      of: find.byType(TagChipBar),
-      matching: find.byType(InkWell),
-    );
+    final chipFinder = find.descendant(of: find.byType(TagChipBar), matching: find.byType(InkWell));
     expect(chipFinder, findsOneWidget);
     await tester.tap(chipFinder);
     await tester.pumpAndSettle();
 
-    expect(position.pixels, greaterThan(initialOffset),
-        reason: 'tapping a tag chip in Preview must scroll the preview');
+    expect(
+      position.pixels,
+      greaterThan(initialOffset),
+      reason: 'tapping a tag chip in Preview must scroll the preview',
+    );
   });
 
   testWidgets('preview toggle swaps body field for rendered markdown', (tester) async {
@@ -626,6 +623,83 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('find-bar')), findsNothing);
     });
+  });
+
+  group('find in note - preview mode (v0.3.5 Task 6)', () {
+    Future<void> openInPreview(WidgetTester tester, String body) async {
+      final note = await real(() => vaultController.createNote(title: 'F', body: body), tester);
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+      await tester.tap(find.byKey(const Key('mode-preview')));
+      await tester.pumpAndSettle();
+    }
+
+    BuildContext previewCtx(WidgetTester tester) {
+      return tester.element(find.byType(MarkdownPreview));
+    }
+
+    testWidgets('counts matches and scrolls on Enter', (tester) async {
+      final pad200 = 'pad\n\n' * 200;
+      final pad50 = 'pad\n\n' * 50;
+      final body = '${pad200}hello there\n\n${pad50}hello again\n\n${pad50}hello last';
+      await openInPreview(tester, body);
+
+      // Get the preview scroll offset before find.
+      final scrollable = find.descendant(
+        of: find.byType(MarkdownPreview),
+        matching: find.byType(Scrollable),
+      );
+      expect(scrollable, findsOneWidget);
+      final position = tester.state<ScrollableState>(scrollable).position;
+      final offsetBefore = position.pixels;
+
+      // Open find bar via Actions.invoke on the preview context.
+      Actions.invoke(previewCtx(tester), const OpenFindIntent());
+      await tester.pump();
+      expect(find.byKey(const Key('find-bar')), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('find-field')), 'hello');
+      await tester.pump();
+      expect(find.text('1/3'), findsOneWidget);
+
+      // Enter advances to the 2nd match and scrolls.
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      expect(find.text('2/3'), findsOneWidget);
+      expect(position.pixels, greaterThan(offsetBefore));
+    });
+
+    testWidgets('no matches shows zero count', (tester) async {
+      await openInPreview(tester, 'nothing here');
+      Actions.invoke(previewCtx(tester), const OpenFindIntent());
+      await tester.pump();
+      await tester.enterText(find.byKey(const Key('find-field')), 'zzz');
+      await tester.pump();
+      expect(find.text('0/0'), findsOneWidget);
+    });
+
+    testWidgets('Esc closes the find bar', (tester) async {
+      await openInPreview(tester, 'some text');
+      Actions.invoke(previewCtx(tester), const OpenFindIntent());
+      await tester.pump();
+      await tester.enterText(find.byKey(const Key('find-field')), 'some');
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      expect(find.byKey(const Key('find-bar')), findsNothing);
+    });
+
+    testWidgets('Ctrl+F opens find bar in preview mode', (tester) async {
+      await openInPreview(tester, 'hello world hello');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+
+      expect(find.byKey(const Key('find-bar')), findsOneWidget);
+    });
+
   });
 
   group('list continuation (spec story 15)', () {
@@ -1268,64 +1342,49 @@ void main() {
     });
   });
 
-
-
-
-
-
-
-
-
   group('preview scroll cache per note (spec story 51)', () {
     String longBody() => List.generate(200, (i) => 'paragraph number $i').join('\n\n');
 
     ScrollPosition previewPosition(WidgetTester tester) {
-      return tester.state<ScrollableState>(
-        find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
-      ).position;
+      return tester
+          .state<ScrollableState>(
+            find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
+          )
+          .position;
     }
 
-    testWidgets(
-      'preview scroll survives a Normal → Preview → Normal round-trip',
-      (tester) async {
-        final note = await real(
-          () => vaultController.createNote(title: 'Preview', body: longBody()),
-          tester,
-        );
-        await real(() => editorController.open(note), tester);
-        await pumpEditor(tester);
+    testWidgets('preview scroll survives a Normal → Preview → Normal round-trip', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Preview', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
 
-        editorController.setMode(EditorMode.preview);
-        await tester.pumpAndSettle();
-        await tester.pump(const Duration(milliseconds: 300));
-        await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
 
-        final pos = previewPosition(tester);
-        expect(pos.maxScrollExtent, greaterThan(0));
+      final pos = previewPosition(tester);
+      expect(pos.maxScrollExtent, greaterThan(0));
 
-        const target = 32.0;
-        pos.jumpTo(target);
-        await tester.pump();
-        expect(pos.pixels, closeTo(target, 0.5));
+      const target = 32.0;
+      pos.jumpTo(target);
+      await tester.pump();
+      expect(pos.pixels, closeTo(target, 0.5));
 
-        editorController.setMode(EditorMode.normal);
-        await tester.pumpAndSettle();
-        editorController.setMode(EditorMode.preview);
-        await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.normal);
+      await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
 
-        expect(previewPosition(tester).pixels, closeTo(target, 1.0));
-      },
-    );
+      expect(previewPosition(tester).pixels, closeTo(target, 1.0));
+    });
 
     testWidgets('preview scroll cache is per-note, not shared', (tester) async {
-      final a = await real(
-        () => vaultController.createNote(title: 'A', body: longBody()),
-        tester,
-      );
-      final b = await real(
-        () => vaultController.createNote(title: 'B', body: longBody()),
-        tester,
-      );
+      final a = await real(() => vaultController.createNote(title: 'A', body: longBody()), tester);
+      final b = await real(() => vaultController.createNote(title: 'B', body: longBody()), tester);
       await real(() => editorController.open(a), tester);
       await pumpEditor(tester);
 
@@ -1359,43 +1418,36 @@ void main() {
       return tester.state<ScrollableState>(finder).position;
     }
 
-    testWidgets(
-      'edit scroll survives a Normal \u2192 Preview \u2192 Normal round-trip',
-      (tester) async {
-        final note = await real(
-          () => vaultController.createNote(title: 'Edit', body: longBody()),
-          tester,
-        );
-        await real(() => editorController.open(note), tester);
-        await pumpEditor(tester);
+    testWidgets('edit scroll survives a Normal \u2192 Preview \u2192 Normal round-trip', (
+      tester,
+    ) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Edit', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
 
-        // Scroll partway down in Normal mode.
-        final pos = editPosition(tester);
-        expect(pos.maxScrollExtent, greaterThan(0));
-        const target = 32.0;
-        pos.jumpTo(target);
-        await tester.pump();
-        expect(pos.pixels, closeTo(target, 0.5));
+      // Scroll partway down in Normal mode.
+      final pos = editPosition(tester);
+      expect(pos.maxScrollExtent, greaterThan(0));
+      const target = 32.0;
+      pos.jumpTo(target);
+      await tester.pump();
+      expect(pos.pixels, closeTo(target, 0.5));
 
-        // Switch to Preview and back \u2014 the edit offset should be restored.
-        editorController.setMode(EditorMode.preview);
-        await tester.pumpAndSettle();
-        editorController.setMode(EditorMode.normal);
-        await tester.pumpAndSettle();
+      // Switch to Preview and back \u2014 the edit offset should be restored.
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.normal);
+      await tester.pumpAndSettle();
 
-        expect(editPosition(tester).pixels, closeTo(target, 1.0));
-      },
-    );
+      expect(editPosition(tester).pixels, closeTo(target, 1.0));
+    });
 
     testWidgets('edit scroll cache is per-note, not shared', (tester) async {
-      final a = await real(
-        () => vaultController.createNote(title: 'A', body: longBody()),
-        tester,
-      );
-      final b = await real(
-        () => vaultController.createNote(title: 'B', body: longBody()),
-        tester,
-      );
+      final a = await real(() => vaultController.createNote(title: 'A', body: longBody()), tester);
+      final b = await real(() => vaultController.createNote(title: 'B', body: longBody()), tester);
       await real(() => editorController.open(a), tester);
       await pumpEditor(tester);
 
@@ -1426,12 +1478,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Scroll past the 50px threshold via the shared _bodyScroll.
-      final sc = tester.state<ScrollableState>(
-        find.descendant(
-          of: find.byType(Scrollbar),
-          matching: find.byType(Scrollable),
-        ).first,
-      ).position;
+      final sc = tester
+          .state<ScrollableState>(
+            find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
+          )
+          .position;
       sc.jumpTo(120.0);
       await tester.pump();
 
@@ -1444,7 +1495,10 @@ void main() {
       expect(fabFinder, findsOneWidget);
 
       // Tap the icon inside the FAB (a stable hit target).
-      final iconFinder = find.descendant(of: fabFinder, matching: find.byIcon(Icons.arrow_upward_rounded));
+      final iconFinder = find.descendant(
+        of: fabFinder,
+        matching: find.byIcon(Icons.arrow_upward_rounded),
+      );
       expect(iconFinder, findsOneWidget);
       await tester.tap(iconFinder);
       // Pump enough frames for animateTo(0, 300ms) to finish.
@@ -1455,8 +1509,9 @@ void main() {
       expect(sc.pixels, closeTo(0, 1.0));
     });
 
-    testWidgets('FAB does not crash when the preview mounts with a cached scroll offset',
-        (tester) async {
+    testWidgets('FAB does not crash when the preview mounts with a cached scroll offset', (
+      tester,
+    ) async {
       // Reproduces the real-app cold start: open a note that already has a
       // cached preview offset, enter preview, the FAB must not read
       // scrollController.offset before the ScrollView has attached its
@@ -1473,9 +1528,11 @@ void main() {
       // restore path runs on first preview mount.
       editorController.setMode(EditorMode.preview);
       await tester.pumpAndSettle();
-      final pos = tester.state<ScrollableState>(
-        find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
-      ).position;
+      final pos = tester
+          .state<ScrollableState>(
+            find.descendant(of: find.byType(Scrollbar), matching: find.byType(Scrollable)).first,
+          )
+          .position;
       pos.jumpTo(200.0);
       await tester.pump();
       editorController.setMode(EditorMode.normal);
@@ -1646,6 +1703,3 @@ TextSelection? _bodySelection(WidgetTester tester) {
   );
   return state.widget.controller.selection;
 }
-
-
-

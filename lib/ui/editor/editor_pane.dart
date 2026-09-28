@@ -234,10 +234,8 @@ class _EditorState extends State<_Editor> {
     _titleFocus.addListener(_onTitleFocusChange);
     _syncedMode = widget.controller.mode;
     final path = widget.controller.current?.path;
-    final cachedPreview =
-        path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
-    final cachedEdit =
-        path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
+    final cachedPreview = path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
+    final cachedEdit = path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
     _editScroll = ScrollController(initialScrollOffset: cachedEdit);
     _editScroll.addListener(_onBodyScroll);
     _previewScroll = ScrollController(initialScrollOffset: cachedPreview);
@@ -283,15 +281,13 @@ class _EditorState extends State<_Editor> {
       // note change - same-mode note switch would otherwise reuse the
       // old controller with the old scroll. Cache miss defaults to 0.
       if (toPreview) {
-        final cached =
-            path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
+        final cached = path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
         _previewScroll.removeListener(_onBodyScroll);
         _previewScroll.dispose();
         _previewScroll = ScrollController(initialScrollOffset: cached);
         _previewScroll.addListener(_onBodyScroll);
       } else {
-        final cached =
-            path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
+        final cached = path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
         _editScroll.removeListener(_onBodyScroll);
         _editScroll.dispose();
         _editScroll = ScrollController(initialScrollOffset: cached);
@@ -317,7 +313,12 @@ class _EditorState extends State<_Editor> {
           final cached = _syncedMode == EditorMode.preview
               ? widget.controller.previewScrollFor(restoredPath) ?? 0.0
               : widget.controller.editScrollFor(restoredPath) ?? 0.0;
-          _scheduleScrollRestore(targetScroll, restoredPath, cached, _syncedMode == EditorMode.preview ? 1 : 12);
+          _scheduleScrollRestore(
+            targetScroll,
+            restoredPath,
+            cached,
+            _syncedMode == EditorMode.preview ? 1 : 12,
+          );
         }
       }
       // Preview unmounts the body TextField, so _bodyFocus.hasFocus is already
@@ -592,12 +593,17 @@ class _EditorState extends State<_Editor> {
     _findCtrl?.dispose();
     _findCtrl = null;
     setState(() => _findOpen = false);
-    _bodyFocus.requestFocus();
+    if (widget.controller.mode == EditorMode.preview) {
+      _previewFocus.requestFocus();
+    } else {
+      _bodyFocus.requestFocus();
+    }
   }
 
   void _recomputeFind() {
     if (!_findOpen || _lastQuery.isEmpty) return;
-    final newMatches = matchOffsets(_body.text, _lastQuery, caseSensitive: _caseSensitive);
+    final text = _modeIsPreview() ? _renderedText() : _body.text;
+    final newMatches = matchOffsets(text, _lastQuery, caseSensitive: _caseSensitive);
     // Preserve index clamped.
     if (newMatches.isEmpty) {
       _matches = [];
@@ -609,9 +615,35 @@ class _EditorState extends State<_Editor> {
     if (mounted) setState(() {});
   }
 
+  bool _modeIsPreview() => widget.controller.mode == EditorMode.preview;
+
+  /// Concatenates the text of every [RenderParagraph] in the preview's
+  /// render tree, in document order. Used by the find flow in Preview
+  /// mode so that match counting and scrolling both operate on the same
+  /// rendered text (not the raw markdown source).
+  String _renderedText() {
+    final previewScroll = _previewScroll;
+    if (!previewScroll.hasClients) return '';
+    final context = previewScroll.position.context.notificationContext;
+    if (context == null) return '';
+    final viewport = context.findRenderObject();
+    if (viewport == null) return '';
+    final buf = StringBuffer();
+    void walk(RenderObject render) {
+      if (render is RenderParagraph) {
+        buf.write(render.text.toPlainText());
+      }
+      render.visitChildren(walk);
+    }
+
+    viewport.visitChildren(walk);
+    return buf.toString();
+  }
+
   void _runFind(String query) {
     _lastQuery = query.trim();
-    _matches = matchOffsets(_body.text, _lastQuery, caseSensitive: _caseSensitive);
+    final text = _modeIsPreview() ? _renderedText() : _body.text;
+    _matches = matchOffsets(text, _lastQuery, caseSensitive: _caseSensitive);
     _matchIndex = _matches.isEmpty ? -1 : 0;
     _jumpToCurrentMatch();
     if (mounted) setState(() {});
@@ -630,17 +662,66 @@ class _EditorState extends State<_Editor> {
     if (_matches.isEmpty) return;
     _matchIndex = (_matchIndex + step) % _matches.length;
     _jumpToCurrentMatch();
-    _bodyFocus.requestFocus();
+    if (widget.controller.mode == EditorMode.preview) {
+      _previewFocus.requestFocus();
+    } else {
+      _bodyFocus.requestFocus();
+    }
     if (mounted) setState(() {});
   }
 
   void _jumpToCurrentMatch() {
     if (_matchIndex < 0 || _matchIndex >= _matches.length) return;
+    if (widget.controller.mode == EditorMode.preview) {
+      _scrollPreviewToMatch();
+      return;
+    }
     final start = _matches[_matchIndex];
     _body.value = TextEditingValue(
       text: _body.text,
       selection: TextSelection(baseOffset: start, extentOffset: start + _lastQuery.length),
     );
+  }
+
+  /// Scrolls the preview to the paragraph containing the
+  /// [_matchIndex]th occurrence of the find query. Walks the render
+  /// tree tracking cumulative character count to locate which
+  /// [RenderParagraph] contains the match offset. The match is not
+  /// visually highlighted in the preview — the user sees only the
+  /// scroll jump (documented limitation; see plan task 6).
+  void _scrollPreviewToMatch() {
+    final matchOffset = _matches[_matchIndex];
+    final previewScroll = _previewScroll;
+    if (!previewScroll.hasClients) return;
+    final position = previewScroll.position;
+    final context = position.context.notificationContext;
+    if (context == null) return;
+    final viewport = context.findRenderObject();
+    if (viewport == null) return;
+    var cumulative = 0;
+    RenderObject? target;
+    void walk(RenderObject render) {
+      if (target != null) return;
+      if (render is RenderParagraph) {
+        final text = render.text.toPlainText();
+        if (matchOffset >= cumulative && matchOffset < cumulative + text.length) {
+          target = render;
+          return;
+        }
+        cumulative += text.length;
+      }
+      render.visitChildren(walk);
+    }
+
+    viewport.visitChildren(walk);
+    final box = target as RenderBox?;
+    if (box == null) return;
+    final viewportTop = (viewport as RenderBox).localToGlobal(Offset.zero).dy;
+    final targetTop = box.localToGlobal(Offset.zero).dy;
+    final offsetInViewport = targetTop - viewportTop;
+    final headroom = position.viewportDimension * 0.2;
+    final newOffset = position.pixels + offsetInViewport - headroom;
+    position.jumpTo(newOffset.clamp(position.minScrollExtent, position.maxScrollExtent));
   }
 
   String get _counterLabel => _matches.isEmpty ? '0/0' : '${_matchIndex + 1}/${_matches.length}';
@@ -719,6 +800,7 @@ class _EditorState extends State<_Editor> {
       }
       render.visitChildren(walk);
     }
+
     viewport.visitChildren(walk);
     final target = found as RenderBox?;
     if (target == null) return;
@@ -730,10 +812,7 @@ class _EditorState extends State<_Editor> {
     // viewport, leaving some headroom.
     final headroom = position.viewportDimension * 0.2;
     final newOffset = position.pixels + targetOffsetInViewport - headroom;
-    position.jumpTo(newOffset.clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
-    ));
+    position.jumpTo(newOffset.clamp(position.minScrollExtent, position.maxScrollExtent));
   }
 
   Future<void> _load() async {
@@ -1102,20 +1181,27 @@ class _EditorState extends State<_Editor> {
                             ShortcutAction.cycleEditorMode,
                             overrides,
                           );
-                          return Focus(
-                            focusNode: _previewFocus,
-                            autofocus: true,
-                            child: Shortcuts(
-                              shortcuts: {cycleActivator: const CycleEditorModeIntent()},
-                              child: Actions(
-                                actions: {
-                                  CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
-                                    onInvoke: (intent) {
-                                      widget.controller.cycleMode();
-                                      return null;
-                                    },
-                                  ),
-                                },
+                          final openActivator = activatorFor(ShortcutAction.openFind, overrides);
+                          return Shortcuts(
+                            shortcuts: {
+                              cycleActivator: const CycleEditorModeIntent(),
+                              openActivator: const OpenFindIntent(),
+                            },
+                            child: Actions(
+                              actions: {
+                                CycleEditorModeIntent: CallbackAction<CycleEditorModeIntent>(
+                                  onInvoke: (intent) {
+                                    widget.controller.cycleMode();
+                                    return null;
+                                  },
+                                ),
+                                OpenFindIntent: CallbackAction<OpenFindIntent>(
+                                  onInvoke: (intent) => _openFind(),
+                                ),
+                              },
+                              child: Focus(
+                                focusNode: _previewFocus,
+                                autofocus: true,
                                 child: ScrollConfiguration(
                                   behavior: const _NoScrollbarBehavior(),
                                   child: HoverScrollbar(
