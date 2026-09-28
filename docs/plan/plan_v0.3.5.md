@@ -144,7 +144,7 @@ surface:
   render-object editor (inline images, embeds). See ADR 0008 for the full
   analysis and best-available implementation path.
 
-- [ ] **Task 4: Preview alignment verification**
+- [x] **Task 4: Preview alignment verification**
   **Description:** The preview already renders wrapped list text with
   a hanging indent via `Row(marker SizedBox, Flexible content)`. This
   task is a verification-only step: write a test that asserts the

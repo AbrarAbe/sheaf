@@ -225,6 +225,54 @@ code line
 
     expect(find.text('void main() {}', findRichText: true), findsOneWidget);
   });
+
+  testWidgets('wrapped list item content aligns as hanging indent (v0.3.5 Task 4)',
+      (tester) async {
+    // The preview renders each list item as
+    // Row(marker SizedBox, Flexible content) — the content is its own
+    // RichText inside the Row, so wrapped lines in the content align
+    // at the content's left edge (hanging indent), not at the marker.
+    final body = '- ${'L' * 60}';
+    await pumpPreview(tester, body, width: 300);
+
+    // The content RichText holds the full list item text.
+    final content = find.text('L' * 60, findRichText: true);
+    expect(content, findsOneWidget);
+
+    // The content RichText is inside a Flexible inside a Row that
+    // also contains the marker. Its left edge must be past the
+    // marker's left edge (the Row starts at the list container left).
+    final contentLeft = tester.getTopLeft(content).dx;
+    final outer = find.byType(RichText).first;
+    final outerLeft = tester.getTopLeft(outer).dx;
+    expect(contentLeft, greaterThan(outerLeft + 5),
+        reason: 'list item content must be indented past the marker');
+
+    // The content RichText is a single widget; all its wrapped lines
+    // share the same left edge. That IS the hanging indent.
+    // Verify the content widget spans multiple lines by height.
+    final contentHeight = tester.getSize(content).height;
+    expect(contentHeight, greaterThan(30),
+        reason: 'the list item content must wrap to multiple lines');
+  });
+
+  testWidgets('non-list wrapped text has no hanging indent (v0.3.5 Task 4)',
+      (tester) async {
+    // Non-list paragraphs wrap at the left edge — no indent.
+    // Control case: if a future refactor accidentally applies hanging
+    // indent to non-list text, this test catches it.
+    final body = 'L' * 60;
+    await pumpPreview(tester, body, width: 300);
+
+    final richText = find.byType(RichText).first;
+    final left = tester.getTopLeft(richText).dx;
+    // Non-list paragraphs start at the container's left edge (or its
+    // padding), with no marker offset.
+    final previewRect = tester.getRect(find.byType(MarkdownPreview));
+    // Allow for preview padding (up to ~24px), but NOT a marker indent.
+    expect(left - previewRect.left, lessThan(33),
+        reason: 'non-list text must not be indented by a marker width');
+  });
 }
 
 bool _hasUnderlinedText(InlineSpan span, String needle) {
