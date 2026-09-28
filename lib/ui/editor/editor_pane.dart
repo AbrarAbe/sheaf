@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:sheaf/ui/common/widgets/hover_scrollbar.dart';
@@ -658,6 +659,13 @@ class _EditorState extends State<_Editor> {
   }
 
   void _focusTag(String tag) {
+    // In Preview the body TextField is unmounted, so the editable-mode
+    // selection+focus path is a no-op. Instead, find the rendered tag
+    // text in the preview tree and scroll to it.
+    if (widget.controller.mode == EditorMode.preview) {
+      _focusTagInPreview(tag);
+      return;
+    }
     final needle = '#$tag';
     final body = _body.text;
     // Find first occurrence, prefer word boundary.
@@ -675,6 +683,57 @@ class _EditorState extends State<_Editor> {
     );
     _bodyFocus.requestFocus();
     // Ensure the selection is visible (TextField auto-scrolls to selection).
+  }
+
+  /// Preview-mode variant of [_focusTag]: the body TextField is unmounted,
+  /// so instead of mutating the selection, walk the preview's render tree
+  /// for a [RenderParagraph] whose text contains the tag and scroll the
+  /// preview to bring that paragraph into view. No visual highlight is
+  /// added (see ADR 0008 / plan task 5 note); scrolling to the match is
+  /// the user-visible effect.
+  void _focusTagInPreview(String tag) {
+    // The markdown parser consumes '#' in headings (e.g. '#work' becomes
+    // the heading text 'work'), so search for the tag text without the
+    // '#' prefix. Inline tags still render with '#', but the tag text
+    // alone is a reliable match for both cases.
+    final needle = tag;
+    final previewScroll = _previewScroll;
+    if (!previewScroll.hasClients) return;
+    final position = previewScroll.position;
+    final context = position.context.notificationContext;
+    if (context == null) return;
+    final viewport = context.findRenderObject();
+    if (viewport == null) return;
+    // Recursively walk the render tree from the viewport to find the
+    // first RenderParagraph containing the needle. We use the render
+    // tree (not the element tree) so the offset math is viewport-
+    // relative rather than global.
+    RenderObject? found;
+    void walk(RenderObject render) {
+      if (found != null) return;
+      if (render is RenderParagraph) {
+        if (render.text.toPlainText().contains(needle)) {
+          found = render;
+          return;
+        }
+      }
+      render.visitChildren(walk);
+    }
+    viewport.visitChildren(walk);
+    final target = found as RenderBox?;
+    if (target == null) return;
+    // Position of the target's top relative to the viewport's top.
+    final viewportTop = (viewport as RenderBox).localToGlobal(Offset.zero).dy;
+    final targetTop = target.localToGlobal(Offset.zero).dy;
+    final targetOffsetInViewport = targetTop - viewportTop;
+    // Scroll so the target appears at ~20% down from the top of the
+    // viewport, leaving some headroom.
+    final headroom = position.viewportDimension * 0.2;
+    final newOffset = position.pixels + targetOffsetInViewport - headroom;
+    position.jumpTo(newOffset.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    ));
   }
 
   Future<void> _load() async {

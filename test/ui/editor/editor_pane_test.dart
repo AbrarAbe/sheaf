@@ -374,6 +374,47 @@ void main() {
     expect(find.text('#q3'), findsOneWidget);
   });
 
+  testWidgets('tag chip scrolls preview to tag (v0.3.5 Task 5)', (tester) async {
+    // In Preview the body TextField is unmounted, so the editable-mode
+    // selection+focus path is a no-op. Tapping a chip must instead scroll
+    // the preview toward the rendered tag text.
+    final before = 'aaa\n\n' * 200;
+    final after = 'bbb\n\n' * 50;
+    final body = '$before#work\n\n$after';
+    final note = await real(
+      () => vaultController.createNote(title: 'Tagged', body: body),
+      tester,
+    );
+    await real(() => editorController.open(note), tester);
+    await pumpEditor(tester);
+
+    await tester.tap(find.byKey(const Key('mode-preview')));
+    await tester.pumpAndSettle();
+
+    // Find the preview's scrollable viewport (inside MarkdownPreview).
+    final previewScrollable = find.descendant(
+      of: find.byType(MarkdownPreview),
+      matching: find.byType(Scrollable),
+    );
+    expect(previewScrollable, findsOneWidget);
+    final scrollableState = tester.state<ScrollableState>(previewScrollable);
+    final position = scrollableState.position;
+    final initialOffset = position.pixels;
+
+    // Tap the chip's InkWell directly (inside TagChipBar) to ensure the
+    // onTap callback is triggered.
+    final chipFinder = find.descendant(
+      of: find.byType(TagChipBar),
+      matching: find.byType(InkWell),
+    );
+    expect(chipFinder, findsOneWidget);
+    await tester.tap(chipFinder);
+    await tester.pumpAndSettle();
+
+    expect(position.pixels, greaterThan(initialOffset),
+        reason: 'tapping a tag chip in Preview must scroll the preview');
+  });
+
   testWidgets('preview toggle swaps body field for rendered markdown', (tester) async {
     final note = await real(
       () => vaultController.createNote(title: 'Doc', body: '# Rendered Heading\nbody'),
@@ -1605,3 +1646,6 @@ TextSelection? _bodySelection(WidgetTester tester) {
   );
   return state.widget.controller.selection;
 }
+
+
+

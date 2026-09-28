@@ -167,7 +167,7 @@ surface:
 
 ### Phase 3 — Preview ergonomics
 
-- [ ] **Task 5: Tag chips clickable in preview mode**
+- [x] **Task 5: Tag chips clickable in preview mode**
   **Description:** The `TagChipBar` is rendered in every mode (including
   Preview) via `_focusTag`, but `_focusTag` mutates
   `_body.value.selection` and calls `_bodyFocus.requestFocus()` — both
