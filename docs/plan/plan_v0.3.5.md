@@ -18,13 +18,13 @@ surface:
   `initialScrollOffset`, so the offset is honored at attach time (before
   first paint). Eliminates both the flicker and the 12-hop retry chain.
 - **Wrapped list text in the editor aligns with the content, not the
-  marker.** The preview already renders a hanging indent via
-  `Row(marker SizedBox, Flexible content)`; the editor uses raw text
-  markers in `EditableText` where wrapped lines inherit the left edge.
-  Matches Obsidian/Typora behavior. Implementation: a custom
-  `LineBoxPainter` that reads the source line, detects a list marker
-  (bullet, ordered, or task), and indents every continuation line past
-  the marker width. Preview is already correct and stays as-is.
+  marker. DEFERRED — see `docs/adr/0008-editor-hanging-indent.md`.**
+  The preview already renders a hanging indent via `Row(marker SizedBox,
+  Flexible content)`; the editor uses raw text markers in `EditableText`
+  where wrapped lines inherit the left edge. The specified mechanism
+  (`LineBoxPainter`) does not exist in Flutter 3.49 beta or on pub.dev.
+  Cosmetic-only limitation; revisit when Flutter ships a per-line paint
+  hook, or when the editor moves to a custom render-object framework.
 
 ## Architecture Decisions
 
@@ -52,32 +52,20 @@ surface:
   scrolls to the cache (so scrolling within a mode updates the cache
   immediately); `_syncFromController` captures on mode switch (so
   programmatic jumps are captured too).
-- **Hanging indent uses `LineBoxPainter`, not a `TextPainter`
-  override.** `TextPainter` overrides the layout (line heights, box
-  metrics), which risks breaking caret math, selection, and the
-  existing highlight/selection paint. `LineBoxPainter` overrides only
-  the per-line paint of the body text — layout is unchanged. Each
-  continuation line is translated right by the marker width computed
-  from the source text of that logical line.
-- **Marker detection is by source-text prefix, not AST.** The
-  highlight controller already scans for `-{1,3} `, `* `, `+ `,
-  `\d+\.\s`, and `- \[ \] `/`- \[x\] `. The `LineBoxPainter` uses the
-  same regex set so editor and preview agree on which lines are
-  list items. Marker width is measured in the current font/style so
-  wrapping stays proportional across font-size changes.
-- **Line boxes are computed per line, not per paragraph.** A single
-  list item can wrap across N physical lines; each physical line's
-  `LineBoxPainter` computes its own indent from the source text of the
-  logical line it belongs to. This keeps the calculation local and
-  avoids coupling to the paragraph boundary (which would require
-  walking the `TextPainter.getBoxesForRange` per paragraph).
+- **Hanging indent is DEFERRED (ADR 0008).** The specified mechanism
+  (`LineBoxPainter`) does not exist in Flutter 3.49 beta — confirmed
+  by grep of the entire `packages/flutter/lib/` source tree and by
+  pub.dev search returning 0 results. A `TextPainter` paint translation
+  would break caret and selection alignment (they read from layout,
+  not paint, positions). The best path is a custom paragraph-based
+  editor (as in `flutter_quill`), which is a multi-day rewrite; see
+  ADR 0008 for the full analysis.
+
 - **Preview is already correct and is not touched.** `ListConfig` in
   `markdown_preview.dart` uses `Row(marker SizedBox, Flexible
-  content)` which gives the preview its hanging indent for free. Only
-  the editor side changes.
+  content)` which gives the preview its hanging indent for free.
 - **Continuation is unchanged.** List continuation (story 15/23) is the
-  shipped behavior; the hanging indent is a pure paint change and does
-  not touch text content or selection math.
+  shipped behavior; this task does not touch text content or selection math.
 
 ## Task List
 
@@ -146,51 +134,15 @@ surface:
 
 ### Phase 2 — List wrap alignment
 
-- [ ] **Task 3: Hanging indent in the editor via LineBoxPainter**
-  **Description:** Add a custom `LineBoxPainter` to the editor body
-  `TextField` that translates each physical line right by the marker
-  width when the source text belongs to a list item. Marker detection
-  matches the highlight controller's set (bullet, ordered, task). The
-  preview is unchanged.
-  **Acceptance criteria:**
-  - [ ] `lib/ui/editor/highlighting_controller.dart` gains a
-        `lineBoxPainter` getter that returns a `ListHangingIndentPainter`
-        (or equivalent) when `highlight` is true.
-  - [ ] The painter reads the source text via `controller.text`,
-        detects the marker prefix of the logical line each physical
-        line belongs to, and computes the indent in pixels using the
-        current `TextStyle`.
-  - [ ] Marker width is measured at the body font size; zoom and
-        `baseFontSize` changes re-flow correctly (the painter is
-        recreated on every layout pass anyway).
-  - [ ] Wrapped list text aligns with the first character of the item's
-        content (the hanging indent), not with the marker.
-  - [ ] Non-list lines are unaffected (no indent).
-  - [ ] Code blocks (fenced), quotes, and headings are unaffected —
-        they are not list items by the marker regex.
-  - [ ] The highlight controller's existing marker-dim behavior is
-        preserved (markers stay real characters, selection/caret
-        offsets are untouched).
-  - [ ] CJK and emoji in the item content wrap correctly (no overflow,
-        no overlap with the marker column).
-  **Verification:**
-  - [ ] Widget test: render a 500-char list item at narrow width;
-        assert the wrapped continuation's left edge equals the first
-        line's content left edge (measure via `RenderBox.getLocalToGlobal`
-        on the body's `RenderParagraph`).
-  - [ ] Widget test: a non-list long line wraps at the left edge (no
-        hanging indent on non-list text).
-  - [ ] Widget test: nested list items (`- item` / `  - sub`) each get
-        their own indent matching their marker column.
-  - [ ] Existing list-continuation tests still pass.
-  - [ ] `flutter analyze` clean; `flutter test` green.
-  **Dependencies:** None
-  **Files likely touched:**
-  - `lib/ui/editor/highlighting_controller.dart`
-  - `lib/ui/editor/editor_pane.dart` (pass `lineBoxPainter` to the
-    `TextField`)
-  - `test/ui/editor/editor_pane_test.dart` (new alignment tests)
-  **Estimated scope:** L
+  **Status: DEFERRED — see `docs/adr/0008-editor-hanging-indent.md`.** The
+  specified mechanism (`LineBoxPainter`) does not exist in Flutter 3.49 beta
+  (confirmed by grep of `packages/flutter/lib/` and pub.dev search returning
+  0 packages). The editor's limitation is cosmetic-only: wrapped list text
+  aligns with the left edge instead of the marker column. The preview
+  already renders correctly and is unchanged. Revisit when Flutter ships a
+  per-line paint hook, or when Sheaf gains features requiring a custom
+  render-object editor (inline images, embeds). See ADR 0008 for the full
+  analysis and best-available implementation path.
 
 - [ ] **Task 4: Preview alignment verification**
   **Description:** The preview already renders wrapped list text with
@@ -311,11 +263,7 @@ surface:
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Separate controllers leak across mode switches | Medium | Dispose the outgoing controller in `_syncFromController` before constructing the incoming one; add a leak-detection assertion in tests. |
-| `LineBoxPainter` shifts the caret visually when wrapping changes | High | Painter only translates the paint, not the layout; caret rect is computed by `TextPainter.getRectForRange` which uses layout metrics, so the caret stays correct. Verify with a caret-position test. |
-| Marker width measured in wrong font | Medium | Painter reads the current `TextStyle` from the controller's `style` and re-computes on every layout pass; zoom/baseFontSize changes re-layout anyway. |
-| CJK/emoji overflow past the marker column | Medium | Painter only translates the paint; the underlying text layout already handles CJK/emoji. Verify with a wrapping test on CJK content. |
-| Performance: painter runs per physical line | Low | Painter is O(1) per line (one regex match on the source prefix). The body has at most a few hundred physical lines; negligible cost. |
-| Highlight controller's marker-dim behavior breaks | Low | Painter is additive; the existing span-styling logic is untouched. Verify with the existing marker-dim tests. |
+| Hanging indent deferred (Task 3) | Low | Cosmetic-only limitation; preview already renders correctly. See ADR 0008 for revisit triggers and best-available implementation path. |
 | Preview alignment test measures the wrong thing | Low | Test measures the `Flexible content` left edge inside the `Row`, not the marker's left edge. If the test is wrong, the production code is still correct. |
 
 ## Confirmed Decisions
@@ -325,27 +273,16 @@ surface:
   `initialScrollOffset` from the per-note cache. Eliminates the
   post-frame restore path and the 12-hop retry chain. The cache
   itself (`_previewScrollByPath` / `_editScrollByPath`) is unchanged.
-- **List wrap alignment mechanism** — `LineBoxPainter` (paint-only
-  override), not a `TextPainter` override (which would risk layout,
-  caret math, selection, and undo). The preview is unchanged.
-- **List wrap semantics** — confirmed at review: interpretation (a),
-  a hanging indent. Wrapped list text aligns with the first character
-  of the item's content, not the marker. Matches Obsidian/Typora
-  behavior and what the preview already renders.
-- **Marker detection set** — same as the highlight controller: `-{1,3} `,
-  `* `, `+ `, `\d+\.\s`, `- \[ \] `, `- \[x\] `. If the highlight
-  controller's set changes, the painter must change in lockstep.
+- **List wrap alignment is DEFERRED (ADR 0008).** `LineBoxPainter`
+  does not exist in Flutter 3.49 beta or on pub.dev. A `TextPainter`
+  paint translation would break caret/selection alignment. Best path
+  is a custom paragraph-based editor (see ADR 0008). The preview is
+  unchanged; it already renders correctly.
 - **Preview alignment test is test-only** — no production changes to
   the preview; the test is a regression guard.
 
 ## Open Questions
 
-- Should the painter handle task-list checkboxes (`- [ ] ` / `- [x] `)
-  by measuring the checkbox width specifically, or treat them as a
-  generic marker? The current plan treats them generically (measure the
-  marker prefix width); a future refinement could special-case
-  checkboxes to align content with the text after the checkbox.
-- Is the `LineBoxPainter` API stable across Flutter releases? It is
-  part of the public `flutter/material.dart` API and has been stable
-  for years. If it ever changes, the painter will need to be rewritten,
-  but that's a one-day change.
+- (Task 3 deferred — see ADR 0008 for the open questions about
+  checkbox handling and the LineBoxPainter API that the deferred
+  implementation would have needed to address.)
