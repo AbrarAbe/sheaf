@@ -235,8 +235,9 @@ class _EditorState extends State<_Editor> {
     _syncedMode = widget.controller.mode;
     final path = widget.controller.current?.path;
     final cachedPreview = path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
-    final cachedEdit = path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
-    _editScroll = ScrollController(initialScrollOffset: cachedEdit);
+    // Editable modes always start at offset 0 — showCaretOnScreen scrolls
+    // to the restored caret naturally, avoiding flicker.
+    _editScroll = ScrollController(initialScrollOffset: 0);
     _editScroll.addListener(_onBodyScroll);
     _previewScroll = ScrollController(initialScrollOffset: cachedPreview);
     _previewScroll.addListener(_onBodyScroll);
@@ -260,7 +261,6 @@ class _EditorState extends State<_Editor> {
     if (noteChanged) _load();
     if (_syncedMode != widget.controller.mode || noteChanged) {
       final fromPreview = _syncedMode == EditorMode.preview;
-      final fromEditable = _syncedMode == EditorMode.normal || _syncedMode == EditorMode.markdown;
       final toPreview = widget.controller.mode == EditorMode.preview;
       final path = newPath;
       // Capture the outgoing branch's live scroll offset BEFORE we
@@ -272,9 +272,12 @@ class _EditorState extends State<_Editor> {
       if (oldPath != null) {
         if (fromPreview && _previewScroll.hasClients) {
           widget.controller.savePreviewScroll(_previewScroll.offset, path: oldPath);
-        } else if (fromEditable && _editScroll.hasClients) {
-          widget.controller.saveEditScroll(_editScroll.offset, path: oldPath);
         }
+        // Editable modes don't save the edit scroll cache: showCaretOnScreen
+        // fights against the cached offset, causing flicker. The caret cache
+        // + showCaretOnScreen handles position restoration for both note
+        // switches and mode switches.
+        
       }
       // Replace the incoming branch's controller with a fresh one
       // seeded from the per-note cache. Rebuild on mode change OR
@@ -287,10 +290,12 @@ class _EditorState extends State<_Editor> {
         _previewScroll = ScrollController(initialScrollOffset: cached);
         _previewScroll.addListener(_onBodyScroll);
       } else {
-        final cached = path != null ? widget.controller.editScrollFor(path) ?? 0.0 : 0.0;
+        // Editable modes always start at offset 0. showCaretOnScreen scrolls
+        // to the restored caret naturally, avoiding flicker caused by fighting
+        // against a cached scroll offset.
         _editScroll.removeListener(_onBodyScroll);
         _editScroll.dispose();
-        _editScroll = ScrollController(initialScrollOffset: cached);
+        _editScroll = ScrollController(initialScrollOffset: 0);
         _editScroll.addListener(_onBodyScroll);
       }
       _syncedMode = widget.controller.mode;
@@ -313,12 +318,9 @@ class _EditorState extends State<_Editor> {
           final cached = _syncedMode == EditorMode.preview
               ? widget.controller.previewScrollFor(restoredPath) ?? 0.0
               : widget.controller.editScrollFor(restoredPath) ?? 0.0;
-          _scheduleScrollRestore(
-            targetScroll,
-            restoredPath,
-            cached,
-            _syncedMode == EditorMode.preview ? 1 : 12,
-          );
+          if (_syncedMode == EditorMode.preview) {
+            _scheduleScrollRestore(targetScroll, restoredPath, cached, 1);
+          }
         }
       }
       // Preview unmounts the body TextField, so _bodyFocus.hasFocus is already
@@ -389,7 +391,7 @@ class _EditorState extends State<_Editor> {
     if (mode == EditorMode.preview) {
       widget.controller.savePreviewScroll(_previewScroll.offset);
     } else {
-      widget.controller.saveEditScroll(_editScroll.offset);
+      // Editable modes don't save the edit scroll cache.
     }
   }
 

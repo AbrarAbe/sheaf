@@ -1418,9 +1418,7 @@ void main() {
       return tester.state<ScrollableState>(finder).position;
     }
 
-    testWidgets('edit scroll survives a Normal \u2192 Preview \u2192 Normal round-trip', (
-      tester,
-    ) async {
+    testWidgets('edit caret survives a Normal → Preview → Normal round-trip', (tester) async {
       final note = await real(
         () => vaultController.createNote(title: 'Edit', body: longBody()),
         tester,
@@ -1428,39 +1426,46 @@ void main() {
       await real(() => editorController.open(note), tester);
       await pumpEditor(tester);
 
-      // Scroll partway down in Normal mode.
-      final pos = editPosition(tester);
-      expect(pos.maxScrollExtent, greaterThan(0));
-      const target = 32.0;
-      pos.jumpTo(target);
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      final bodyCtrl = field.controller!;
+      final caretOffset = bodyCtrl.text.length ~/ 2;
+      bodyCtrl.value = TextEditingValue(
+        text: bodyCtrl.text,
+        selection: TextSelection.collapsed(offset: caretOffset),
+      );
       await tester.pump();
-      expect(pos.pixels, closeTo(target, 0.5));
 
-      // Switch to Preview and back \u2014 the edit offset should be restored.
       editorController.setMode(EditorMode.preview);
       await tester.pumpAndSettle();
       editorController.setMode(EditorMode.normal);
       await tester.pumpAndSettle();
 
-      expect(editPosition(tester).pixels, closeTo(target, 1.0));
+      expect(bodyCtrl.selection.start, caretOffset);
+      expect(editPosition(tester).pixels, greaterThan(0));
     });
 
-    testWidgets('edit scroll cache is per-note, not shared', (tester) async {
-      final a = await real(() => vaultController.createNote(title: 'A', body: longBody()), tester);
-      final b = await real(() => vaultController.createNote(title: 'B', body: longBody()), tester);
+    testWidgets('edit caret cache is per-note, not shared', (tester) async {
+      final a = await real(
+        () => vaultController.createNote(title: 'A', body: longBody()),
+        tester,
+      );
+      final b = await real(
+        () => vaultController.createNote(title: 'B', body: longBody()),
+        tester,
+      );
       await real(() => editorController.open(a), tester);
       await pumpEditor(tester);
 
-      final posA = editPosition(tester);
-      expect(posA.maxScrollExtent, greaterThan(0));
-      posA.jumpTo(64.0);
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      field.controller!.selection = const TextSelection.collapsed(offset: 200);
       await tester.pump();
 
-      // Open B \u2014 should start at 0 (uncached).
       await real(() => editorController.open(b), tester);
       await tester.pump();
       await tester.pumpAndSettle();
-      expect(editPosition(tester).pixels, closeTo(0, 1.0));
+
+      final fieldB = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      expect(fieldB.controller!.selection.start, 0);
     });
   });
 
