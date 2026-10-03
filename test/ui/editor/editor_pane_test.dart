@@ -699,7 +699,6 @@ void main() {
 
       expect(find.byKey(const Key('find-bar')), findsOneWidget);
     });
-
   });
 
   group('list continuation (spec story 15)', () {
@@ -1445,14 +1444,8 @@ void main() {
     });
 
     testWidgets('edit caret cache is per-note, not shared', (tester) async {
-      final a = await real(
-        () => vaultController.createNote(title: 'A', body: longBody()),
-        tester,
-      );
-      final b = await real(
-        () => vaultController.createNote(title: 'B', body: longBody()),
-        tester,
-      );
+      final a = await real(() => vaultController.createNote(title: 'A', body: longBody()), tester);
+      final b = await real(() => vaultController.createNote(title: 'B', body: longBody()), tester);
       await real(() => editorController.open(a), tester);
       await pumpEditor(tester);
 
@@ -1466,6 +1459,51 @@ void main() {
 
       final fieldB = tester.widget<TextField>(find.byKey(const Key('editor-body')));
       expect(fieldB.controller!.selection.start, 0);
+    });
+
+    testWidgets('edit caret is centered in viewport after a mode switch', (tester) async {
+      final note = await real(
+        () => vaultController.createNote(title: 'Center', body: longBody()),
+        tester,
+      );
+      await real(() => editorController.open(note), tester);
+      await pumpEditor(tester);
+
+      final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+      final bodyCtrl = field.controller!;
+      // Place caret mid-document.
+      final caretOffset = bodyCtrl.text.length ~/ 2;
+      bodyCtrl.value = TextEditingValue(
+        text: bodyCtrl.text,
+        selection: TextSelection.collapsed(offset: caretOffset),
+      );
+      await tester.pump();
+
+      // Switch to preview and back — triggers showCaretOnScreen animation.
+      editorController.setMode(EditorMode.preview);
+      await tester.pumpAndSettle();
+      editorController.setMode(EditorMode.normal);
+
+      await tester.pumpAndSettle();
+
+      // The caret offset should be preserved.
+      expect(bodyCtrl.selection.start, caretOffset);
+
+      final pos = editPosition(tester);
+      final viewportHeight = pos.viewportDimension;
+      // The scroll offset should not be at the top (caret is mid-document).
+      expect(pos.pixels, greaterThan(0));
+
+      final editable = tester.state<EditableTextState>(
+        find.descendant(
+          of: find.byKey(const Key('editor-body')),
+          matching: find.byType(EditableText),
+        ),
+      );
+      final re = editable.renderEditable;
+      final caretRect = re.getLocalRectForCaret(TextPosition(offset: caretOffset));
+      final caretCenter = caretRect.top + caretRect.height / 2;
+      expect((caretCenter - viewportHeight / 2).abs(), lessThan(viewportHeight / 2));
     });
   });
 

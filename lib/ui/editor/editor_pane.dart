@@ -130,6 +130,45 @@ class _Editor extends StatefulWidget {
   State<_Editor> createState() => _EditorState();
 }
 
+
+/// A [ScrollController] whose [animateTo] jumps instead of animating.
+///
+/// EditableText's showCaretOnScreen calls _scrollController.animateTo()
+/// on focus restore, which normally starts a 100ms AnimationController
+/// that re-asserts the target offset every frame. That animation would
+/// fight our _centerCaretInView jumpTo. Since we never call animateTo
+/// ourselves (only jumpTo), overriding it to jumpTo eliminates the
+/// race — showCaretOnScreen's call becomes an instant jump.
+class _EditScrollController extends ScrollController {
+  _EditScrollController(this._onAnimateTo);
+  final void Function(double) _onAnimateTo;
+
+  /// When true, [animateTo] redirects to the callback instead of
+  /// bottom-aligning the caret. Set before requestFocus during
+  /// mode/note switches.
+  bool shouldCenterCaret = false;
+
+  @override
+  Future<void> animateTo(
+    double offset, {
+    required Duration duration,
+    required Curve curve,
+  }) {
+    if (shouldCenterCaret) {
+      shouldCenterCaret = false;
+      _onAnimateTo(offset);
+    } else {
+      // Normal typing behavior: animate to the caret position.
+      super.animateTo(
+        offset,
+        duration: duration,
+        curve: curve,
+      );
+    }
+    return Future.value();
+  }
+}
+
 class _EditorState extends State<_Editor> {
   late final HighlightingController _body;
 
@@ -149,7 +188,7 @@ class _EditorState extends State<_Editor> {
   /// switches (Preview unmounts the TextField, so hasFocus is false on return).
   bool _wantBodyFocus = false;
   late final FocusNode _titleFocus;
-  late ScrollController _editScroll;
+  late _EditScrollController _editScroll;
   late ScrollController _previewScroll;
   String? _loadedPath;
   Note? _loadedNote;
@@ -174,6 +213,8 @@ class _EditorState extends State<_Editor> {
   /// land at the bottom from a previous session. Mid-session note switches
   /// still restore the caret to where the user left off.
   bool _skipCaretRestoreOnNextLoad = true;
+
+
 
   /// Records a body change and its current selection into the per-note
   /// undo history. Called from the TextField's onChanged and from every
@@ -237,7 +278,7 @@ class _EditorState extends State<_Editor> {
     final cachedPreview = path != null ? widget.controller.previewScrollFor(path) ?? 0.0 : 0.0;
     // Editable modes always start at offset 0 — showCaretOnScreen scrolls
     // to the restored caret naturally, avoiding flicker.
-    _editScroll = ScrollController(initialScrollOffset: 0);
+    _editScroll = _EditScrollController(_onEditScrollAnimateTo);
     _editScroll.addListener(_onBodyScroll);
     _previewScroll = ScrollController(initialScrollOffset: cachedPreview);
     _previewScroll.addListener(_onBodyScroll);
@@ -295,7 +336,7 @@ class _EditorState extends State<_Editor> {
         // against a cached scroll offset.
         _editScroll.removeListener(_onBodyScroll);
         _editScroll.dispose();
-        _editScroll = ScrollController(initialScrollOffset: 0);
+        _editScroll = _EditScrollController(_onEditScrollAnimateTo);
         _editScroll.addListener(_onBodyScroll);
       }
       _syncedMode = widget.controller.mode;
@@ -329,7 +370,10 @@ class _EditorState extends State<_Editor> {
       // land back in an editable mode with that intent, hand focus back.
       if (editable && _wantBodyFocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _bodyFocus.requestFocus();
+          if (!mounted) return;
+          _editScroll.shouldCenterCaret = true;
+          _bodyFocus.requestFocus();
+          _centerCaretInView();
         });
       } else if (!editable) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -351,17 +395,8 @@ class _EditorState extends State<_Editor> {
   /// `_syncFromController` captures the offset on leaving preview for
   /// programmatic jumps.
   /// Re-asserts a scroll target on [scroll] for a bounded number of
-  /// post-frame hops. Used to win a race against EditableText's
-  /// showCaretOnScreen animation, which fires after focus is restored
-  /// and animates the offset to the caret's rect. The target is
-  /// snapshotted at call time so later cache writes don't corrupt it.
-  ///
-  /// [scroll] is captured at call time so the chain keeps targeting the
-  /// same controller even if the mode changes mid-chain — _activeScroll
-  /// would return the new mode's controller, which is wrong.
-  ///
-  /// Preview mode needs only one hop (no caret animation). Edit mode
-  /// needs enough hops to span the ~100ms caret animation.
+  /// post-frame hops. Preview mode needs one hop to ensure the
+  /// controller is attached.
   void _scheduleScrollRestore(
     ScrollController scroll,
     String path,
@@ -378,6 +413,46 @@ class _EditorState extends State<_Editor> {
     });
   }
 
+  /// Centers the caret in the editor viewport. Queries the
+  /// [RenderEditable] for the caret's local rect, computes the
+  /// scroll offset that would center it, and jumps there. No-op
+  /// when the layout hasn't been computed yet (no render editable,
+  /// no clients, or the caret is already centered within tolerance).
+  ///
+  /// [showCaretOnScreen] calls [_EditScrollController.animateTo]
+  /// which jumps (not animates) to the offset we set here.
+  void _centerCaretInView() {
+    final sel = _body.selection;
+    if (!sel.isValid) return;
+    final caretOffset = sel.baseOffset;
+    if (!_editScroll.hasClients) return;
+    final pos = _editScroll.position;
+    final scrollable = pos.context as ScrollableState?;
+    final renderEditable = scrollable
+        ?.context
+        .findAncestorStateOfType<EditableTextState>()
+        ?.renderEditable;
+    if (renderEditable == null) return;
+    final caretRect = renderEditable.getLocalRectForCaret(
+      TextPosition(offset: caretOffset),
+    );
+    final viewportHeight = pos.viewportDimension;
+    // getLocalRectForCaret returns viewport coordinates (relative to
+    // current scroll offset). Convert to absolute document coordinates
+    // by adding the current scroll offset.
+    final target =
+        (caretRect.top + caretRect.height / 2 + pos.pixels) - viewportHeight / 2;
+    if ((pos.pixels - target).abs() < 2.0) return;
+    pos.jumpTo(target.clamp(pos.minScrollExtent, pos.maxScrollExtent));
+  }
+
+  /// Callback for [_EditScrollController.animateTo]. Called when
+  /// [_EditScrollController.shouldCenterCaret] is true (mode/note switch),
+  /// redirects to [_centerCaretInView] instead of bottom-aligning the caret.
+  void _onEditScrollAnimateTo(double offset) {
+    _centerCaretInView();
+  }
+
   void _onBodyScroll() {
     final mode = widget.controller.mode;
     if (mode != EditorMode.preview && mode != EditorMode.normal && mode != EditorMode.markdown) {
@@ -389,6 +464,7 @@ class _EditorState extends State<_Editor> {
     final path = _loadedPath;
     if (path == null) return;
     if (mode == EditorMode.preview) {
+      if (!_previewScroll.hasClients) return;
       widget.controller.savePreviewScroll(_previewScroll.offset);
     } else {
       // Editable modes don't save the edit scroll cache.
@@ -871,9 +947,9 @@ class _EditorState extends State<_Editor> {
       // showCaretOnScreen animation then scrolls to the caret when
       // focus is requested; the retry hop chain in _syncFromController
       // re-asserts the cached offset to win that race.
+      final openMode = widget.controller.mode;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final openMode = widget.controller.mode;
         if (openMode == EditorMode.preview) {
           _previewFocus.requestFocus();
           // Spec story 51: the preview ScrollController is constructed
@@ -883,11 +959,13 @@ class _EditorState extends State<_Editor> {
         } else {
           _wantBodyFocus = true;
           _bodyFocus.requestFocus();
+          _centerCaretInView();
           // Spec story 52: the edit ScrollController is constructed
           // with the cached offset as initialScrollOffset — the
           // editor branch starts at the right place on first paint.
         }
       });
+      // (caret centering is scheduled inside the post-frame callback)
     }
   }
 
