@@ -185,3 +185,24 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/plan/plan_v0.3.3.md`](docs/plan/plan_v0.3.3.md) — v0.3.3 implementation plan (type-first)
 - [`docs/plan/plan_v0.3.4.md`](docs/plan/plan_v0.3.4.md) — v0.3.4 implementation plan (sticky state)
 - [`docs/plan/plan_v0.3.5.md`](docs/plan/plan_v0.3.5.md) — v0.3.5 implementation plan (steady)
+
+## Contributing
+
+> [!NOTE]
+> **sheaf** is not open to outside contributions yet — it's still in early, fast-moving development and the codebase changes day to day. Once the doors open, this section will spell out the process. Until then, there are still two useful ways to help:
+
+*   **Reporting Bugs** : If you find any bugs or issues, please open an issue on the GitHub repository. Provide a clear description of the bug, steps to reproduce it, and any relevant error messages.
+*   **Suggesting Features** : Have an idea for a new feature or improvement? Feel free to open a discussion to suggest it. Describe your idea and why you think it would be valuable.
+
+**Submitting Pull Requests** : On hold for now — please hold off on opening a pull request until contribution guidelines land. When they do, the expectation will be the same as it is today: fork the repository, keep your changes focused and well-commented, follow [conventinal commits guidelines](https://www.conventionalcommits.org/en/v1.0.0/) and follow general Flutter coding conventions.
+
+We appreciate your help in making this project even better!
+
+## License
+
+This project is open-source and is distributed under the [GPL-3.0 License](LICENSE). See the `LICENSE` file for details.
+
+## Contact
+
+*   [Email](<abrar.abe01@gmail.com>)
+*   [GitHub](<https://github.com/AbrarAbe>)
