@@ -204,5 +204,5 @@ This project is open-source and is distributed under the [GPL-3.0 License](LICEN
 
 ## Contact
 
-*   [Email](<abrar.abe01@gmail.com>)
-*   [GitHub](<https://github.com/AbrarAbe>)
+*   <abrar.abe01@gmail.com>
+*   [GitHub](https://github.com/AbrarAbe)
