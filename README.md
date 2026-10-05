@@ -46,10 +46,10 @@ shipped as a self-contained tarball.
   subset read-only. Autosave (~1 s) behaves identically everywhere.
 - **Keyboard-complete editing** — `Ctrl+B/I/U` toggle bold/italic/underline (combinable, nesting `***`/`**<u>`; word-aware Unicode `café naïve` at bare caret), Enter continues lists (`- `, `* `, `1. `, `- [ ] `), `Tab`/`Shift+Tab` indent/outdent the current line or selection by four spaces, `Ctrl+F` finds inside the note (recomputes on edit), `Ctrl+D` selects word, `Ctrl+Shift+C/V` copy/paste, `Ctrl+Tab` cycles notes.
 - **Type-first editing** — opening a note (list or `Ctrl+K`) drops the caret straight into the body; the title saves on blur (click away, `Tab`, or switching notes) without pressing Enter; the caret and scroll are remembered per note across switches. The preview never turns indented prose into a code block — indentation only nests lists, so use fenced code blocks for code. A note's title is always its file name; a `# Heading` in the body never overrides it.
-- **Sticky state** — undo/redo history is kept per note, so `Ctrl+Z` still works after switching notes or cycling Normal/Markdown/Preview. The preview remembers its scroll position across mode switches, with a go-to-top button that fades in once you scroll down.
+- **Sticky state** — undo/redo history is kept per note, so `Ctrl+Z` still works after switching notes or cycling Normal/Markdown/Preview. The preview remembers its scroll position across mode switches, with a go-to-top button that fades in once you scroll down. Each mode keeps its own scroll controller, so switching modes no longer flashes the top of the note before landing on the cached position.
 - **Nested folders** — folder tree renders recursively with chevron expand/collapse; indent per depth; collapsed state hides subtree without selecting.
 - **Sticky DIRECTORIES header** — FOLDERS header (DIRECTORIES on Linux) stays pinned above the scrollable folder list.
-- **In-editor tags** — `#tag` chips live inside the editor column under the title, scroll with content; tap copies `#tag ` at caret.
+- **In-editor tags** — `#tag` chips live inside the editor column under the title, scroll with content; in edit modes a tap copies `#tag ` at caret, and in Preview a tap scrolls the rendered preview to that tag.
 - **Tight selection & scrollbar** — multi-line selection hugs glyphs (`BoxWidthStyle.tight`); interactive scrollbar shows hand cursor and padded gutter (`right 18/24`) without covering text.
 
 <table align="right"
@@ -63,8 +63,9 @@ shipped as a self-contained tarball.
 
 - **Live preview** — GFM subset (headings, emphasis, lists, task lists,
   quotes, fenced code, links, tables, `<u>` underline) rendered with your
-  chosen theme world; links use the theme accent; System mode follows your
-  desktop.
+  chosen theme world; links use the theme accent; `Ctrl+F` finds inside the
+  rendered preview and `Enter`/`Shift+Enter` step through matches; System
+  mode follows your desktop.
 - **Theme worlds & type controls** — Quire, Graphite, and Sepia color sets ×
   System/Light/Dark; app-wide zoom (`Ctrl+=/-/0`); editor type size 12–24 px.
 - **Quick-switcher** — `Ctrl+K` (or the header search pill) jumps to any note across vaults; an empty query lists notes newest-first, so the first row is always what you touched last.
@@ -106,7 +107,7 @@ shipped as a self-contained tarball.
 | Next/previous note | `Ctrl+Tab` / `Ctrl+Shift+Tab` |
 | Bold / italic / underline | `Ctrl+B` / `Ctrl+I` / `Ctrl+U` |
 | Select word | `Ctrl+D` |
-| Find in note | `Ctrl+F` inside the editor, `Esc` closes |
+| Find in note | `Ctrl+F` in the editor or preview, `Esc` closes |
 | Copy/paste (terminal-style) | `Ctrl+Shift+C` / `Ctrl+Shift+V` |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Cycle editor mode | `Ctrl+Shift+M` |
@@ -183,3 +184,4 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/plan/plan_v0.3.2.md`](docs/plan/plan_v0.3.2.md) — v0.3.2 implementation plan (no surprises)
 - [`docs/plan/plan_v0.3.3.md`](docs/plan/plan_v0.3.3.md) — v0.3.3 implementation plan (type-first)
 - [`docs/plan/plan_v0.3.4.md`](docs/plan/plan_v0.3.4.md) — v0.3.4 implementation plan (sticky state)
+- [`docs/plan/plan_v0.3.5.md`](docs/plan/plan_v0.3.5.md) — v0.3.5 implementation plan (steady)

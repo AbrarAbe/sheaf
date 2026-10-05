@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-10-05
+
+### Added
+
+- Add wrapped list alignment regression test
+
+### Changed
+
+- Draft v0.3.5 'steady' with 6 tasks
+- Separate scroll controllers per mode
+- Drop vestigial cache-miss branches
+- Defer hanging indent to ADR 0008
+- Make tag chips clickable in preview mode
+- Finalize v0.3.5 checkbox closure
+
+### Fixed
+
+- Eliminate scroll flicker on note and mode switch
+- Use caret cache for mode switches to prevent flicker
+- Center caret in viewport after mode and note switches
+
 ## [0.3.4] - 2026-09-26
 
 ### Added
@@ -21,6 +42,7 @@ All notable changes to this project will be documented in this file.
 - Defer list wrap alignment to v0.3.5
 - Hide attachments directory as .attachments
 - Link color uses theme accent
+- V0.3.4
 
 ### Fixed
 
@@ -281,6 +303,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.5]: https://github.com/AbrarAbe/sheaf/compare/v0.3.4..v0.3.5
 [0.3.4]: https://github.com/AbrarAbe/sheaf/compare/v0.3.3..v0.3.4
 [0.3.3]: https://github.com/AbrarAbe/sheaf/compare/v0.3.2..v0.3.3
 [0.3.2]: https://github.com/AbrarAbe/sheaf/compare/v0.3.1..v0.3.2

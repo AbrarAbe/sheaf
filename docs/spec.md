@@ -4,8 +4,8 @@ Milestone history: v0.1 ("the desk") shipped as `v0.1.0`; v0.2
 ("the editor") shipped; v0.3 ("polish & power") shipped; v0.3.1
 ("paper cuts") shipped; v0.3.2 ("no surprises") shipped; v0.3.3
 ("type-first") shipped; v0.3.4 ("sticky state") shipped; v0.3.5
-("steady") is the current draft. This revision brings the spec up to
-v0.3.4 and records the deferred items still open.
+("steady") is the current release. This revision brings the spec up to
+v0.3.5 and records the deferred items still open.
 
 ## Objective
 
@@ -238,8 +238,9 @@ Fonts as offline assets; local font loading (removed).
     render with `theme.colorScheme.primary` and an underline, matching the
     rest of the preview's Quire theming.
 
-Explicitly **deferred to v0.3.5**: editor list wrap alignment (story
-53). Everything else carried from the v0.3.4 brief stays deferred:
+Explicitly **deferred** (carried into v0.3.5, still open — see
+`docs/adr/0008-editor-hanging-indent.md`): editor list wrap alignment
+(story 53). Everything else carried from the v0.3.4 brief stays deferred:
 list/link/image action bar (`EditorActionBar`, `ListKind`,
 `LinkKind`); open-notes editor tabs (see
 `docs/adr/0007-open-notes-tabs.md`); global hotkeys (`Ctrl+Alt+N`);
@@ -259,17 +260,18 @@ Fonts as offline assets; local font loading (removed).
     chain added in v0.3.4 (to win a race against
     `EditableText._scheduleShowCaretOnScreen`) is removed because the
     offset is now correct before `EditableText` mounts.
-57. **Editor list wrap alignment** — wrapped list text in the editor
-    (Normal and Markdown modes) aligns with the first character of the
-    item's content (a hanging indent), not with the marker. Matches
-    Obsidian/Typora behavior and what the preview already renders via
-    `Row(marker SizedBox, Flexible content)`. Implemented as a custom
-    `LineBoxPainter` on the editor body that translates each physical
-    line right by the marker width computed from the source text of
-    the logical line. Layout, caret math, selection, and undo are
-    untouched — the painter only changes per-line paint. Preview is
-    already correct and stays as-is; a test is added as a regression
-    guard.
+57. **Editor list wrap alignment** — **deferred (ADR 0008, v0.3.5).**
+    Wrapped list text in the editor (Normal and Markdown modes) should
+    align with the first character of the item's content (a hanging
+    indent), not with the marker, matching Obsidian/Typora behavior and
+    what the preview already renders via `Row(marker SizedBox, Flexible
+    content)`. The planned `LineBoxPainter` API does not exist in
+    Flutter 3.49 beta (verified against `packages/flutter/lib/` and
+    pub.dev), and a `TextPainter` paint translation would desync caret
+    and selection (they read layout, not paint, positions). Deferred
+    until Flutter ships a per-line paint hook or the editor moves to a
+    custom render-object framework; the preview is already correct and
+    stays as-is, with a regression test guarding it.
 58. **Tag chips clickable in preview mode** — the in-editor tag chip bar
     is rendered in every mode, but tapping a chip in Preview is inert
     because the handler mutates the (unmounted) body's selection and
@@ -285,13 +287,15 @@ Fonts as offline assets; local font loading (removed).
     current match in the rendered preview is documented as a
     known limitation (scroll-to only) rather than over-engineered.
 
-Explicitly **deferred**: list/link/image action bar
-(`EditorActionBar`, `ListKind`, `LinkKind`) — list continuation
-(story 15/23) is the shipped list behavior and the untested scaffolding
-was removed in v0.3.1; open-notes editor tabs (see
+Explicitly **deferred**: editor list wrap alignment — the editor
+hanging indent (story 57) — see `docs/adr/0008-editor-hanging-indent.md`;
+list/link/image action bar (`EditorActionBar`, `ListKind`, `LinkKind`) —
+list continuation (story 15/23) is the shipped list behavior and the
+untested scaffolding was removed in v0.3.1; open-notes editor tabs (see
 `docs/adr/0007-open-notes-tabs.md`); global hotkeys (`Ctrl+Alt+N`);
 reminders; sync/mobile polish; true marker-hiding WYSIWYG; parsing
 local GTK themes' CSS into color worlds; bundling additional Google
+Fonts as offline assets; local font loading (removed).
 
 ## Assumptions
 
@@ -458,19 +462,20 @@ v0.3.4 adds:
       directory migrates on first vault open
 - [x] Markdown links in the preview render in the theme accent
 - [x] `flutter analyze` clean; `flutter test` green
+
 v0.3.5 adds:
 
-- [ ] No scroll flicker when switching Preview → Normal or Markdown;
+- [x] No scroll flicker when switching Preview → Normal or Markdown;
       the cached offset is honored at attach time (no post-frame dance)
+- [x] Preview wrapped-list alignment covered by a regression test
 - [ ] Editor wrapped list text aligns with the item's content (hanging
-      indent) — matches what the preview already renders
-- [ ] Preview alignment covered by a regression test
-- [ ] Tag chips are clickable in Preview — tap scrolls the rendered
+      indent) — **deferred to a future version, see ADR 0008**
+- [x] Tag chips are clickable in Preview — tap scrolls the rendered
       preview to the tag's first occurrence
-- [ ] Find in note works in Preview — `Ctrl+F` opens the bar, matches
+- [x] Find in note works in Preview — `Ctrl+F` opens the bar, matches
       against rendered preview text, `Enter`/`Shift+Enter` cycle,
       `Esc` closes
-- [ ] `flutter analyze` clean; `flutter test` green
+- [x] `flutter analyze` clean; `flutter test` green
 
 ## Decisions
 
