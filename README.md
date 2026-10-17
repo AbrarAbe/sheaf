@@ -194,7 +194,7 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 *   **Reporting Bugs** : If you find any bugs or issues, please open an issue on the GitHub repository. Provide a clear description of the bug, steps to reproduce it, and any relevant error messages.
 *   **Suggesting Features** : Have an idea for a new feature or improvement? Feel free to open a discussion to suggest it. Describe your idea and why you think it would be valuable.
 
-**Submitting Pull Requests** : On hold for now — please hold off on opening a pull request until contribution guidelines land. When they do, the expectation will be the same as it is today: fork the repository, keep your changes focused and well-commented, follow [conventinal commits guidelines](https://www.conventionalcommits.org/en/v1.0.0/) and follow general Flutter coding conventions.
+**Submitting Pull Requests** : On hold for now — please hold off on opening a pull request until contribution guidelines land. When they do, the expectation will be the same as it is today: fork the repository, keep your changes focused and well-commented, follow [conventional commits guidelines](https://www.conventionalcommits.org/en/v1.0.0/) and follow general Flutter coding conventions.
 
 We appreciate your help in making this project even better!
 
