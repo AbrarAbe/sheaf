@@ -163,10 +163,46 @@ echo "📦 Bundling GTK dependencies..."
     --executable "$APPDIR/sheaf" \
     --desktop-file "$APPDIR/sheaf.desktop" 2>/dev/null || true
 
+# Update information used by AppImageUpdate / zsync for delta updates.
+if [ -z "${APPIMAGE_UPDATE_INFO:-}" ]; then
+    if [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
+        APPIMAGE_UPDATE_INFO="gh-releases-zsync|${GITHUB_REPOSITORY%/*}|${GITHUB_REPOSITORY#*/}|latest|*.AppImage.zsync"
+    else
+        APPIMAGE_UPDATE_INFO=""
+    fi
+fi
+
+# Direct download URL for the published AppImage (used in the .zsync file)
+APPIMAGE_FILE_URL=""
+if [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_REF_NAME:-}" ]; then
+    APPIMAGE_FILE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$OUTPUT_APPIMAGE")"
+fi
+
+# Make the bundled zsyncmake discoverable (used by appimagetool and by us)
+export PATH="$TOOLS_DIR/squashfs-root/plugins/linuxdeploy-plugin-appimage/appimagetool-prefix/usr/bin:$PATH"
+
 # 5. Package into AppImage using appimagetool directly
 echo "📦 Creating AppImage..."
 export LDAI_OUTPUT="$OUTPUT_APPIMAGE"
-"$APPIMAGETOOL" "$APPDIR" "$OUTPUT_APPIMAGE"
+if [ -n "$APPIMAGE_UPDATE_INFO" ]; then
+    "$APPIMAGETOOL" -u "$APPIMAGE_UPDATE_INFO" "$APPDIR" "$OUTPUT_APPIMAGE"
+else
+    "$APPIMAGETOOL" "$APPDIR" "$OUTPUT_APPIMAGE"
+fi
+
+# 5b. Generate zsync delta-update metadata alongside the AppImage
+ZSYNC_OUT="$OUTPUT_APPIMAGE.zsync"
+if [ -n "$APPIMAGE_FILE_URL" ] && command -v zsyncmake >/dev/null 2>&1; then
+    echo "🔗 Generating zsync metadata: $ZSYNC_OUT"
+    (cd "$(dirname "$OUTPUT_APPIMAGE")" && zsyncmake -u "$APPIMAGE_FILE_URL" "$(basename "$OUTPUT_APPIMAGE")")
+    if [ -f "$ZSYNC_OUT" ]; then
+        echo "✅ zsync metadata created"
+    else
+        echo "⚠️  zsync metadata generation failed"
+    fi
+elif [ -n "$APPIMAGE_UPDATE_INFO" ]; then
+    echo "⚠️  zsyncmake not found; skipping .zsync generation. Install zsync in CI."
+fi
 
 BUILD_HOME="$HOME"
 

@@ -24,7 +24,7 @@ jobs:
             - name: Install Linux build dependencies
               run: >
                   sudo apt-get update &&
-                  sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+                  sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev zsync
 
             - name: Pub get
               run: flutter pub get
@@ -54,6 +54,7 @@ jobs:
                   path: |
                       sheaf-*-linux-x64.tar.gz
                       sheaf-*-linux-x64.AppImage
+                      sheaf-*-linux-x64.AppImage.zsync
 
     # Separate job so a publish/upload failure can be retried via
     # "Re-run failed jobs" without rebuilding (~20 min saved).
@@ -85,3 +86,4 @@ jobs:
                   files: |
                       sheaf-*-linux-x64.tar.gz
                       sheaf-*-linux-x64.AppImage
+                      sheaf-*-linux-x64.AppImage.zsync
