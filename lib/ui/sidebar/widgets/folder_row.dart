@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../data/vault_repository.dart' show FolderNode;
 import '../../../logic/vault_controller.dart';

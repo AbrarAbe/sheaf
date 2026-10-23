@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../logic/editor_controller.dart';
 import '../../../logic/search_controller.dart';

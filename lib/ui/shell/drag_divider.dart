@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A draggable divider between panes: a generous invisible hit strip with a
 /// 1 px hairline centered in it, column-resize cursor per layout-and-space.md.

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'logic/theme_setting_x.dart';
 import 'logic/vault_controller.dart';
@@ -39,7 +39,17 @@ class SheafApp extends StatelessWidget {
             final scaled = media.copyWith(
               textScaler: TextScaler.linear(clampZoom(controller.settings.zoomFactor)),
             );
-            return MediaQuery(data: scaled, child: child ?? const SizedBox.shrink());
+            // Bridge the modern `package:material_ui` theme to legacy packages
+            // (flutter_context_menu, file_picker, desktop_drop, markdown_widget,
+            // window_manager, ...) that still resolve `package:flutter/material`
+            // Theme/Localizations. Required after the material_ui migration so
+            // legacy subtrees inherit the app theme instead of falling back to
+            // defaults.
+            return MediaQuery(
+              data: scaled,
+              // ignore: deprecated_member_use
+              child: MaterialUiCompatibilityBridge(child: child ?? const SizedBox.shrink()),
+            );
           },
           home:
               homeOverride ??

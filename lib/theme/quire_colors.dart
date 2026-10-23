@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Quire semantic colors that have no home in Material's [ColorScheme]:
 /// the highlighter set (state washes) and the focus ring.

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Text controller that renders markdown formatting live in Normal mode
 /// (spec story 12, feedback F4): styled spans with **dimmed markers** —

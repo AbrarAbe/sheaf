@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A small floating "back to top" button that fades in when the scroll
 /// offset crosses [threshold] and fades out otherwise. Spec story 54 —

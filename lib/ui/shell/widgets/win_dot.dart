@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The desktop shell: sidebar | note list | editor, folding through the three
 /// window tiers of layout-and-space.md. Owns the editor controller and keeps

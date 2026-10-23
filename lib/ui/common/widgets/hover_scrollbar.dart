@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Wraps a scrollable so its scrollbar thumb shows a hand cursor on hover
 /// and a grabbing cursor while the thumb is dragged.
