@@ -297,6 +297,43 @@ reminders; sync/mobile polish; true marker-hiding WYSIWYG; parsing
 local GTK themes' CSS into color worlds; bundling additional Google
 Fonts as offline assets; local font loading (removed).
 
+## User stories — v0.3.6 "deliberate"
+
+60. **New-note modal captures intent before creation** — `Ctrl+N`, the
+    list-pane "New note" button, the note-list scaffold context menu, the
+    empty state, and the stack shell no longer create an `Untitled` note as a
+    quiet side effect. Each opens a modal form with two required-but-defaulted
+    fields — note name (defaults to `Untitled`) and location (defaults to the
+    current directory) — and creates the note only on submit (`Enter` accepts
+    the defaults, `Esc` cancels). Location is chosen from the folder tree
+    (including a `Vault root` entry), never typed, so typos cannot birth stray
+    folders. The created note's title and folder flow through the existing
+    `createNote` path; a cancelled dialog creates nothing.
+61. **Directory label on note rows (unfiltered view only)** — in the all-notes
+    view (`selectedFolder == null && selectedTag == null`), each `NoteRow`
+    shows the note's immediate parent folder name (`Vault root` for top-level
+    notes) with the full relative directory as a tooltip, so a flat list of
+    notes finally says where it lives. The label stays hidden under any folder
+    or tag scope, where it would be redundant.
+62. **"New note inside" from a folder row** — a folder's context menu gains
+    `New note inside` next to the existing `New folder inside`; selecting it
+    selects that folder and opens the same modal, so its location default is
+    already correct. Creation still runs through the single shared funnel.
+63. **Note-creation picker setting** — Settings gains `NewNotePicker`
+    (`builtin` default / `system`), persisted like every other flag. When set to
+    `system`, the new-note affordances use the OS directory chooser
+    (`file_picker`'s `getDirectoryPath`) instead of the built-in modal; the note
+    is created as `Untitled` in the chosen directory, and picking a directory
+    outside the active vault creates nothing. No new dependency is
+    introduced — the chooser is the one already backing vault selection.
+64. **One predictable way to start a note, from anywhere** — muscle memory
+    pays off: `Ctrl+N`, the list-pane button, the scaffold context menu, the
+    empty state, the folder row, and the stack shell all present the same
+    two-step flow with the same defaults and the same cancel semantics, so the
+    gesture is learned once and no surface can ever leave a note behind that the
+    user did not confirm. There is no “skip the modal if the defaults are fine”
+    bypass.
+
 ## Assumptions
 
 1. v0.1 assumptions carry over (files-on-disk vault, source-mode editor +
@@ -476,6 +513,28 @@ v0.3.5 adds:
       against rendered preview text, `Enter`/`Shift+Enter` cycle,
       `Esc` closes
 - [x] `flutter analyze` clean; `flutter test` green
+
+v0.3.6 adds:
+
+- [ ] New-note modal captures intent before creation — `Ctrl+N`, the
+      list-pane button, the scaffold context menu, the empty state, and the
+      stack shell all open a two-field modal (name defaulting to `Untitled`,
+      location defaulting to the current directory chosen from the folder tree);
+      `Enter` accepts the defaults, `Esc` cancels; no "skip the modal" bypass
+- [ ] Note rows show their immediate parent folder in the unfiltered view
+      (`Vault root` for top-level notes), with the full relative directory as a
+      tooltip; hidden under any folder or tag scope
+- [ ] Folder-row context menu gains "New note inside" alongside "New folder
+      inside", selecting the folder and opening the same modal
+- [ ] Settings toggle `NewNotePicker` (`builtin` default / `system`) persisted
+      like other flags; system mode uses `file_picker`'s directory chooser and
+      creates nothing for a directory picked outside the vault; no new
+      dependency introduced
+- [ ] Every entry point — `Ctrl+N`, list-pane button, scaffold context menu,
+      empty state, folder row, stack shell — presents the same flow and the same
+      defaults (modal, or the OS picker per the setting), and no surface can
+      create a note the user did not confirm
+- [ ] `flutter analyze` clean; `flutter test` green
 
 ## Decisions
 
