@@ -1,6 +1,7 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../logic/vault_controller.dart';
 import '../../theme/quire_colors.dart';
@@ -30,7 +31,9 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLight = theme.brightness == Brightness.light;
-    final quire = theme.extension<QuireColors>() ?? (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
+    final quire =
+        theme.extension<QuireColors>() ??
+        (theme.brightness == Brightness.dark ? quireColorsDark : quireColorsLight);
     final onSurface = theme.colorScheme.onSurface;
     final onVariant = theme.colorScheme.onSurfaceVariant;
 
@@ -44,6 +47,14 @@ class WelcomeScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Brand mark
+                SvgPicture.asset(
+                  'assets/brand/svg/sheaf-symbol.svg',
+                  width: 48,
+                  height: 48,
+                  colorFilter: ColorFilter.mode(onSurface, BlendMode.srcIn),
+                ),
+                const SizedBox(height: 16),
                 // Eyebrow
                 Text(
                   'QUIRE  ·  A GATHERING OF FOLDED PAGES',
@@ -69,7 +80,12 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 // Wordmark + paper stack
-                PaperStack(isLight: isLight, primary: theme.colorScheme.primary, card: theme.colorScheme.surfaceContainerLowest, hairline: theme.colorScheme.outlineVariant),
+                PaperStack(
+                  isLight: isLight,
+                  primary: theme.colorScheme.primary,
+                  card: theme.colorScheme.surfaceContainerLowest,
+                  hairline: theme.colorScheme.outlineVariant,
+                ),
                 const SizedBox(height: 28),
                 Text(
                   'Your notes,',
@@ -127,7 +143,11 @@ class WelcomeScreen extends StatelessWidget {
                               color: theme.colorScheme.secondaryContainer,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.folder_open_rounded, size: 18, color: theme.colorScheme.primary),
+                            child: Icon(
+                              Icons.folder_open_rounded,
+                              size: 18,
+                              color: theme.colorScheme.primary,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(

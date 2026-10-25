@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Sheaf logo, reversed</title>
+  <!--
+    Sheaf mark, final master - REVERSED (white) cut.
+
+    Identical geometry to brand/final/sheaf-symbol.svg, thinned from stroke 36
+    to stroke 34 for irradiation compensation.
+
+    Why thinned: on a dark field a light shape reads heavier than an ink shape
+    of the same stroke, because light bleeds outward into the surrounding dark
+    (irradiation). Stroke 34 is 5.6% lighter than the stock cut, which lands
+    the mark inside the traditional 3-6% correction band for reversed artwork.
+
+    The choice was made on evidence, not taste. brand/scripts/sheet_reversed.py
+    renders four integer candidates (33/34/35/36) as white marks on identical
+    #191C24 tiles at 512/256/128px beside a positive control - stock ink on
+    #F3F4F7 paper - and prints measured mark coverage:
+
+      stroke 36  positive control (ink on paper)   28.86% at 512px
+      stroke 36  white, uncorrected                28.91%
+      stroke 35  white, -2.8%                      28.17%
+      stroke 34  white, -5.6%                      27.38%   (chosen)
+      stroke 33  white, -8.3%                      26.59%
+
+    Coverage alone does not settle it (irradiation makes the white mark appear
+    larger than its true coverage, so perceived equality needs a deficit, not a
+    match), but it rules stroke 33 out as an over-correction that reads as a
+    different, deliberately lighter cut. Inspected at 2x, stroke 35 and 36 are
+    barely distinguishable while 34 reads as the same mark with a touch more
+    air in the counter - the intended result. Sheet:
+    brand/renders/sheet-reversed.png.
+
+    Stroke must be an integer: gen_symbol.py formats the band as %d
+    (height = stroke, rx = stroke/2), so a fractional stroke would break the
+    flush band-to-arc seam. With stroke 34 the band is h=34 rx=17 and the arc
+    caps are R=17 - still exactly flush, outer R=71 (54+17), inner R=37 (54-17).
+
+    Deliberately NOT thinned, both by design:
+      - sheaf-symbol-small.svg (stroke 42). It appears only on tiles, where
+        small-size legibility needs the extra weight and that cancels the
+        irradiation gain.
+      - the lockup. Thinning either half alone breaks the measured weight match
+        between symbol and wordmark (0.172 stem/x-height vs 0.173 stroke/S-height)
+        that fixed the wordmark at Bricolage wght 400.
+
+    The mark is 180-degree symmetric about (128, 127) and the band is centred
+    on that axis, so it overhangs the letter equally on both sides - a cord is
+    longer than the bundle it holds. Fully resolved to filled paths: no
+    strokes, no filters, no text, no gradients.
+  -->
+  <g id="symbol" fill="#FFFFFF">
+    <path d="M 189.49 59.50
+  A 71.0 71.0 0 0 0 59.42 113.38
+  A 17.0 17.0 0 0 0 92.26 104.58
+  A 37.0 37.0 0 0 1 160.04 76.50
+  A 17.0 17.0 0 0 0 189.49 59.50
+  Z"/>
+    <path d="M 196.58 140.62
+  A 71.0 71.0 0 0 1 66.51 194.50
+  A 17.0 17.0 0 0 1 95.96 177.50
+  A 37.0 37.0 0 0 0 163.74 149.42
+  A 17.0 17.0 0 0 1 196.58 140.62
+  Z"/>
+    <rect x="30" y="110.00" width="196" height="34" rx="17"/>
+  </g>
+</svg>

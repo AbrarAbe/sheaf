@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../logic/vault_controller.dart';
@@ -91,14 +92,11 @@ class HeaderBar extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: Text(
-                        'S',
-                        style: GoogleFonts.bricolageGrotesque(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: theme.colorScheme.onPrimary,
-                          height: 1,
-                        ),
+                      child: SvgPicture.asset(
+                        'assets/brand/svg/sheaf-symbol.svg',
+                        width: 16,
+                        height: 16,
+                        colorFilter: ColorFilter.mode(theme.colorScheme.onPrimary, BlendMode.srcIn),
                       ),
                     ),
                   ),

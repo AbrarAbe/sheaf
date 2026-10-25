@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Sheaf logo</title>
+  <!--
+    Sheaf mark, final master.
+    S from two 165-degree arcs (r 54, stroke 36) plus a straight band of the
+    same weight. The letter is 180-degree symmetric about (128, 127) and the band is
+    centred on that axis, so it overhangs the letter equally on both sides - a cord is
+    longer than the bundle it holds.
+    Fully resolved to filled paths: no strokes, no filters, no text, no gradients.
+  -->
+  <g id="symbol" fill="#191C24">
+    <path d="M 190.35 59.00
+  A 72.0 72.0 0 0 0 58.45 113.63
+  A 18.0 18.0 0 0 0 93.23 104.32
+  A 36.0 36.0 0 0 1 159.18 77.00
+  A 18.0 18.0 0 0 0 190.35 59.00
+  Z"/>
+    <path d="M 197.55 140.37
+  A 72.0 72.0 0 0 1 65.65 195.00
+  A 18.0 18.0 0 0 1 96.82 177.00
+  A 36.0 36.0 0 0 0 162.77 149.68
+  A 18.0 18.0 0 0 1 197.55 140.37
+  Z"/>
+    <rect x="30" y="109.00" width="196" height="36" rx="18"/>
+  </g>
+</svg>

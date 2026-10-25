@@ -1,32 +1,41 @@
 name: sheaf
 description: "A local-first Markdown notes desk for Linux with plain-file vaults, live preview, tags, trash restore, and keyboard-first navigation."
-publish_to: 'none'
+publish_to: "none"
 version: 0.3.5+1
 
 environment:
-  sdk: ^3.14.0-95.2.beta
+    sdk: ^3.14.0-95.2.beta
 
 dependencies:
-  flutter:
-    sdk: flutter
-  dynamic_color: ^2.1.0
-  material_ui: ^1.8.0
-  google_fonts: ^6.2.1
-  path: ^1.9.1
-  path_provider: ^2.1.6
-  file_picker: ^12.0.0
-  markdown: ^7.3.1
-  markdown_widget: ^2.3.2+8
-  desktop_drop: ^0.8.0
-  intl: ^0.20.3
-  watcher: ^1.2.1
-  flutter_context_menu: ^0.4.2
-  window_manager: ^0.5.2
+    flutter:
+        sdk: flutter
+    dynamic_color: ^2.1.0
+    material_ui: ^1.8.0
+    google_fonts: ^6.2.1
+    path: ^1.9.1
+    path_provider: ^2.1.6
+    file_picker: ^12.0.0
+    markdown: ^7.3.1
+    markdown_widget: ^2.3.2+8
+    desktop_drop: ^0.8.0
+    intl: ^0.20.3
+    watcher: ^1.2.1
+    flutter_context_menu: ^0.4.2
+    window_manager: ^0.5.2
+    flutter_svg: ^2.3.0
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^6.0.0
+    flutter_test:
+        sdk: flutter
+    flutter_lints: ^6.0.0
 
 flutter:
-  uses-material-design: true
+    uses-material-design: true
+    assets:
+        - assets/brand/svg/sheaf-symbol.svg
+        - assets/brand/svg/sheaf-symbol-small.svg
+        - assets/brand/svg/sheaf-symbol-reversed.svg
+        - assets/brand/svg/sheaf-wordmark.svg
+        - assets/brand/svg/sheaf-lockup.svg
+        - assets/brand/svg/sheaf-lockup-stacked.svg
+        - assets/brand/sheaf.png

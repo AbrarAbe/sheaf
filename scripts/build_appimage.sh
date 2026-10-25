@@ -149,11 +149,11 @@ Type=Application
 Categories=Utility;
 EOF
 
-# Use the Android launcher icon as the desktop icon
-ANDROID_ICON="$PROJECT_ROOT/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"
-if [ -f "$ANDROID_ICON" ]; then
-    cp "$ANDROID_ICON" "$APPDIR/sheaf.png"
-    echo "📱 Using Android icon as desktop icon"
+# Use the bundled brand mark as the desktop icon
+APP_ICON="$PROJECT_ROOT/assets/brand/sheaf.png"
+if [ -f "$APP_ICON" ]; then
+    cp "$APP_ICON" "$APPDIR/sheaf.png"
+    echo "🎨 Using brand mark as desktop icon"
 fi
 
 # 4. Use linuxdeploy (without --output) to bundle GTK libs into the AppDir
