@@ -46,6 +46,7 @@ class SpyVaultController extends VaultController {
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
   List<Note> fakeNotes = const [];
+  List<FolderNode> fakeFolders = const [];
   ThemeSetting theme = ThemeSetting.system;
   @override
   String vaultPath = '/old/vault';
@@ -54,6 +55,9 @@ class SpyVaultController extends VaultController {
 
   @override
   List<Note> get notes => List.unmodifiable(fakeNotes);
+
+  @override
+  List<FolderNode> get folders => List.unmodifiable(fakeFolders);
 
   @override
   Iterable<Note> get visibleNotes => fakeNotes;

@@ -1,0 +1,271 @@
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/ui/dialogs/new_note_dialog.dart';
+
+import '../../helpers/spy_vault_controller.dart';
+
+void main() {
+  late SpyVaultController controller;
+
+  setUp(() {
+    controller = SpyVaultController('unused');
+    controller.fakeFolders = const [
+      FolderNode(
+        name: 'work',
+        relPath: 'work',
+        children: [FolderNode(name: 'q3', relPath: 'work/q3')],
+      ),
+    ];
+    controller.selectedFolder = null;
+  });
+
+  testWidgets('default submit returns Untitled and empty folder', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.showKeyboard(find.byType(TextFormField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(result, isNotNull);
+    expect(result!.title, 'Untitled');
+    expect(result!.relFolder, '');
+  });
+
+  testWidgets('empty name normalizes to Untitled', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.enterText(find.byType(TextFormField), '');
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(result, isNotNull);
+    expect(result!.title, 'Untitled');
+  });
+
+  testWidgets('whitespace trimmed', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.enterText(find.byType(TextFormField), '  hello  ');
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(result, isNotNull);
+    expect(result!.title, 'hello');
+  });
+
+  testWidgets('location default when a folder is selected', (tester) async {
+    controller.selectedFolder = 'work/q3';
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('work/q3'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(result, isNotNull);
+    expect(result!.title, 'Untitled');
+    expect(result!.relFolder, 'work/q3');
+  });
+
+  testWidgets('dropdown content flattened and selection submitted', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Vault root'), findsOneWidget);
+
+    // open the dropdown
+    await tester.tap(find.text('Vault root'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('work/q3').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(result, isNotNull);
+    expect(result!.relFolder, 'work/q3');
+  });
+
+  testWidgets('cancel via barrier dismiss returns null', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tapAt(const Offset(0, 0));
+    await tester.pumpAndSettle();
+
+    expect(result, isNull);
+  });
+
+  testWidgets('cancel via Esc returns null', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(result, isNull);
+  });
+
+  testWidgets('no stale state after prior submit', (tester) async {
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // first submit
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.enterText(find.byType(TextFormField), 'First');
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+    expect(result!.title, 'First');
+
+    // reopen
+    result = null;
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // default name should be Untitled again
+    final field = tester.widget<TextFormField>(find.byType(TextFormField));
+    expect(field.controller!.text, 'Untitled');
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+    expect(result, isNotNull);
+    expect(result!.title, 'Untitled');
+    expect(result!.relFolder, '');
+  });
+}

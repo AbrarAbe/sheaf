@@ -130,7 +130,7 @@ note rows in the unscoped list finally say which directory they live in.
 
 ### Phase 2 — The modal
 
-- [ ] **Task B: new-note modal**
+- [x] **Task B: new-note modal**
   **Description:** Create `lib/ui/dialogs/new_note_dialog.dart` exposing
   `Future<NewNoteRequest?> showNewNoteDialog(BuildContext context, VaultController
   controller)` — no picker callback here: the built-in modal's location control
@@ -151,17 +151,17 @@ note rows in the unscoped list finally say which directory they live in.
   field. Cancel is `showDialog`'s default barrier dismiss, which resolves
   `null`.
   **Acceptance criteria:**
-  - [ ] `showNewNoteDialog` returns `null` on cancel and `NewNoteRequest` on submit.
-  - [ ] Defaults are `Untitled` and `controller.selectedFolder ?? ''`.
-  - [ ] Location control is a dropdown over the folder tree plus `Vault root`;
+  - [x] `showNewNoteDialog` returns `null` on cancel and `NewNoteRequest` on submit.
+  - [x] Defaults are `Untitled` and `controller.selectedFolder ?? ''`.
+  - [x] Location control is a dropdown over the folder tree plus `Vault root`;
         no free text.
-  - [ ] Empty name submissions are normalized to `Untitled`.
-  - [ ] Reloading after a prior submit re-shows the defaults (no stale state).
+  - [x] Empty name submissions are normalized to `Untitled`.
+  - [x] Reloading after a prior submit re-shows the defaults (no stale state).
   **Verification:**
-  - [ ] `test/ui/dialogs/new_note_dialog_test.dart` covers default submit,
+  - [x] `test/ui/dialogs/new_note_dialog_test.dart` covers default submit,
         empty-name normalization, cancel (Esc + barrier), and the location default
         when a folder is selected.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task A (conceptually — settings exists, though the modal does
   not read it yet)
   **Files likely touched:**
