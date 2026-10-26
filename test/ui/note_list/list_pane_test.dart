@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/models/note.dart';
@@ -63,9 +63,16 @@ void main() {
         await vault.createNote(title: 'Groceries');
       },
     );
+    // Unfiltered view shows the immediate-parent folder label.
+    expect(find.text('Vault root'), findsOneWidget);
+    expect(find.text('proj'), findsOneWidget);
+
     controller.selectFolder('proj');
     await tester.pump();
 
+    // Folder-scoped view hides the directory label.
+    expect(find.text('Vault root'), findsNothing);
+    expect(find.text('proj'), findsNothing);
     expect(find.text('in proj'), findsOneWidget);
     expect(find.text('Groceries'), findsNothing);
 

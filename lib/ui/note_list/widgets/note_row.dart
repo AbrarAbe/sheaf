@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../logic/search_controller.dart';
 import '../../../models/note.dart';
@@ -18,6 +18,7 @@ class NoteRow extends StatefulWidget {
     required this.onTogglePin,
     required this.pinned,
     required this.onInfoTap,
+    this.showDirectory = false,
   });
 
   final Note note;
@@ -28,6 +29,7 @@ class NoteRow extends StatefulWidget {
   final VoidCallback onDelete;
   final VoidCallback onTogglePin;
   final VoidCallback? onInfoTap;
+  final bool showDirectory;
 
   @override
   State<NoteRow> createState() => _NoteRowState();
@@ -53,6 +55,9 @@ class _NoteRowState extends State<NoteRow> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final snip = snippetOf(widget.note.body);
+    final segs = widget.note.path.split('/');
+    final dir = segs.length <= 1 ? '' : segs.sublist(0, segs.length - 1).join('/');
+    final parentLabel = dir.isEmpty ? 'Vault root' : dir.split('/').last;
     return QuireContextMenuRegion(
       menu: _menu,
       onItemSelected: (value) {
@@ -141,6 +146,23 @@ class _NoteRowState extends State<NoteRow> {
                               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                             ),
                           ),
+                        if (widget.showDirectory) ...[
+                          const SizedBox(height: 2),
+                          Tooltip(
+                            key: Key('note-row-directory-${Uri.encodeComponent(widget.note.path)}'),
+                            message: dir.isEmpty ? 'Vault root' : dir,
+                            child: Text(
+                              parentLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.splineSansMono(
+                                fontSize: 10.5,
+                                letterSpacing: 0.3,
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ],
                         if (widget.note.tags.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Wrap(

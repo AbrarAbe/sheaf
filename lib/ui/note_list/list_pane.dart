@@ -1,6 +1,6 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../logic/search_controller.dart';
 import '../../logic/vault_controller.dart';
@@ -306,6 +306,7 @@ class _ListPaneState extends State<ListPane> {
       onTrash: () => _onTrash(note),
       onDelete: () => _onDelete(note),
       onInfoTap: () => _showNoteInfo(note),
+      showDirectory: controller.selectedFolder == null && controller.selectedTag == null,
     ),
   );
 }

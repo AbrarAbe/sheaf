@@ -243,19 +243,20 @@ note rows in the unscoped list finally say which directory they live in.
   (one widget per file, no new private widgets in a pane); the label is expected
   to be small enough to stay inline in `NoteRow` and needs no new file.
   **Acceptance criteria:**
-  - [ ] Label appears only in the unfiltered view; hidden under folder or tag scope.
-  - [ ] Top-level notes show `Vault root`; nested notes show the immediate
+  - [x] Label appears only in the unfiltered view; hidden under folder or tag scope.
+  - [x] Top-level notes show `Vault root`; nested notes show the immediate
         parent folder name.
-  - [ ] Full relative directory is available as a tooltip (key
+  - [x] Full relative directory is available as a tooltip (key
         `note-row-directory-${Uri.encodeComponent(note.path)}`, matching the row's
         existing `row-pin-…` key style).
-  - [ ] No layout overflow on narrow rows; label uses `TextOverflow.ellipsis`.
+  - [x] No layout overflow on narrow rows; label uses `TextOverflow.ellipsis`.
   **Verification:**
-  - [ ] `test/ui/note_list/list_pane_test.dart` gains assertions: an unfiltered
+  - [x] `test/ui/note_list/list_pane_test.dart` gains assertions: an unfiltered
         list shows the parent label; a folder-scoped list does not.
-  - [ ] Add `test/ui/note_list/note_row_test.dart` for top-level vs. nested
-        label text if the row is extracted for direct testing.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [ ] (N/A — NoteRow was not extracted, the label is inline in it, so there is
+        no new file to test directly; the top-level vs. nested and scoped/unscoped
+        cases are covered by the ListPane assertions above.)
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/ui/note_list/widgets/note_row.dart`
