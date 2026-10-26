@@ -87,7 +87,7 @@ note rows in the unscoped list finally say which directory they live in.
 
 ### Phase 1 — Settings gate
 
-- [ ] **Task A: settings field + OS-picker seam**
+- [x] **Task A: settings field + OS-picker seam**
   **Description:** Add `NewNotePicker` (system picker vs. built-in modal,
   default `builtin`) to `AppSettings` — constructor default, `copyWith`,
   `toJson`/`fromJson`, and `==`/`hashCode`. The JSON key is camelCase
@@ -107,18 +107,18 @@ note rows in the unscoped list finally say which directory they live in.
   Document that the system branch reuses `WelcomeScreen.defaultPickFolder`
   (`FilePicker.getDirectoryPath`) and that no dependency is added.
   **Acceptance criteria:**
-  - [ ] `AppSettings.newNotePicker` round-trips through `toJson`/`fromJson`.
-  - [ ] Missing key on read yields `NewNotePicker.builtin`.
-  - [ ] `copyWith(newNotePicker:)` works; `==`/`hashCode` include the field.
-  - [ ] `VaultController.setNewNotePicker` early-returns when unchanged,
+  - [x] `AppSettings.newNotePicker` round-trips through `toJson`/`fromJson`.
+  - [x] Missing key on read yields `NewNotePicker.builtin`.
+  - [x] `copyWith(newNotePicker:)` works; `==`/`hashCode` include the field.
+  - [x] `VaultController.setNewNotePicker` early-returns when unchanged,
         persists via `_settingsRepo.save`, and notifies.
-  - [ ] Settings dialog renders the toggle under `key('new-note-picker-switch')`
+  - [x] Settings dialog renders the toggle under `key('new-note-picker-switch')`
         and routes `onChanged` to `setNewNotePicker`.
   **Verification:**
-  - [ ] `test/models/settings_test.dart` (or the existing settings test) gains
+  - [x] `test/models/settings_test.dart` (or the existing settings test) gains
         round-trip + legacy-default assertions.
-  - [ ] `test/logic/vault_controller_test.dart` gains the setter test.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `test/logic/vault_controller_test.dart` gains the setter test.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** None
   **Files likely touched:**
   - `lib/models/settings.dart`

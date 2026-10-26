@@ -41,6 +41,8 @@ class SpyVaultController extends VaultController {
   double zoom = 1.0;
   bool showWindowControls = true;
   final windowControlToggles = <bool>[];
+  NewNotePicker newNotePicker = NewNotePicker.builtin;
+  final newNotePickers = <NewNotePicker>[];
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
   List<Note> fakeNotes = const [];
@@ -107,6 +109,7 @@ class SpyVaultController extends VaultController {
     editorFontSize: editorFontSize,
     zoomFactor: zoom,
     showWindowControls: showWindowControls,
+    newNotePicker: newNotePicker,
     shortcutOverrides: Map.unmodifiable(shortcutOverrides),
   );
 
@@ -136,6 +139,13 @@ class SpyVaultController extends VaultController {
   Future<void> setShowWindowControls(bool value) async {
     windowControlToggles.add(value);
     showWindowControls = value;
+  }
+
+  @override
+  Future<void> setNewNotePicker(NewNotePicker picker) async {
+    newNotePickers.add(picker);
+    newNotePicker = picker;
+    notifyListeners();
   }
 
   @override

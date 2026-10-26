@@ -15,6 +15,7 @@ class AppSettings {
     this.sidebarFull = false,
     this.sidebarStack = false,
     this.showWindowControls = true,
+    this.newNotePicker = NewNotePicker.builtin,
     this.shortcutOverrides = const {},
   });
 
@@ -55,6 +56,10 @@ class AppSettings {
   /// (v0.3). Some setups keep the compositor title bar and want them gone.
   final bool showWindowControls;
 
+  /// Which surface creates a new note (v0.3.6). The built-in modal always asks
+  /// for a name and location; the OS picker hands back a directory only.
+  final NewNotePicker newNotePicker;
+
   /// Customizable shortcut overrides: action name to serialized `SingleActivator`.
   /// Empty means all defaults apply. Stored as `Map<String,String>` to keep this
   /// file Flutter-free; parsing lives in shortcut_serializer.dart.
@@ -73,6 +78,7 @@ class AppSettings {
     bool? sidebarFull,
     bool? sidebarStack,
     bool? showWindowControls,
+    NewNotePicker? newNotePicker,
     Map<String, String>? shortcutOverrides,
   }) => AppSettings(
     vaultPath: vaultPath ?? this.vaultPath,
@@ -86,6 +92,7 @@ class AppSettings {
     sidebarFull: sidebarFull ?? this.sidebarFull,
     sidebarStack: sidebarStack ?? this.sidebarStack,
     showWindowControls: showWindowControls ?? this.showWindowControls,
+    newNotePicker: newNotePicker ?? this.newNotePicker,
     shortcutOverrides: shortcutOverrides ?? this.shortcutOverrides,
   );
 
@@ -101,6 +108,7 @@ class AppSettings {
     'sidebarFull': sidebarFull,
     'sidebarStack': sidebarStack,
     'showWindowControls': showWindowControls,
+    'newNotePicker': newNotePicker.toJson(),
     if (shortcutOverrides.isNotEmpty) 'shortcutOverrides': shortcutOverrides,
   };
   factory AppSettings.fromJson(Map<String, Object?> json) {
@@ -141,6 +149,7 @@ class AppSettings {
       sidebarFull: json['sidebarFull'] as bool? ?? false,
       sidebarStack: json['sidebarStack'] as bool? ?? false,
       showWindowControls: json['showWindowControls'] as bool? ?? true,
+      newNotePicker: NewNotePicker.fromJson(json['newNotePicker'] as String?),
       shortcutOverrides: overrides,
     );
   }
@@ -158,6 +167,7 @@ class AppSettings {
       other.sidebarFull == sidebarFull &&
       other.sidebarStack == sidebarStack &&
       other.showWindowControls == showWindowControls &&
+      other.newNotePicker == newNotePicker &&
       _mapEq(other.shortcutOverrides, shortcutOverrides);
 
   @override
@@ -173,6 +183,7 @@ class AppSettings {
     sidebarFull,
     sidebarStack,
     showWindowControls,
+    newNotePicker,
     Object.hashAllUnordered(
       shortcutOverrides.entries.map((e) => Object.hash(e.key, e.value)),
     ),
@@ -230,3 +241,17 @@ enum EditorMode {
 /// Window layout tier (spec story 15). Lives beside settings so per-tier
 /// visibility flags can be keyed by tier without a ui→models dependency.
 enum WindowTier { expanded, full, stack }
+
+/// Which surface creates a new note (v0.3.6). The built-in modal always asks
+/// for a name and location; the OS picker hands back a directory only.
+enum NewNotePicker {
+  builtin,
+  system;
+
+  String toJson() => name;
+
+  factory NewNotePicker.fromJson(String? value) => values.firstWhere(
+    (v) => v.name == value,
+    orElse: () => NewNotePicker.builtin,
+  );
+}

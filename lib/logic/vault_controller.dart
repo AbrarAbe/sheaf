@@ -181,6 +181,14 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persists which surface creates a new note (v0.3.6).
+  Future<void> setNewNotePicker(NewNotePicker picker) async {
+    if (picker == _settings.newNotePicker) return;
+    _settings = _settings.copyWith(newNotePicker: picker);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
   /// Persists per-tier sidebar visibility (spec story 15 / task 10).
   Future<void> setSidebarVisibility(WindowTier tier, bool visible) async {
     final next = switch (tier) {

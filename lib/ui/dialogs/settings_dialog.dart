@@ -180,6 +180,19 @@ class _SettingsDialog extends StatelessWidget {
                   onChanged: (value) => controller.setShowWindowControls(value),
                 ),
                 const Divider(height: QuireSpace.xl),
+                const SectionLabel('Notes'),
+                const SizedBox(height: QuireSpace.xs),
+                SwitchListTile(
+                  key: const Key('new-note-picker-switch'),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Use system picker for new notes', style: theme.textTheme.bodySmall),
+                  value: controller.settings.newNotePicker == NewNotePicker.system,
+                  onChanged: (value) => controller.setNewNotePicker(
+                    value ? NewNotePicker.system : NewNotePicker.builtin,
+                  ),
+                ),
+                const Divider(height: QuireSpace.xl),
                 const SectionLabel('Vault'),
                 const SizedBox(height: QuireSpace.xs),
                 Row(

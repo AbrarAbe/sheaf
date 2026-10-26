@@ -146,4 +146,44 @@ void main() {
       );
     });
   });
+
+  group('NewNotePicker (v0.3.6)', () {
+    test('defaults to builtin', () {
+      const s = AppSettings();
+      expect(s.newNotePicker, NewNotePicker.builtin);
+    });
+
+    test('toJson emits newNotePicker builtin by default and system after copyWith', () {
+      final base = const AppSettings();
+      expect(base.toJson()['newNotePicker'], 'builtin');
+      final switched = base.copyWith(newNotePicker: NewNotePicker.system);
+      expect(switched.toJson()['newNotePicker'], 'system');
+    });
+
+    test('fromJson round-trips both values', () {
+      for (final v in NewNotePicker.values) {
+        final s = AppSettings.fromJson({'newNotePicker': v.name});
+        expect(s.newNotePicker, v);
+        final restored = AppSettings.fromJson(s.toJson());
+        expect(restored.newNotePicker, v);
+      }
+    });
+
+    test('fromJson missing key yields builtin', () {
+      final s = AppSettings.fromJson({'vaultPath': '/v'});
+      expect(s.newNotePicker, NewNotePicker.builtin);
+    });
+
+    test('fromJson unknown value yields builtin', () {
+      final s = AppSettings.fromJson({'newNotePicker': 'os_dialog'});
+      expect(s.newNotePicker, NewNotePicker.builtin);
+    });
+
+    test('equals/hashCode differ between builtin and system', () {
+      const a = AppSettings(newNotePicker: NewNotePicker.builtin);
+      final b = a.copyWith(newNotePicker: NewNotePicker.system);
+      expect(a, isNot(b));
+      expect(a.hashCode, isNot(b.hashCode));
+    });
+  });
 }

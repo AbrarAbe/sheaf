@@ -130,6 +130,22 @@ void main() {
     expect(controller.settings.showWindowControls, isFalse);
   });
 
+  testWidgets('new note picker switch records the choice', (tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = await pumpSettings(tester);
+    expect(controller.settings.newNotePicker, NewNotePicker.builtin);
+
+    await tester.tap(find.byKey(const Key('new-note-picker-switch')));
+    await tester.pump();
+
+    expect(controller.newNotePickers, [NewNotePicker.system]);
+    expect(controller.settings.newNotePicker, NewNotePicker.system);
+  });
+
   testWidgets('Change vault delegates to the controller with picked path', (
     tester,
   ) async {

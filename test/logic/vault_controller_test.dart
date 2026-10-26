@@ -151,6 +151,28 @@ void main() {
     expect(reloaded.settings.theme, ThemeSetting.dark);
   });
 
+  test('new note picker setting persists through the controller', () async {
+    final controller = makeController();
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    var notifications = 0;
+    controller.addListener(() => notifications++);
+
+    await controller.setNewNotePicker(NewNotePicker.system);
+    expect(controller.settings.newNotePicker, NewNotePicker.system);
+    expect(notifications, 1);
+
+    final before = notifications;
+    await controller.setNewNotePicker(NewNotePicker.system);
+    expect(notifications, before);
+
+    final reloaded = makeController();
+    addTearDown(reloaded.dispose);
+    await reloaded.initialize();
+    expect(reloaded.settings.newNotePicker, NewNotePicker.system);
+  });
+
   group('selection and filtering', () {
     test('null folder shows every note, picking one scopes it', () async {
       final controller = makeController();
