@@ -7,12 +7,14 @@ import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/vault_controller.dart';
 import 'package:sheaf/models/settings.dart';
+import 'package:sheaf/ui/dialogs/new_note_dialog.dart';
 import 'package:sheaf/ui/shell/drag_divider.dart';
 import 'package:sheaf/ui/shell/pane_widths.dart';
 import 'package:sheaf/ui/shell/shell.dart';
 import 'package:sheaf/ui/shell/window_controls.dart';
 import 'package:sheaf/ui/sidebar/sidebar.dart';
 
+import '../helpers/spy_vault_controller.dart';
 import '../helpers/test_vault.dart';
 
 void main() {
@@ -263,6 +265,112 @@ void main() {
       expect(calls, 1);
       expect(controller.selectedNotePath, 'Untitled.md');
       expect(find.widgetWithText(TextField, 'Untitled'), findsOneWidget);
+    });
+
+    testWidgets('modal path feeds request to createNote', (tester) async {
+      final controller = SpyVaultController('${tempDir.path}/settings.json');
+      addTearDown(controller.dispose);
+
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Shell(
+            controller: controller,
+            showNewNoteDialog: (ctx, c) async =>
+                const NewNoteRequest(title: 'Custom', relFolder: 'foo'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('New note'));
+      await tester.pump();
+
+      expect(controller.createdNoteCalls.length, 1);
+      expect(controller.createdNoteCalls.single.title, 'Custom');
+      expect(controller.createdNoteCalls.single.folder, 'foo');
+      expect(controller.selectedNotePath, 'foo/Custom.md');
+    });
+
+    testWidgets('modal cancel leaves vault untouched', (tester) async {
+      final controller = SpyVaultController('${tempDir.path}/settings.json');
+      addTearDown(controller.dispose);
+
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Shell(controller: controller, showNewNoteDialog: (ctx, c) async => null),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('New note'));
+      await tester.pump();
+
+      expect(controller.createdNoteCalls, isEmpty);
+      expect(controller.selectedNotePath, isNull);
+    });
+
+    testWidgets('system picker creates Untitled in chosen dir', (tester) async {
+      for (final scenario in [1, 2, 3, 4]) {
+        final controller = SpyVaultController('${tempDir.path}/settings.json');
+        controller.newNotePicker = NewNotePicker.system;
+        controller.vaultPath = scenario == 3 ? '' : '/old/vault';
+        addTearDown(controller.dispose);
+
+        Future<String?> picker() async {
+          switch (scenario) {
+            case 1:
+              return '/old/vault/sub';
+            case 2:
+              return '/elsewhere/outside';
+            case 3:
+              return '/anywhere';
+            case 4:
+              return '/old/vault/..hidden';
+            default:
+              return null;
+          }
+        }
+
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Shell(controller: controller, pickFolder: picker),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('New note'));
+        await tester.pump();
+
+        switch (scenario) {
+          case 1:
+            expect(controller.createdNoteCalls.length, 1);
+            expect(controller.createdNoteCalls.single.title, 'Untitled');
+            expect(controller.createdNoteCalls.single.folder, 'sub');
+          case 4:
+            // `..hidden` is a real folder name inside the vault, not a
+            // parent-directory escape; it must stay creatable.
+            expect(controller.createdNoteCalls.length, 1);
+            expect(controller.createdNoteCalls.single.title, 'Untitled');
+            expect(controller.createdNoteCalls.single.folder, '..hidden');
+          default:
+            expect(controller.createdNoteCalls, isEmpty);
+        }
+      }
     });
 
     testWidgets('header controls stay vertically centered in the bar', (tester) async {

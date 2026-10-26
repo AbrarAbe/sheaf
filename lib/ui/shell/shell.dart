@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
 import '../../logic/editor_controller.dart';
@@ -9,7 +10,9 @@ import '../../models/settings.dart';
 import '../common/corner_toast.dart';
 import '../common/widgets/loading_overlay.dart';
 import '../dialogs/confirm_delete.dart';
+import '../dialogs/new_note_dialog.dart' as new_note_dialog;
 import '../dialogs/settings_dialog.dart';
+import '../dialogs/welcome_screen.dart';
 import '../editor/editor_pane.dart';
 import '../note_list/list_pane.dart';
 import '../sidebar/sidebar.dart';
@@ -31,10 +34,15 @@ class Shell extends StatefulWidget {
     required this.controller,
     PaneWidths? paneWidths,
     this.onCreateNote,
+    Future<new_note_dialog.NewNoteRequest?> Function(BuildContext, VaultController)?
+    showNewNoteDialog,
+    Future<String?> Function()? pickFolder,
     Future<bool> Function()? isOsFullscreen,
     Future<void> Function(bool full)? setOsFullscreen,
     this._windowControls,
   }) : paneWidths = paneWidths ?? _default,
+       showNewNoteDialog = showNewNoteDialog ?? new_note_dialog.showNewNoteDialog,
+       pickFolder = pickFolder ?? WelcomeScreen.defaultPickFolder,
        isOsFullscreen = isOsFullscreen ?? windowManager.isFullScreen,
        setOsFullscreen = setOsFullscreen ?? windowManager.setFullScreen;
 
@@ -44,6 +52,13 @@ class Shell extends StatefulWidget {
   /// Injectable note factory for tests; defaults to creating 'Untitled'
   /// in the selected folder.
   final Future<Note?> Function()? onCreateNote;
+
+  /// Path → modal seam (Task C). Defaults to the real dialog.
+  final Future<new_note_dialog.NewNoteRequest?> Function(BuildContext, VaultController)
+  showNewNoteDialog;
+
+  /// OS folder picker seam (Task C). Defaults to the real picker.
+  final Future<String?> Function() pickFolder;
 
   /// OS-fullscreen seam (task 12). Defaults drive the real window via
   /// window_manager; tests inject fakes to stay off the platform channel.
@@ -200,6 +215,7 @@ class _ShellState extends State<Shell> {
                             width: widths.sidebar,
                             onTrashTapped: () => showTrashDialog(context, controller),
                             onSettingsTapped: () => showSettingsDialog(context, controller),
+                            onCreateNote: _createNote,
                           ),
                           DragDivider(onDrag: (dx) => widths.sidebar += dx),
                         ],
@@ -253,6 +269,7 @@ class _ShellState extends State<Shell> {
                           ),
                           onTrashTapped: () => showTrashDialog(context, controller),
                           onSettingsTapped: () => showSettingsDialog(context, controller),
+                          onCreateNote: _createNote,
                         ),
                       ],
                     ),
@@ -284,8 +301,37 @@ class _ShellState extends State<Shell> {
   Future<Note?> _createNote() async {
     final custom = widget.onCreateNote;
     final controller = widget.controller;
-    final note = await (custom != null ? custom() : controller.createNote(title: 'Untitled'));
-    if (note != null) controller.selectNote(note);
+    if (custom != null) {
+      final note = await custom();
+      if (note != null) controller.selectNote(note);
+      return note;
+    }
+
+    final picker = controller.settings.newNotePicker;
+    new_note_dialog.NewNoteRequest? request;
+    if (picker == NewNotePicker.system) {
+      final picked = await widget.pickFolder();
+      if (picked == null) return null;
+      if (controller.vaultPath.isEmpty) return null;
+      final rel = p.relative(picked, from: controller.vaultPath);
+      if (rel == '.') {
+        request = const new_note_dialog.NewNoteRequest(title: 'Untitled', relFolder: '');
+      } else if (p.isAbsolute(rel) || rel == '..' || rel.startsWith('../')) {
+        return null;
+      } else {
+        request = new_note_dialog.NewNoteRequest(title: 'Untitled', relFolder: rel);
+      }
+      if (!mounted) return null;
+    } else {
+      final dlg = await widget.showNewNoteDialog(context, controller);
+      if (!mounted) return null;
+      request = dlg;
+    }
+
+    if (request == null) return null;
+    final note = await controller.createNote(title: request.title, folder: request.relFolder);
+    if (!mounted) return null;
+    controller.selectNote(note);
     return note;
   }
 

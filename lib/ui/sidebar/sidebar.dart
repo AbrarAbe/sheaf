@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../logic/vault_controller.dart';
+import '../../models/note.dart';
 import '../common/context_menus.dart';
 import '../common/widgets/hover_scrollbar.dart';
 import 'widgets/entry.dart';
@@ -21,12 +22,14 @@ class Sidebar extends StatefulWidget {
     required this.width,
     this.onTrashTapped,
     this.onSettingsTapped,
+    this.onCreateNote,
   });
 
   final VaultController controller;
   final double width;
   final VoidCallback? onTrashTapped;
   final VoidCallback? onSettingsTapped;
+  final Future<Note?> Function()? onCreateNote;
 
   @override
   State<Sidebar> createState() => _SidebarState();
@@ -173,6 +176,7 @@ class _SidebarState extends State<Sidebar> {
                                         node: folder,
                                         expandVersion: _expandVersion,
                                         expandValue: _expandValue,
+                                        onCreateNote: widget.onCreateNote,
                                       ),
                                     ),
                                 ],

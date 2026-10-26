@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../../data/vault_repository.dart' show FolderNode;
 import '../../../logic/vault_controller.dart';
+import '../../../models/note.dart';
 import '../../common/context_menus.dart';
 import '../../common/widgets/loading_overlay.dart';
 import '../../dialogs/confirm_delete.dart';
@@ -19,6 +20,7 @@ class FolderRow extends StatefulWidget {
     this.depth = 0,
     this.expandVersion = 0,
     this.expandValue = false,
+    this.onCreateNote,
   });
 
   final VaultController controller;
@@ -26,6 +28,7 @@ class FolderRow extends StatefulWidget {
   final int depth;
   final int expandVersion;
   final bool expandValue;
+  final Future<Note?> Function()? onCreateNote;
 
   @override
   State<FolderRow> createState() => _FolderRowState();
@@ -137,6 +140,7 @@ class _FolderRowState extends State<FolderRow> {
                   depth: depth + 1,
                   expandVersion: widget.expandVersion,
                   expandValue: widget.expandValue,
+                  onCreateNote: widget.onCreateNote,
                 ),
             ],
           ),

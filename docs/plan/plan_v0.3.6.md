@@ -171,7 +171,7 @@ note rows in the unscoped list finally say which directory they live in.
 
 ### Phase 3 — Rewire the funnel
 
-- [ ] **Task C: rewire the single funnel**
+- [x] **Task C: rewire the single funnel**
   **Description:** `Shell._createNote()` now: (1) if `widget.onCreateNote != null`,
   invoke it unchanged (test escape hatch); else (2) consult
   `controller.settings.newNotePicker` — on `system`, call the directory chooser
@@ -203,22 +203,24 @@ note rows in the unscoped list finally say which directory they live in.
   folder and throws `ArgumentError` on an absolute one. Convert before creating:
   `final rel = p.relative(picked, from: controller.vaultPath);` and map
   `rel == '.'` to `''` (vault root); abort without creating anything when
-  `controller.vaultPath` is empty, `p.isAbsolute(rel)`, or `rel.startsWith('..')`.
+  `controller.vaultPath` is empty, `p.isAbsolute(rel)`, `rel == '..'`, or
+  `rel.startsWith('../')` — so an in-vault folder literally named `..hidden`
+  stays legal rather than being mistaken for a parent-directory escape.
   A directory picked outside the active vault cannot become a note folder.
   **Acceptance criteria:**
-  - [ ] Every listed entry point reaches `_createNote` and behaves identically.
-  - [ ] Cancelling the modal leaves the vault untouched (no note, no refresh).
-  - [ ] System-picker branch creates `Untitled` in the chosen directory, and a
+  - [x] Every listed entry point reaches `_createNote` and behaves identically.
+  - [x] Cancelling the modal leaves the vault untouched (no note, no refresh).
+  - [x] System-picker branch creates `Untitled` in the chosen directory, and a
         directory picked outside the vault (or no vault open) creates nothing.
-  - [ ] `onCreateNote` override still short-circuits (existing `shell_test.dart`
+  - [x] `onCreateNote` override still short-circuits (existing `shell_test.dart`
         expectations remain green).
-  - [ ] New note is selected + opened after creation.
+  - [x] New note is selected + opened after creation.
   **Verification:**
-  - [ ] `test/ui/shell_test.dart` existing new-note test still passes.
-  - [ ] Add a modal-path test using an injected `showNewNoteDialog` seam
+  - [x] `test/ui/shell_test.dart` existing new-note test still passes.
+  - [x] Add a modal-path test using an injected `showNewNoteDialog` seam
         asserting the returned request is fed to `createNote`, plus a cancel
         test.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task A (reads `settings.newNotePicker`), Task B (modal)
   **Files likely touched:**
   - `lib/ui/shell/shell.dart`

@@ -43,6 +43,7 @@ class SpyVaultController extends VaultController {
   final windowControlToggles = <bool>[];
   NewNotePicker newNotePicker = NewNotePicker.builtin;
   final newNotePickers = <NewNotePicker>[];
+  final createdNoteCalls = <({String title, String? folder})>[];
   final openedVaults = <String>[];
   List<TrashEntry> entries = const [];
   List<Note> fakeNotes = const [];
@@ -171,7 +172,11 @@ class SpyVaultController extends VaultController {
   }
 
   @override
-  bool get hasVault => true;
+  Future<Note> createNote({required String title, String? body, String? folder}) async {
+    createdNoteCalls.add((title: title, folder: folder));
+    final rel = (folder == null || folder.isEmpty) ? '$title.md' : '$folder/$title.md';
+    return Note(path: rel, title: title, body: body ?? '');
+  }
 
   @override
   Future<void> openVault(String path) async {
