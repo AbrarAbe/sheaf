@@ -153,5 +153,26 @@ void main() {
       expect(buildQuireLight().canvasColor, const Color(0xFFFFFFFF));
       expect(buildQuireLight().canvasColor, isNot(const Color(0xFFF3F4F7)));
     });
+
+    test('dropdownMenuTheme uses card surface, m radius, and body text', () {
+      for (final theme in [buildQuireLight(), buildQuireDark()]) {
+        final dm = theme.dropdownMenuTheme;
+        // Field + menu items read 14px body text, not the 16px M3 default.
+        expect(dm.textStyle?.fontSize, 14);
+        // The popup panel matches the card surface and m radius — the legacy
+        // DropdownButton popup ignored menuTheme and painted a 2px radius.
+        final menuStyle = dm.menuStyle!;
+        expect(menuStyle.backgroundColor?.resolve({}), theme.cardTheme.color);
+        expect(
+          menuStyle.shape?.resolve({}),
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.m)),
+        );
+        // The field's decoration matches the rest of the theme's inputs so the
+        // label is 14px on the same fill as the Name field.
+        final deco = dm.inputDecorationTheme!;
+        expect(deco.labelStyle?.fontSize, 14);
+        expect(deco.fillColor, theme.inputDecorationTheme.fillColor);
+      }
+    });
   });
 }

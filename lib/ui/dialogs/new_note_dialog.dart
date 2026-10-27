@@ -73,7 +73,16 @@ class _NewNoteDialogState extends State<_NewNoteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final entries = _flatten().toList();
+    // M3 menu rows are MenuItemButtons. Size them to 36px with body text so
+    // the picker matches the dialog's dense density — DropdownButton rows are
+    // hard-floored at kMinInteractiveDimension (48px) and ignore this.
+    final menuItemStyle = MenuItemButton.styleFrom(
+      minimumSize: const Size(0, 36),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      textStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+    );
 
     return AlertDialog(
       title: const Text('New note'),
@@ -92,28 +101,39 @@ class _NewNoteDialogState extends State<_NewNoteDialog> {
               decoration: const InputDecoration(labelText: 'Name'),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _location,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Location'),
-              items: [
-                const DropdownMenuItem<String>(value: '', child: Text('Vault root')),
-                for (final entry in entries)
-                  DropdownMenuItem<String>(
-                    value: entry.$1,
-                    child: Row(
-                      children: [
-                        SizedBox(width: entry.$2 * 16.0),
-                        Expanded(
-                          child: Text(entry.$1, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
+            // Without an explicit width the M3 menu sizes its panel to the
+            // widest item's *intrinsic* text width (ellipsis is ignored there)
+            // and our Row/Expanded labelWidget makes every row fill it, so the
+            // panel blows out past the modal on long paths. Feed the dialog's
+            // real available width in so the panel hugs the field and long
+            // paths ellipsize inside it instead.
+            LayoutBuilder(
+              builder: (context, constraints) => DropdownMenu<String>(
+                width: constraints.maxWidth,
+                initialSelection: _location,
+                requestFocusOnTap: false,
+                enableFilter: false,
+                enableSearch: false,
+                label: const Text('Location'),
+                onSelected: (value) => setState(() => _location = value ?? ''),
+                dropdownMenuEntries: [
+                  DropdownMenuEntry<String>(value: '', label: 'Vault root', style: menuItemStyle),
+                  for (final entry in entries)
+                    DropdownMenuEntry<String>(
+                      value: entry.$1,
+                      label: entry.$1,
+                      style: menuItemStyle,
+                      labelWidget: Row(
+                        children: [
+                          SizedBox(width: entry.$2 * 8.0),
+                          Expanded(
+                            child: Text(entry.$1, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-              ],
-              onChanged: (value) {
-                setState(() => _location = value ?? '');
-              },
+                ],
+              ),
             ),
           ],
         ),

@@ -371,6 +371,14 @@ ThemeData buildTokens({
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: inset ?? raised,
+      labelStyle: _safeHanken(
+        TextStyle(
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+          color: onSurfaceVariant,
+          letterSpacing: 0.14,
+        ),
+      ),
       hintStyle: _safeHanken(
         TextStyle(
           fontWeight: FontWeight.w400,
@@ -443,6 +451,44 @@ ThemeData buildTokens({
         shadowColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.18)),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.m)),
+        ),
+      ),
+    ),
+    // DropdownMenu (M3) reads DropdownMenuTheme, not MenuTheme. Give the
+    // new-note location picker the same card surface, m radius, and 14px body
+    // text the rest of the theme uses — the legacy DropdownButton popup ignored
+    // menuTheme and painted a 2px-radius, 16px-text panel.
+    dropdownMenuTheme: DropdownMenuThemeData(
+      textStyle: textTheme.bodyMedium?.copyWith(color: onSurface),
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(card),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        elevation: const WidgetStatePropertyAll(24),
+        shadowColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.18)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(QuireRadius.m)),
+        ),
+        maximumSize: const WidgetStatePropertyAll(Size(double.infinity, 260)),
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 4)),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: inset ?? raised,
+        labelStyle: _safeHanken(
+          TextStyle(
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
+            color: onSurfaceVariant,
+            letterSpacing: 0.14,
+          ),
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(QuireRadius.m),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: QuireSpace.m,
+          vertical: QuireSpace.s + 2,
         ),
       ),
     ),
