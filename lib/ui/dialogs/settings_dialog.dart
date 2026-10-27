@@ -42,7 +42,7 @@ class _SettingsDialog extends StatelessWidget {
       title: const Text('Settings'),
       content: SizedBox(
         width: dialogWidth,
-        height: isWide ? 480 : null,
+        height: isWide ? 500 : null,
         child: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
@@ -133,10 +133,7 @@ class _SettingsDialog extends StatelessWidget {
                     final percent = (controller.settings.zoomFactor * 100).round();
                     return Row(
                       children: [
-                        SizedBox(
-                          width: 72,
-                          child: Text('Zoom', style: theme.textTheme.bodySmall),
-                        ),
+                        SizedBox(width: 72, child: Text('Zoom', style: theme.textTheme.bodySmall)),
                         IconButton(
                           key: const Key('zoom-out'),
                           visualDensity: VisualDensity.compact,
@@ -220,16 +217,14 @@ class _SettingsDialog extends StatelessWidget {
             final shortcutsContent = Builder(
               builder: (context) {
                 final overrides = controller.settings.shortcutOverrides;
-                final visible = ShortcutAction.values.where((a) => a != ShortcutAction.continueList).toList();
+                final visible = ShortcutAction.values
+                    .where((a) => a != ShortcutAction.continueList)
+                    .toList();
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final action in visible)
-                      ShortcutRow(
-                        action: action,
-                        overrides: overrides,
-                        controller: controller,
-                      ),
+                      ShortcutRow(action: action, overrides: overrides, controller: controller),
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
@@ -248,9 +243,7 @@ class _SettingsDialog extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: SingleChildScrollView(child: appearanceVault),
-                  ),
+                  Expanded(child: SingleChildScrollView(child: appearanceVault)),
                   const VerticalDivider(width: 24),
                   Expanded(
                     child: Column(
@@ -258,9 +251,7 @@ class _SettingsDialog extends StatelessWidget {
                       children: [
                         const SectionLabel('Keyboard Shortcuts'),
                         const SizedBox(height: QuireSpace.xs),
-                        Expanded(
-                          child: SingleChildScrollView(child: shortcutsContent),
-                        ),
+                        Expanded(child: SingleChildScrollView(child: shortcutsContent)),
                       ],
                     ),
                   ),
@@ -290,4 +281,3 @@ class _SettingsDialog extends StatelessWidget {
     );
   }
 }
-

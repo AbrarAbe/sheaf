@@ -1,6 +1,6 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sheaf/theme/quire_colors.dart';
 import 'package:sheaf/theme/quire_theme.dart';
 
@@ -132,6 +132,26 @@ void main() {
     test('focus color is the ring color', () {
       expect(buildQuireLight().focusColor, const Color(0xFF2F4BD7));
       expect(buildQuireDark().focusColor, const Color(0xFF93A8F0));
+    });
+  });
+
+  group('dropdown popup surface (v0.3.6)', () {
+    // DropdownButton's popup menu paints Theme.canvasColor, so it must match
+    // the card color the dialog and menus use, not the darker surface.
+    test('canvasColor equals cardTheme.color in both themes', () {
+      final light = buildQuireLight();
+      final dark = buildQuireDark();
+      expect(light.canvasColor, light.cardTheme.color);
+      expect(dark.canvasColor, dark.cardTheme.color);
+    });
+
+    test('canvasColor is the card token, not the surface token', () {
+      // Dark: card 0xFF1D1B17 (dialog/menu) vs surface 0xFF131110 (canvas).
+      expect(buildQuireDark().canvasColor, const Color(0xFF1D1B17));
+      expect(buildQuireDark().canvasColor, isNot(const Color(0xFF131110)));
+      // Light: card 0xFFFFFFFF vs surface 0xFFF3F4F7.
+      expect(buildQuireLight().canvasColor, const Color(0xFFFFFFFF));
+      expect(buildQuireLight().canvasColor, isNot(const Color(0xFFF3F4F7)));
     });
   });
 }

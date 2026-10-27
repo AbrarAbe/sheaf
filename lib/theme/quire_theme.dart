@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'quire_colors.dart';
 
@@ -316,6 +316,9 @@ ThemeData buildTokens({
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
+    // DropdownButton's popup menu paints canvasColor (dropdown.dart), so it
+    // must match the dialog/menu surfaces (card), not the default surface.
+    canvasColor: card,
     focusColor: focusColor,
     splashFactory: InkSparkle.splashFactory,
     extensions: extensions,

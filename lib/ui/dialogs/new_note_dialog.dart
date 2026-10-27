@@ -77,41 +77,46 @@ class _NewNoteDialogState extends State<_NewNoteDialog> {
 
     return AlertDialog(
       title: const Text('New note'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextFormField(
-            controller: _nameController,
-            focusNode: _nameFocus,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(labelText: 'Name'),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _location,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Location'),
-            items: [
-              const DropdownMenuItem<String>(value: '', child: Text('Vault root')),
-              for (final entry in entries)
-                DropdownMenuItem<String>(
-                  value: entry.$1,
-                  child: Row(
-                    children: [
-                      SizedBox(width: entry.$2 * 16.0),
-                      Expanded(child: Text(entry.$1, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    ],
+      content: SizedBox(
+        width: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _nameController,
+              focusNode: _nameFocus,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _submit(),
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _location,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Location'),
+              items: [
+                const DropdownMenuItem<String>(value: '', child: Text('Vault root')),
+                for (final entry in entries)
+                  DropdownMenuItem<String>(
+                    value: entry.$1,
+                    child: Row(
+                      children: [
+                        SizedBox(width: entry.$2 * 16.0),
+                        Expanded(
+                          child: Text(entry.$1, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-            ],
-            onChanged: (value) {
-              setState(() => _location = value ?? '');
-            },
-          ),
-        ],
+              ],
+              onChanged: (value) {
+                setState(() => _location = value ?? '');
+              },
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
