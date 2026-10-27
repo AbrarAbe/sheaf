@@ -92,15 +92,18 @@ class _NewNoteDialogState extends State<_NewNoteDialog> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _location,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Location'),
             items: [
               const DropdownMenuItem<String>(value: '', child: Text('Vault root')),
               for (final entry in entries)
                 DropdownMenuItem<String>(
                   value: entry.$1,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: entry.$2 * 16.0),
-                    child: Text(entry.$1),
+                  child: Row(
+                    children: [
+                      SizedBox(width: entry.$2 * 16.0),
+                      Expanded(child: Text(entry.$1, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    ],
                   ),
                 ),
             ],

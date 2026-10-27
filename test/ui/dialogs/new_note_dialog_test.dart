@@ -227,6 +227,58 @@ void main() {
     expect(result, isNull);
   });
 
+  testWidgets('long nested paths do not overflow the location dropdown', (tester) async {
+    tester.view.physicalSize = const Size(300, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final longPath = '${'a' * 40}/${'b' * 40}';
+    controller.fakeFolders = [
+      FolderNode(
+        name: 'a' * 40,
+        relPath: 'a' * 40,
+        children: [FolderNode(name: 'b' * 40, relPath: longPath)],
+      ),
+    ];
+    controller.selectedFolder = longPath;
+
+    NewNoteRequest? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Center(
+            child: FilledButton(
+              onPressed: () async {
+                result = await showNewNoteDialog(context, controller);
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // no RenderFlex overflow from the wide, deeply-indented items
+    expect(tester.takeException(), isNull);
+
+    // the long path is still selectable and round-trips as the location
+    await tester.tap(find.text(longPath));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.text(longPath).last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Create'));
+    await tester.pumpAndSettle();
+
+    expect(result, isNotNull);
+    expect(result!.relFolder, longPath);
+  });
+
   testWidgets('no stale state after prior submit', (tester) async {
     NewNoteRequest? result;
     await tester.pumpWidget(
