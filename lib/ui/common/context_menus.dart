@@ -72,6 +72,7 @@ ContextMenuEntry<Object?> menuItem(
   required Object value,
   IconData? icon,
   bool destructive = false,
+  bool enabled = true,
   SingleActivator? shortcut,
 }) {
   return QuireMenuItem(
@@ -79,6 +80,7 @@ ContextMenuEntry<Object?> menuItem(
     value: value,
     icon: icon,
     destructive: destructive,
+    enabled: enabled,
     shortcut: shortcut,
   );
 }

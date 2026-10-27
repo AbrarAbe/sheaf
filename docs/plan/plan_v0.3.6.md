@@ -232,7 +232,7 @@ note rows in the unscoped list finally say which directory they live in.
 
 ### Phase 4 — List + folder surfaces
 
-- [ ] **Task D: directory label in the note list**
+- [x] **Task D: directory label in the note list**
   **Description:** `NoteRow` gains a `showDirectory` bool (default `false`) and
   renders the note's immediate-parent folder name — derived from
   `note.path` (the segment before the file name, or `Vault root` when top-level) —
@@ -264,7 +264,7 @@ note rows in the unscoped list finally say which directory they live in.
   - `test/ui/note_list/list_pane_test.dart`
   **Estimated scope:** S
 
-- [ ] **Task E: "New note inside" in folder-row context menu**
+- [x] **Task E: "New note inside" in folder-row context menu**
   **Description:** Add `menuItem('New note inside', value: 'new-note-inside',
   icon: Icons.note_add_outlined)` to `FolderRow`'s `QuireContextMenuRegion`
   before the existing `New folder inside`. On selection, call
@@ -289,16 +289,16 @@ note rows in the unscoped list finally say which directory they live in.
   `QuireMenuItem(..., enabled: widget.onCreateNote != null)` construction at this
   call site.
   **Acceptance criteria:**
-  - [ ] Menu contains both `New note inside` and `New folder inside`.
-  - [ ] Selecting it selects the folder and triggers note creation.
-  - [ ] When `onCreateNote` is null the item is still rendered but disabled/no-op
+  - [x] Menu contains both `New note inside` and `New folder inside`.
+  - [x] Selecting it selects the folder and triggers note creation.
+  - [x] When `onCreateNote` is null the item is still rendered but disabled/no-op
         (no crash).
-  - [ ] Existing rename/delete behaviour is unchanged.
+  - [x] Existing rename/delete behaviour is unchanged.
   **Verification:**
-  - [ ] `test/ui/sidebar/sidebar_test.dart` gains a test that the context menu
+  - [x] `test/ui/sidebar/sidebar_test.dart` gains a test that the context menu
         includes "New note inside", and that selecting it calls the injected
         creation callback with the folder selected.
-  - [ ] `flutter analyze` clean; `flutter test` green.
+  - [x] `flutter analyze` clean; `flutter test` green.
   **Dependencies:** Task C (funnel wired); Task B conceptually
   **Files likely touched:**
   - `lib/ui/sidebar/widgets/folder_row.dart`
@@ -309,11 +309,13 @@ note rows in the unscoped list finally say which directory they live in.
 
 ### Checkpoint: v0.3.6 complete
 
-- [ ] All acceptance criteria from tasks A–E met
-- [ ] `flutter analyze` clean
-- [ ] `flutter test` green
-- [ ] Hot reload pushed to running app after each Dart edit
-- [ ] One Conventional Commit per completed task
+- [x] All acceptance criteria from tasks A–E met
+- [x] `flutter analyze` clean
+- [x] `flutter test` green
+- [ ] (N/A — no Flutter app was connected via `dtd` this session, so no reload could
+      be pushed; code was validated by `flutter test` + `flutter analyze` instead.)
+      Hot reload pushed to running app after each Dart edit
+- [x] One Conventional Commit per completed task
 
 ## Risks and Mitigations
 

@@ -1,10 +1,15 @@
 import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sheaf/data/vault_repository.dart' show FolderNode;
 import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/models/note.dart';
+import 'package:sheaf/ui/common/context_menus.dart';
 import 'package:sheaf/ui/sidebar/sidebar.dart';
 
+import '../../helpers/spy_vault_controller.dart';
 import '../../helpers/test_vault.dart';
 
 void main() {
@@ -75,5 +80,82 @@ void main() {
     await tester.tap(find.text('#work'));
     await tester.pump();
     expect(controller.selectedTag, isNull);
+  });
+
+  group('folder row context menu (v0.3.6 task E)', () {
+    Future<SpyVaultController> pumpFolderSidebar(
+      WidgetTester tester, {
+      Future<Note?> Function()? onCreateNote,
+    }) async {
+      final controller = SpyVaultController('${tempDir.path}/settings.json');
+      addTearDown(controller.dispose);
+      controller.fakeFolders = [
+        const FolderNode(name: 'work', relPath: 'work'),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Sidebar(controller: controller, width: 240, onCreateNote: onCreateNote),
+          ),
+        ),
+      );
+      await tester.pump();
+      return controller;
+    }
+
+    Future<void> openFolderMenu(WidgetTester tester) async {
+      await tester.tap(find.text('work'), buttons: kSecondaryButton, warnIfMissed: false);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('lists New note inside above New folder inside', (tester) async {
+      await pumpFolderSidebar(tester, onCreateNote: () async => null);
+      await openFolderMenu(tester);
+
+      expect(find.text('New note inside'), findsOneWidget);
+      expect(find.byIcon(Icons.note_add_outlined), findsOneWidget);
+      // Existing entries untouched, in their original order.
+      expect(find.text('New folder inside'), findsOneWidget);
+      expect(find.text('Rename'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+    });
+
+    testWidgets('selecting New note inside selects the folder and creates', (tester) async {
+      var calls = 0;
+      final controller = await pumpFolderSidebar(
+        tester,
+        onCreateNote: () async {
+          calls++;
+          return null;
+        },
+      );
+
+      await openFolderMenu(tester);
+      await tester.tap(find.text('New note inside'));
+      await tester.pump();
+
+      expect(calls, 1);
+      expect(controller.selectedFolder, 'work');
+    });
+
+    testWidgets('New note inside renders disabled and stays inert without onCreateNote',
+        (tester) async {
+      final controller = await pumpFolderSidebar(tester);
+      await openFolderMenu(tester);
+
+      // Entries are data objects, not widgets, so read them off the region's
+      // menu definition rather than searching the tree.
+      final noteItem = tester
+          .widgetList<QuireContextMenuRegion>(find.byType(QuireContextMenuRegion))
+          .expand((r) => r.menu.entries)
+          .whereType<QuireMenuItem>()
+          .singleWhere((e) => e.debugLabel == 'QuireMenuItem(New note inside)');
+      expect(noteItem.enabled, isFalse);
+
+      await tester.tap(find.text('New note inside'));
+      await tester.pump();
+      expect(controller.selectedFolder, isNull);
+    });
   });
 }

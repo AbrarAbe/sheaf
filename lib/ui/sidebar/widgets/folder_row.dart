@@ -87,6 +87,12 @@ class _FolderRowState extends State<FolderRow> {
                 child: QuireContextMenuRegion(
                   menu: quireMenu([
                     menuItem(
+                      'New note inside',
+                      value: 'new-note-inside',
+                      icon: Icons.note_add_outlined,
+                      enabled: widget.onCreateNote != null,
+                    ),
+                    menuItem(
                       'New folder inside',
                       value: 'new-inside',
                       icon: Icons.create_new_folder_outlined,
@@ -102,6 +108,9 @@ class _FolderRowState extends State<FolderRow> {
                   ]),
                   onItemSelected: (value) async {
                     switch (value) {
+                      case 'new-note-inside':
+                        controller.selectFolder(node.relPath);
+                        await widget.onCreateNote?.call();
                       case 'new-inside':
                         await _promptAndCreate(context);
                       case 'rename':
