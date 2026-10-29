@@ -354,12 +354,11 @@ note rows in the unscoped list finally say which directory they live in.
 
 ### Checkpoint: v0.3.6 complete
 
-- [x] All acceptance criteria from tasks A–E met
+- [x] All acceptance criteria from tasks A–F met
 - [x] `flutter analyze` clean
 - [x] `flutter test` green
-- [ ] (N/A — no Flutter app was connected via `dtd` this session, so no reload could
-      be pushed; code was validated by `flutter test` + `flutter analyze` instead.)
-      Hot reload pushed to running app after each Dart edit
+- [x] Running app hot-reloaded and verified after the Dart edits (the user pressed
+      `r`/`R`; no `dtd` tool was available in-session to push the reload)
 - [x] One Conventional Commit per completed task
 
 ## Risks and Mitigations
