@@ -10,6 +10,7 @@ Future<String?> textPrompt(
   return showDialog<String>(
     context: context,
     builder: (context) => AlertDialog(
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 400),
       title: Text(
         title,
         style: GoogleFonts.bricolageGrotesque(fontWeight: FontWeight.w600),

@@ -28,12 +28,17 @@ class ScopeChip extends StatelessWidget {
           children: [
             Icon(icon, size: 12, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(width: 5),
-            Text(
-              label,
-              style: GoogleFonts.hankenGrotesk(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.hankenGrotesk(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                softWrap: false,
               ),
             ),
             const SizedBox(width: 3),

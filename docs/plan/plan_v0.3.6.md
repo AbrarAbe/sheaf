@@ -321,6 +321,37 @@ note rows in the unscoped list finally say which directory they live in.
   - `test/ui/sidebar/sidebar_test.dart`
   **Estimated scope:** S
 
+- [x] **Task F: ellipsize long scope/folder labels; cap rename dialog width**
+  **Description:** Long labels no longer overflow. The `ScopeChip` label
+  (`in <folder>` / `#<tag>` pill in the note-list header) is wrapped in a
+  `Flexible` and truncated with `TextOverflow.ellipsis` (`maxLines: 1`,
+  `softWrap: false`) — the chip previously overflowed by ~14px at a 136px
+  constraint. The folder-name label in `HoverRow` (already inside an `Expanded`)
+  gains the same ellipsis props. The shared `textPrompt` dialog (Rename folder /
+  New folder inside) is capped to a 400px max width so it no longer spans the
+  window on desktop; the cap must survive a long single-line `initial` value
+  (the `TextField`'s intrinsic width is otherwise unbounded inside
+  `AlertDialog`'s `IntrinsicWidth`).
+  **Acceptance criteria:**
+  - [x] Scope chip renders without overflow at narrow widths; long label
+        ellipsizes.
+  - [x] Folder name ellipsizes inside a narrow sidebar row.
+  - [x] Rename/new-folder dialog surface stays ≤ 400px and centered on a wide
+        window, including with a long initial folder name.
+  **Verification:**
+  - [x] `test/ui/note_list/scope_chip_test.dart` asserts no overflow + ellipsis.
+  - [x] `test/ui/sidebar/folder_row_test.dart` asserts `HoverRow` ellipsis and
+        dialog surface cap.
+  - [x] `dart analyze` clean; `flutter test` green.
+  **Dependencies:** None
+  **Files likely touched:**
+  - `lib/ui/note_list/widgets/scope_chip.dart`
+  - `lib/ui/sidebar/widgets/hover_row.dart`
+  - `lib/ui/sidebar/widgets/text_prompt.dart`
+  - `test/ui/note_list/scope_chip_test.dart`
+  - `test/ui/sidebar/folder_row_test.dart`
+  **Estimated scope:** S
+
 ### Checkpoint: v0.3.6 complete
 
 - [x] All acceptance criteria from tasks A–E met
