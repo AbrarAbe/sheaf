@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -21,6 +24,37 @@ class WelcomeScreen extends StatelessWidget {
 
   static Future<String?> defaultPickFolder() =>
       FilePicker.getDirectoryPath(dialogTitle: 'Choose a vault folder');
+
+  /// Production seam for the new-note system picker. Opens the OS **Save**
+  /// dialog so the note title is typed in its name field, then returns the
+  /// chosen absolute path (or null on cancel).
+  ///
+  /// The portal writes an empty stub at the chosen path; that stub is deleted
+  /// here so the note is created (slugified, unique-pathed) by the normal
+  /// funnel instead of by the portal — a Save dialog would otherwise leave an
+  /// un-slugified file and could truncate an existing note on replace.
+  static Future<String?> defaultPickNotePath({
+    String? initialDirectory,
+    String? dialogTitle,
+    String? fileName,
+  }) async {
+    final uri = await FilePicker.saveFile(
+      fileName: fileName ?? 'Untitled.md',
+      bytes: Uint8List(0),
+      dialogTitle: dialogTitle,
+      initialDirectory: initialDirectory,
+    );
+    if (uri == null) return null;
+    final path = uri.path;
+    try {
+      final file = File(path);
+      if (file.existsSync()) await file.delete();
+    } catch (_) {
+      // Best effort: if the empty stub cannot be removed, the note is still
+      // created by the funnel (as a sibling with a unique name).
+    }
+    return path;
+  }
 
   Future<void> _choose() async {
     final path = await pickFolder();

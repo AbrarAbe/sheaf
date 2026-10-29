@@ -321,11 +321,14 @@ Fonts as offline assets; local font loading (removed).
     already correct. Creation still runs through the single shared funnel.
 63. **Note-creation picker setting** — Settings gains `NewNotePicker`
     (`builtin` default / `system`), persisted like every other flag. When set to
-    `system`, the new-note affordances use the OS directory chooser
-    (`file_picker`'s `getDirectoryPath`) instead of the built-in modal; the note
-    is created as `Untitled` in the chosen directory, and picking a directory
-    outside the active vault creates nothing. No new dependency is
-    introduced — the chooser is the one already backing vault selection.
+    `system`, the new-note affordances use the OS **Save** dialog
+    (`file_picker`'s `saveFile`) instead of the built-in modal: it opens titled
+    "Create new note" in the sidebar-scoped folder (or the vault root), and the
+    note title is typed directly in the dialog's name field. The portal's empty
+    stub file is discarded and the note is created (slugified) by the normal
+    funnel, so a pick outside the active vault creates nothing. No new
+    dependency is introduced — the picker is the one already backing vault
+    selection.
 64. **One predictable way to start a note, from anywhere** — muscle memory
     pays off: `Ctrl+N`, the list-pane button, the scaffold context menu, the
     empty state, the folder row, and the stack shell all present the same
@@ -527,9 +530,9 @@ v0.3.6 adds:
 - [ ] Folder-row context menu gains "New note inside" alongside "New folder
       inside", selecting the folder and opening the same modal
 - [ ] Settings toggle `NewNotePicker` (`builtin` default / `system`) persisted
-      like other flags; system mode uses `file_picker`'s directory chooser and
-      creates nothing for a directory picked outside the vault; no new
-      dependency introduced
+      like other flags; system mode uses `file_picker`'s Save dialog (titled
+      "Create new note", opening in the sidebar-scoped folder) and creates
+      nothing for a pick outside the vault; no new dependency introduced
 - [ ] Every entry point — `Ctrl+N`, list-pane button, scaffold context menu,
       empty state, folder row, stack shell — presents the same flow and the same
       defaults (modal, or the OS picker per the setting), and no surface can

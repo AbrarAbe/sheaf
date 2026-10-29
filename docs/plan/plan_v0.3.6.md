@@ -5,6 +5,19 @@ lands as its own Conventional Commit behind `flutter analyze` + `flutter test`.
 No new dependencies (`file_picker` ^12.0.0 is already in `pubspec.yaml` and
 backs the OS-picker branch).
 
+## Revisions
+
+- **v0.3.6 (in flight) — system picker becomes a Save dialog.** The original
+  plan shipped the `system` branch as a directory chooser (`getDirectoryPath`)
+  creating `Untitled`; the open question deferred `saveFile` (filename +
+  directory) to a later version. That decision is reversed within v0.3.6: the
+  `system` branch now uses `FilePicker.saveFile` so the note title is typed
+  directly in the OS dialog's name field, the dialog opens titled
+  "Create new note" in the sidebar-scoped folder (vault-root fallback), and the
+  portal's empty stub file is discarded so the note is still slugified and
+  unique-pathed by the normal funnel. See `docs/adr/` entry for the
+  saveFile-writes-then-delete trade-off.
+
 ## Overview
 
 Three deferred new-note ideas, refined into one coherent flow. The core shift:
@@ -34,14 +47,15 @@ note rows in the unscoped list finally say which directory they live in.
 ## Architecture Decisions
 
 - **`file_picker` is the only seam for OS-level choice.** `WelcomeScreen.defaultPickFolder`
-  already wraps `FilePicker.getDirectoryPath`. Task A reuses that function and
-  adds `FilePicker.saveFile` only if the system branch wants a filename; the
-  default system branch in v0.3.6 stays a directory chooser
-  (`getDirectoryPath`) and the note is created as `Untitled` in that directory.
-  The chosen path is absolute, so it is converted to vault-relative before
-  reaching `VaultRepository.createNote` — whose `_normalizeFolder` throws
+  already wraps `FilePicker.getDirectoryPath` for vault selection. The system
+  new-note branch adds a separate `defaultPickNotePath` seam wrapping
+  `FilePicker.saveFile` (empty bytes, then deletes the portal's stub file), so
+  the note title is typed in the OS dialog's name field. The chosen path is
+  absolute, so it is converted to vault-relative before reaching
+  `VaultRepository.createNote` — whose `_normalizeFolder` throws
   `ArgumentError` on absolute input — and a pick outside the active vault is
-  discarded rather than creating a stray folder. No new dependency is introduced.
+  discarded rather than creating a stray folder. No new dependency is
+  introduced.
 - **One funnel, unchanged public signature.** `Shell._createNote()` remains the
   single caller of creation logic; note creation calls still resolve to
   `controller.createNote(title:, folder:)`. All UI entry points
@@ -350,8 +364,8 @@ note rows in the unscoped list finally say which directory they live in.
 
 ## Open Questions
 
-- Whether the system-picker branch should grow into a full `FilePicker.saveFile`
-  (filename + directory) in a later version. v0.3.6 ships the directory chooser
-  only, matching the seam already in use for vault selection.
+- ~~Whether the system-picker branch should grow into a full `FilePicker.saveFile`
+  (filename + directory) in a later version.~~ **Resolved in v0.3.6** — see the
+  Revisions note: the `system` branch now uses `saveFile` directly.
 - Whether the directory label should be promoted to a full relative path for
   deeply nested vaults. v0.3.6 ships the immediate-parent name plus tooltip.

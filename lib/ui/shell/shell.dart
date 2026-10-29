@@ -36,13 +36,14 @@ class Shell extends StatefulWidget {
     this.onCreateNote,
     Future<new_note_dialog.NewNoteRequest?> Function(BuildContext, VaultController)?
     showNewNoteDialog,
-    Future<String?> Function()? pickFolder,
+    Future<String?> Function({String? initialDirectory, String? dialogTitle, String? fileName})?
+    pickNotePath,
     Future<bool> Function()? isOsFullscreen,
     Future<void> Function(bool full)? setOsFullscreen,
     this._windowControls,
   }) : paneWidths = paneWidths ?? _default,
        showNewNoteDialog = showNewNoteDialog ?? new_note_dialog.showNewNoteDialog,
-       pickFolder = pickFolder ?? WelcomeScreen.defaultPickFolder,
+       pickNotePath = pickNotePath ?? WelcomeScreen.defaultPickNotePath,
        isOsFullscreen = isOsFullscreen ?? windowManager.isFullScreen,
        setOsFullscreen = setOsFullscreen ?? windowManager.setFullScreen;
 
@@ -57,8 +58,13 @@ class Shell extends StatefulWidget {
   final Future<new_note_dialog.NewNoteRequest?> Function(BuildContext, VaultController)
   showNewNoteDialog;
 
-  /// OS folder picker seam (Task C). Defaults to the real picker.
-  final Future<String?> Function() pickFolder;
+  /// OS "save" seam for the new-note system picker (Task C). Defaults to the
+  /// real Save dialog, which returns the chosen absolute path (already without
+  /// the portal's empty stub file) or null on cancel. Pass an [initialDirectory]
+  /// to open the dialog there, a [dialogTitle] for its heading, and a
+  /// [fileName] for the default name field value.
+  final Future<String?> Function({String? initialDirectory, String? dialogTitle, String? fileName})
+  pickNotePath;
 
   /// OS-fullscreen seam (task 12). Defaults drive the real window via
   /// window_manager; tests inject fakes to stay off the platform channel.
@@ -310,17 +316,31 @@ class _ShellState extends State<Shell> {
     final picker = controller.settings.newNotePicker;
     new_note_dialog.NewNoteRequest? request;
     if (picker == NewNotePicker.system) {
-      final picked = await widget.pickFolder();
+      // Open the OS Save dialog in the sidebar-scoped folder (vault root when
+      // the all-notes view is active) so the user types the note title in the
+      // dialog's name field, and give it a title that matches the action.
+      final vault = controller.vaultPath;
+      final scope = controller.selectedFolder;
+      final startDir = vault.isEmpty
+          ? null
+          : (scope == null || scope.isEmpty ? vault : p.join(vault, scope));
+      final picked = await widget.pickNotePath(
+        initialDirectory: startDir,
+        dialogTitle: 'Create new note',
+        fileName: 'Untitled.md',
+      );
       if (picked == null) return null;
       if (controller.vaultPath.isEmpty) return null;
       final rel = p.relative(picked, from: controller.vaultPath);
-      if (rel == '.') {
-        request = const new_note_dialog.NewNoteRequest(title: 'Untitled', relFolder: '');
-      } else if (p.isAbsolute(rel) || rel == '..' || rel.startsWith('../')) {
+      if (p.isAbsolute(rel) || rel == '..' || rel.startsWith('../')) {
         return null;
-      } else {
-        request = new_note_dialog.NewNoteRequest(title: 'Untitled', relFolder: rel);
       }
+      final dir = p.dirname(rel);
+      final rawTitle = p.basenameWithoutExtension(rel);
+      request = new_note_dialog.NewNoteRequest(
+        title: rawTitle.isEmpty ? 'Untitled' : rawTitle,
+        relFolder: dir == '.' ? '' : dir,
+      );
       if (!mounted) return null;
     } else {
       final dlg = await widget.showNewNoteDialog(context, controller);

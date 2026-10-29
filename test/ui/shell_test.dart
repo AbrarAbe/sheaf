@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/vault_controller.dart';
@@ -319,23 +319,35 @@ void main() {
       expect(controller.selectedNotePath, isNull);
     });
 
-    testWidgets('system picker creates Untitled in chosen dir', (tester) async {
-      for (final scenario in [1, 2, 3, 4]) {
+    testWidgets('system picker saves with typed name in scoped folder', (tester) async {
+      for (final scenario in [1, 2, 3, 4, 5]) {
         final controller = SpyVaultController('${tempDir.path}/settings.json');
         controller.newNotePicker = NewNotePicker.system;
         controller.vaultPath = scenario == 3 ? '' : '/old/vault';
         addTearDown(controller.dispose);
 
-        Future<String?> picker() async {
+        String? lastInitialDirectory;
+        String? lastDialogTitle;
+        String? lastFileName;
+        Future<String?> picker({
+          String? initialDirectory,
+          String? dialogTitle,
+          String? fileName,
+        }) async {
+          lastInitialDirectory = initialDirectory;
+          lastDialogTitle = dialogTitle;
+          lastFileName = fileName;
           switch (scenario) {
             case 1:
-              return '/old/vault/sub';
+              return '/old/vault/sub/My Note.md';
             case 2:
-              return '/elsewhere/outside';
+              return '/elsewhere/outside/note.md';
             case 3:
-              return '/anywhere';
+              return '/anywhere/note.md';
             case 4:
-              return '/old/vault/..hidden';
+              return '/old/vault/..hidden/Note.md';
+            case 5:
+              return '/old/vault/a/b/Deep.md';
             default:
               return null;
           }
@@ -348,25 +360,47 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: Shell(controller: controller, pickFolder: picker),
+            home: Shell(controller: controller, pickNotePath: picker),
           ),
         );
         await tester.pumpAndSettle();
 
+        // Scenario 5 scopes the sidebar to a nested folder; the Save dialog
+        // must open there rather than at the vault root.
+        if (scenario == 5) controller.selectedFolder = 'a/b';
+
         await tester.tap(find.text('New note'));
         await tester.pump();
+
+        // The Save dialog is titled for the action, carries the default note
+        // name, and opens in the sidebar-scoped folder — the vault root when
+        // unscoped, and no initial directory when no vault is open.
+        expect(lastDialogTitle, 'Create new note');
+        expect(lastFileName, 'Untitled.md');
+        expect(
+          lastInitialDirectory,
+          scenario == 3
+              ? null
+              : scenario == 5
+              ? '/old/vault/a/b'
+              : '/old/vault',
+        );
 
         switch (scenario) {
           case 1:
             expect(controller.createdNoteCalls.length, 1);
-            expect(controller.createdNoteCalls.single.title, 'Untitled');
+            expect(controller.createdNoteCalls.single.title, 'My Note');
             expect(controller.createdNoteCalls.single.folder, 'sub');
           case 4:
             // `..hidden` is a real folder name inside the vault, not a
             // parent-directory escape; it must stay creatable.
             expect(controller.createdNoteCalls.length, 1);
-            expect(controller.createdNoteCalls.single.title, 'Untitled');
+            expect(controller.createdNoteCalls.single.title, 'Note');
             expect(controller.createdNoteCalls.single.folder, '..hidden');
+          case 5:
+            expect(controller.createdNoteCalls.length, 1);
+            expect(controller.createdNoteCalls.single.title, 'Deep');
+            expect(controller.createdNoteCalls.single.folder, 'a/b');
           default:
             expect(controller.createdNoteCalls, isEmpty);
         }
