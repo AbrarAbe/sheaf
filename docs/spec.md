@@ -519,25 +519,25 @@ v0.3.5 adds:
 
 v0.3.6 adds:
 
-- [ ] New-note modal captures intent before creation — `Ctrl+N`, the
+- [x] New-note modal captures intent before creation — `Ctrl+N`, the
       list-pane button, the scaffold context menu, the empty state, and the
       stack shell all open a two-field modal (name defaulting to `Untitled`,
       location defaulting to the current directory chosen from the folder tree);
       `Enter` accepts the defaults, `Esc` cancels; no "skip the modal" bypass
-- [ ] Note rows show their immediate parent folder in the unfiltered view
+- [x] Note rows show their immediate parent folder in the unfiltered view
       (`Vault root` for top-level notes), with the full relative directory as a
       tooltip; hidden under any folder or tag scope
-- [ ] Folder-row context menu gains "New note inside" alongside "New folder
+- [x] Folder-row context menu gains "New note inside" alongside "New folder
       inside", selecting the folder and opening the same modal
-- [ ] Settings toggle `NewNotePicker` (`builtin` default / `system`) persisted
+- [x] Settings toggle `NewNotePicker` (`builtin` default / `system`) persisted
       like other flags; system mode uses `file_picker`'s Save dialog (titled
       "Create new note", opening in the sidebar-scoped folder) and creates
       nothing for a pick outside the vault; no new dependency introduced
-- [ ] Every entry point — `Ctrl+N`, list-pane button, scaffold context menu,
+- [x] Every entry point — `Ctrl+N`, list-pane button, scaffold context menu,
       empty state, folder row, stack shell — presents the same flow and the same
       defaults (modal, or the OS picker per the setting), and no surface can
       create a note the user did not confirm
-- [ ] `flutter analyze` clean; `flutter test` green
+- [x] `flutter analyze` clean; `flutter test` green
 
 ## Decisions
 

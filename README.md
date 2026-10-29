@@ -38,6 +38,14 @@ shipped as a self-contained tarball.
   sidebar is user-owned in every tier (toggle button or `Ctrl+\`), persists
   per tier, and becomes an overlay drawer when stacked. Draggable dividers
   with sane clamps.
+- **Deliberate note creation** — `Ctrl+N`, the list-pane button, the scaffold
+  context menu, the empty state, and the stack shell all open a two-field modal
+  (name defaults to `Untitled`, location defaults to the current directory and
+  is chosen from the folder tree), so no note is created until you confirm
+  (`Enter` accepts the defaults, `Esc` cancels). A folder's context menu adds
+  `New note inside`, and the unfiltered note list labels each row with its
+  parent folder (`Vault root` for top-level notes). A `NewNotePicker` setting
+  (`builtin` default / `system`) swaps the modal for the OS Save dialog.
 - **Fast retrieval** — pinned notes float in a PINNED section; the rest is
   day-grouped, recent-first, with instant filtering across title + body and
   title-priority ranking.
@@ -185,6 +193,7 @@ flutter build linux --release   # produces build/linux/x64/release/bundle
 - [`docs/plan/plan_v0.3.3.md`](docs/plan/plan_v0.3.3.md) — v0.3.3 implementation plan (type-first)
 - [`docs/plan/plan_v0.3.4.md`](docs/plan/plan_v0.3.4.md) — v0.3.4 implementation plan (sticky state)
 - [`docs/plan/plan_v0.3.5.md`](docs/plan/plan_v0.3.5.md) — v0.3.5 implementation plan (steady)
+- [`docs/plan/plan_v0.3.6.md`](docs/plan/plan_v0.3.6.md) — v0.3.6 implementation plan (deliberate)
 
 ## Contributing
 

@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-10-29
+
+### Added
+
+- Add contributing, license, and contact sections
+- Add SVG brand marks and switch to flutter_svg
+- Add new-note picker preference
+- Add new-note modal dialog
+- Add New note inside to folder-row menu
+
+### Changed
+
+- Create LICENSE
+- Generate zsync metadata for AppImage delta updates
+- Switch Material imports to material_ui package
+- Draft v0.3.6 "deliberate" with 5 tasks
+- Wire note creation through the new-note funnel
+- Show parent folder label on note rows
+- New-note system picker uses Save dialog in scoped folder
+- Mark v0.3.6 checkpoint complete (tasks A-F)
+
+### Fixed
+
+- Fix contact section formatting
+- Stop new-note location dropdown overflowing
+- Make new-note dropdown follow card surface
+- Match new-note location dropdown to Quire theme
+- Ellipsize long chip/folder labels; cap rename dialog width
+
+### Removed
+
+- Remove Android platform scaffolding
+
 ## [0.3.5] - 2026-10-05
 
 ### Added
@@ -16,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - Defer hanging indent to ADR 0008
 - Make tag chips clickable in preview mode
 - Finalize v0.3.5 checkbox closure
+- V0.3.5
 
 ### Fixed
 
@@ -303,6 +337,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.6]: https://github.com/AbrarAbe/sheaf/compare/v0.3.5..v0.3.6
 [0.3.5]: https://github.com/AbrarAbe/sheaf/compare/v0.3.4..v0.3.5
 [0.3.4]: https://github.com/AbrarAbe/sheaf/compare/v0.3.3..v0.3.4
 [0.3.3]: https://github.com/AbrarAbe/sheaf/compare/v0.3.2..v0.3.3
