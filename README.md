@@ -195,10 +195,10 @@ GTK 3 is the only runtime expectation, and it ships with virtually every
 desktop distribution.
 
 > **Keep it updated with Gear Lever** — the AppImage embeds its GitHub
-> release information, so [Gear Lever](https://gearlever.mijorus.it) can
-> update it in place, including zsync delta downloads. Install it once with
-> `flatpak install flathub it.mijorus.gearlever`, then add the AppImage to
-> Gear Lever and let it handle updates from the app menu.
+> release information, so [Gear Lever](https://github.com/mijorus/gearlever) can
+> update it in place, including zsync delta downloads. Install it from
+> [Flathub](https://flathub.org/en/apps/it.mijorus.gearlever), then add the
+> AppImage to Gear Lever and let it handle updates from the app menu.
 
 ### Option 2 — Install (tarball)
 
