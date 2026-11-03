@@ -66,9 +66,9 @@ Each task = one checkbox group = one commit. Scope is `S` unless noted; all on
 - Test: `test/ui/note_list/` (extend the list-pane widget test).
 
 ### Task 2 — Hand cursor on tappable controls
-- [ ] Every tappable control shows `SystemMouseCursors.click` on hover.
-- [ ] Reuse the existing `MouseRegion(cursor: ...)` pattern (see `win_dot.dart`, `palette_row.dart`, `drag_divider.dart`); add wrappers where absent.
-- [ ] `analyze_files` clean; widget tests assert the cursor annotation on a representative button per surface.
+- [x] Every tappable control shows `SystemMouseCursors.click` on hover.
+- [x] Reuse the existing `MouseRegion(cursor: ...)` pattern (see `win_dot.dart`, `palette_row.dart`, `drag_divider.dart`); add wrappers where absent.
+- [x] `analyze_files` clean; widget tests assert the cursor annotation on a representative button per surface.
 - Files (non-exclusive): `lib/ui/note_list/widgets/note_row.dart`, `lib/ui/sidebar/widgets/hover_row.dart`, `lib/ui/shell/widgets/*`, `lib/ui/dialogs/*`.
 - Test: extend per-surface widget tests.
 
@@ -95,18 +95,29 @@ Each task = one checkbox group = one commit. Scope is `S` unless noted; all on
 - Test: `test/ui/editor/`.
 
 ### Task 6 (stretched, optional) — Busy cursor during async operations
-- [ ] Show `SystemMouseCursors.wait` while a note/folder is being created or a note deleted.
-- [ ] Follow the existing `_creatingFolder` wait-cursor precedent in the sidebar.
-- [ ] `analyze_files` clean; widget test asserts the wait cursor during an in-flight op.
+- [x] Show `SystemMouseCursors.wait` while a note/folder is being created or a note deleted.
+- [x] Follow the existing `_creatingFolder` wait-cursor precedent in the sidebar.
+- [x] `analyze_files` clean; widget test asserts the wait cursor during an in-flight op.
 - Files: `lib/ui/sidebar/sidebar.dart`, `lib/ui/note_list/*`, `lib/ui/shell/*`.
+- Landed as: a full-screen wait `MouseRegion` inside the shared `showLoadingOverlay` (covers trash/delete/folder-delete), plus the note-create disk-write routed through that overlay in `shell.dart`.
 - Sequenced after Tasks 1–5 so it wraps their final widgets.
 - Test: extend per-surface widget tests.
 
 ### Task 7 (optional) — Native-window popups (investigation)
-- [ ] Survey the current Flutter window APIs (multi-window / native window support) for hosting modals and the settings dialog as real OS windows.
-- [ ] Produce a short feasibility note in `docs/ideas/`: what's supported today, effort, risk, and a recommend/do-not-recommend.
-- [ ] No product code changes unless the note concludes there is a clean path AND the user opts in.
+- [x] Survey the current Flutter window APIs (multi-window / native window support) for hosting modals and the settings dialog as real OS windows.
+- [x] Produce a short feasibility note in `docs/ideas/`: what's supported today, effort, risk, and a recommend/do-not-recommend.
+- [x] No product code changes unless the note concludes there is a clean path AND the user opts in.
+- Outcome: `docs/ideas/native-window-popups.md` — **DO NOT RECOMMEND** for v0.3.7. Stable Flutter still lacks a first-class multi-window API (main-channel-only, feature-gated, `@internal`); the production route (`desktop_multi_window`) splits into separate engines, wrong for dialogs needing shared state. Revisit when Flutter windowing reaches stable.
 - Scope: `XS` (investigation/spike). Deliverable is the note + a recommendation.
+
+### Task 8 (optional, fix) — Accurate Created time via btime (FFI `statx`)
+- [ ] Bug: the note-info dialog's Created and Modified rows show the same timestamp for a freshly-created or just-edited note, because `Created` falls back to `stat.changed` (ctime), which Linux bumps on every write.
+- [ ] Read the true birth time (btime) via FFI `statx(2)` (`STATX_BTIME`) instead of ctime, so Created no longer mirrors Modified.
+- [ ] Platform gating: Linux uses the `statx` FFI path; other desktop platforms keep the existing ctime fallback (documented) unless a follow-up adds their native btime source. No note-content changes.
+- [ ] FFI boundary is isolated (e.g. a small `created_time.dart` helper) so the non-Linux path and tests stay pure Dart.
+- [ ] `analyze_files` clean; unit test asserts the helper maps a `statx` result to the right `DateTime` and that the Created row renders btime (not ctime) on the Linux path.
+- Scope: `S`. Introduces native FFI — **get an explicit go/no-go before implementing**; not auto-included in the v0.3.7 ship.
+- Files: `lib/ui/dialogs/note_info.dart`, new `lib/data/created_time.dart` (or similar), test under `test/ui/dialogs/`.
 
 ## Verification (per task)
 
@@ -120,3 +131,6 @@ Each task = one checkbox group = one commit. Scope is `S` unless noted; all on
 - v0.3.7 (in flight) — initial plan. Cursor work split into Task 2 (hand
   cursor) and Task 6 (busy cursor) and both sequenced after the structural
   tasks so they wrap final widgets without colliding on shared files.
+- v0.3.7 — added Task 8 (note-info Created/Modified same-timestamp fix via
+  Linux btime over FFI `statx`), gated behind an explicit go since it adds
+  native code; optional and not auto-included in the ship.
