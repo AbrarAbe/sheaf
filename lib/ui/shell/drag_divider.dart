@@ -17,16 +17,20 @@ class DragDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hairline = theme.dividerTheme.color ?? theme.colorScheme.outlineVariant;
+    // The end variant renders a thinner hairline (2 px) flush to the pane edge,
+    // but keeps the same 12 dp invisible grab strip as the regular divider so
+    // pointer targets never fall below the 12 dp accessibility floor.
+    final bool end = isEnd == true;
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
         child: SizedBox(
-          width: isEnd == true ? 6 : hitWidth,
+          width: hitWidth,
           child: Row(
-            mainAxisAlignment: isEnd == true ? .end : .center,
-            children: [VerticalDivider(width: isEnd == true ? 2 : 1, color: hairline)],
+            mainAxisAlignment: end ? .end : .center,
+            children: [VerticalDivider(width: end ? 2 : 1, color: hairline)],
           ),
         ),
       ),
