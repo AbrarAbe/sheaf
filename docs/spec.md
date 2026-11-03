@@ -337,6 +337,34 @@ Fonts as offline assets; local font loading (removed).
     user did not confirm. There is no “skip the modal if the defaults are fine”
     bypass.
 
+## User stories — v0.3.7 "tactile"
+
+65. **Pinned list collapses to just its eyebrow** — the PINNED section in the
+    note list gains a chevron toggle on the eyebrow row. Collapsed, it hides the
+    pinned rows and frees vertical space, leaving only the `PINNED` eyebrow as a
+    handle to re-expand; expanded, it shows the rows as before. The preference
+    persists as an `AppSettings` flag (`pinnedExpanded`, default expanded), so
+    existing layouts are unchanged on upgrade and the choice survives a restart.
+    The toggle shows a hand cursor.
+66. **Selecting a folder reveals its subfolders** — selecting a collapsed folder
+    with children now expands it in place, so navigating into a folder opens it
+    instead of requiring a second click on the chevron. The chevron still works
+    on its own for manual expand/collapse, and a folder the user deliberately
+    collapsed stays collapsed until it is deselected and re-selected. Expansion
+    is also reachable without a click on the row — for example when the sidebar
+    selects a folder right after creating it — so the tree opens consistently
+    however the selection changes.
+67. **Note-info metadata is selectable and copyable** — the note-info dialog's
+    values (title, filename, path, dates, counts) render as selectable text, so
+    they can be highlighted and copied with the native selection + `Ctrl+C`
+    instead of being read-only labels. Layout and typography are unchanged.
+68. **Right-click in the note body lands the caret where you clicked** —
+    secondary-clicking anywhere in the note moves the caret to that exact
+    character before the Quire edit menu opens, so menu actions (copy, paste,
+    cut, formatting) operate on the character under the pointer rather than
+    wherever the caret happened to be. A right-click inside an active selection
+    is left alone, preserving cut/copy of that selection.
+
 ## Assumptions
 
 1. v0.1 assumptions carry over (files-on-disk vault, source-mode editor +

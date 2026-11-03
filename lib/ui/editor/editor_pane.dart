@@ -3,9 +3,9 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:desktop_drop/desktop_drop.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 import 'package:sheaf/ui/common/widgets/hover_scrollbar.dart';
 
@@ -130,7 +130,6 @@ class _Editor extends StatefulWidget {
   State<_Editor> createState() => _EditorState();
 }
 
-
 /// A [ScrollController] whose [animateTo] jumps instead of animating.
 ///
 /// EditableText's showCaretOnScreen calls _scrollController.animateTo()
@@ -149,21 +148,13 @@ class _EditScrollController extends ScrollController {
   bool shouldCenterCaret = false;
 
   @override
-  Future<void> animateTo(
-    double offset, {
-    required Duration duration,
-    required Curve curve,
-  }) {
+  Future<void> animateTo(double offset, {required Duration duration, required Curve curve}) {
     if (shouldCenterCaret) {
       shouldCenterCaret = false;
       _onAnimateTo(offset);
     } else {
       // Normal typing behavior: animate to the caret position.
-      super.animateTo(
-        offset,
-        duration: duration,
-        curve: curve,
-      );
+      super.animateTo(offset, duration: duration, curve: curve);
     }
     return Future.value();
   }
@@ -213,8 +204,6 @@ class _EditorState extends State<_Editor> {
   /// land at the bottom from a previous session. Mid-session note switches
   /// still restore the caret to where the user left off.
   bool _skipCaretRestoreOnNextLoad = true;
-
-
 
   /// Records a body change and its current selection into the per-note
   /// undo history. Called from the TextField's onChanged and from every
@@ -318,7 +307,6 @@ class _EditorState extends State<_Editor> {
         // fights against the cached offset, causing flicker. The caret cache
         // + showCaretOnScreen handles position restoration for both note
         // switches and mode switches.
-        
       }
       // Replace the incoming branch's controller with a fresh one
       // seeded from the per-note cache. Rebuild on mode change OR
@@ -428,20 +416,16 @@ class _EditorState extends State<_Editor> {
     if (!_editScroll.hasClients) return;
     final pos = _editScroll.position;
     final scrollable = pos.context as ScrollableState?;
-    final renderEditable = scrollable
-        ?.context
+    final renderEditable = scrollable?.context
         .findAncestorStateOfType<EditableTextState>()
         ?.renderEditable;
     if (renderEditable == null) return;
-    final caretRect = renderEditable.getLocalRectForCaret(
-      TextPosition(offset: caretOffset),
-    );
+    final caretRect = renderEditable.getLocalRectForCaret(TextPosition(offset: caretOffset));
     final viewportHeight = pos.viewportDimension;
     // getLocalRectForCaret returns viewport coordinates (relative to
     // current scroll offset). Convert to absolute document coordinates
     // by adding the current scroll offset.
-    final target =
-        (caretRect.top + caretRect.height / 2 + pos.pixels) - viewportHeight / 2;
+    final target = (caretRect.top + caretRect.height / 2 + pos.pixels) - viewportHeight / 2;
     if ((pos.pixels - target).abs() < 2.0) return;
     pos.jumpTo(target.clamp(pos.minScrollExtent, pos.maxScrollExtent));
   }
@@ -1404,6 +1388,26 @@ class _EditorState extends State<_Editor> {
                                       if (!context.mounted) {
                                         _editMenuOpen = false;
                                         return;
+                                      }
+                                      // Caret-accurate (v0.3.7 Task 5): move the
+                                      // caret to the secondary-tap point before
+                                      // opening the anchored menu, unless the tap
+                                      // lands inside an existing selection.
+                                      final re = editableState.renderEditable;
+                                      final tapGlobal = re.lastSecondaryTapDownPosition;
+                                      if (tapGlobal != null) {
+                                        final tapOffset = re.getPositionForPoint(tapGlobal).offset;
+                                        final sel = editableState.textEditingValue.selection;
+                                        final bool insideSelection =
+                                            !sel.isCollapsed &&
+                                            sel.isValid &&
+                                            tapOffset >=
+                                                (sel.start < sel.end ? sel.start : sel.end) &&
+                                            tapOffset <=
+                                                (sel.start < sel.end ? sel.end : sel.start);
+                                        if (!insideSelection) {
+                                          re.selectPosition(cause: SelectionChangedCause.tap);
+                                        }
                                       }
                                       unawaited(
                                         showBodyEditMenu(

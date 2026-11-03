@@ -3,10 +3,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sheaf/data/settings_repository.dart';
 import 'package:sheaf/data/vault_repository.dart';
 import 'package:sheaf/logic/editor_controller.dart';
@@ -513,6 +513,103 @@ void main() {
         await tester.runAsync(editorController.flush); // settle autosave
       });
     });
+
+    testWidgets('secondary tap moves caret to tapped position (caret-accurate right-click)', (
+      tester,
+    ) async {
+      await onDesktop(() async {
+        final note = await real(
+          () => vaultController.createNote(title: 'Caret', body: 'hello world'),
+          tester,
+        );
+        await real(() => editorController.open(note), tester);
+        await pumpEditor(tester);
+        await tester.pump();
+
+        // Start with a collapsed caret so the tap must reposition it.
+        final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+        field.controller!.value = TextEditingValue(
+          text: field.controller!.text,
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+        await tester.pump();
+
+        final editable = tester.state<EditableTextState>(
+          find.descendant(
+            of: find.byKey(const Key('editor-body')),
+            matching: find.byType(EditableText),
+          ),
+        );
+        final re = editable.renderEditable;
+        const targetOffset = 6;
+        final caretRect = re.getLocalRectForCaret(const TextPosition(offset: targetOffset));
+        final tapPosition = re.localToGlobal(caretRect.centerLeft + const Offset(2, 0));
+
+        final gesture = await tester.startGesture(
+          tapPosition,
+          kind: PointerDeviceKind.mouse,
+          buttons: kSecondaryButton,
+        );
+        await tester.pump();
+        await gesture.up();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        // Menu still opens; caret now at the tapped character.
+        expect(field.controller!.selection.isCollapsed, isTrue);
+        expect(field.controller!.selection.baseOffset, targetOffset);
+
+        await tester.runAsync(editorController.flush);
+      });
+    });
+
+    testWidgets(
+      'secondary tap preserves an active selection when tapped inside it (caret-accurate right-click)',
+      (tester) async {
+        await onDesktop(() async {
+          final note = await real(
+            () => vaultController.createNote(title: 'Sel', body: 'hello world'),
+            tester,
+          );
+          await real(() => editorController.open(note), tester);
+          await pumpEditor(tester);
+          await tester.pump();
+
+          final field = tester.widget<TextField>(find.byKey(const Key('editor-body')));
+          field.controller!.value = TextEditingValue(
+            text: field.controller!.text,
+            selection: const TextSelection(baseOffset: 6, extentOffset: 11),
+          );
+          await tester.pump();
+
+          final editable = tester.state<EditableTextState>(
+            find.descendant(
+              of: find.byKey(const Key('editor-body')),
+              matching: find.byType(EditableText),
+            ),
+          );
+          final re = editable.renderEditable;
+          const inside = 8;
+          final caretRect = re.getLocalRectForCaret(const TextPosition(offset: inside));
+          final tapPosition = re.localToGlobal(caretRect.centerLeft + const Offset(2, 0));
+
+          final gesture = await tester.startGesture(
+            tapPosition,
+            kind: PointerDeviceKind.mouse,
+            buttons: kSecondaryButton,
+          );
+          await tester.pump();
+          await gesture.up();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 50));
+
+          expect(field.controller!.selection.baseOffset, 6);
+          expect(field.controller!.selection.extentOffset, 11);
+
+          await tester.runAsync(editorController.flush);
+        });
+      },
+    );
 
     testWidgets('Copy puts the selection on the clipboard', (tester) async {
       Object? copied;
