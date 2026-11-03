@@ -349,7 +349,13 @@ class _ShellState extends State<Shell> {
     }
 
     if (request == null) return null;
-    final note = await controller.createNote(title: request.title, folder: request.relFolder);
+    if (!mounted) return null;
+    // Wrap only the disk-write so the wait cursor/busy spinner appears during
+    // the create itself, not while the (interactive) picker/dialog is up.
+    final note = await showLoadingOverlay(
+      context,
+      controller.createNote(title: request.title, folder: request.relFolder),
+    );
     if (!mounted) return null;
     controller.selectNote(note);
     return note;
