@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2026-11-03
+
+### Added
+
+- Add pinned-list expand/hide toggle
+- Add native-window popups feasibility note
+- Add task 9 and supersede task 8 (btime fix)
+
+### Changed
+
+- Reorganize features and clarify install steps
+- Point Gear Lever links to GitHub and Flathub
+- Auto-expand a folder when it becomes selected
+- Make note-info metadata selectable and copyable
+- Show hand cursor on tappable controls
+- Show busy cursor during async create/delete
+- Tick tasks 2/6/7 and add task 8 (btime fix)
+- Drop filename/created rows, add size
+- Refine pane spacing and divider styling
+
+### Fixed
+
+- Move caret to the right-clicked position
+- Keep end drag-divider hit target at 12 dp
+- Align info-dialog assertions with task 9
+
 ## [0.3.6] - 2026-10-29
 
 ### Added
@@ -22,6 +48,7 @@ All notable changes to this project will be documented in this file.
 - Show parent folder label on note rows
 - New-note system picker uses Save dialog in scoped folder
 - Mark v0.3.6 checkpoint complete (tasks A-F)
+- V0.3.6
 
 ### Fixed
 
@@ -337,6 +364,7 @@ All notable changes to this project will be documented in this file.
 - Explicit parent for folder creation
 - Adopt io.github.AbrarAbe.Taker application id
 
+[0.3.7]: https://github.com/AbrarAbe/sheaf/compare/v0.3.6..v0.3.7
 [0.3.6]: https://github.com/AbrarAbe/sheaf/compare/v0.3.5..v0.3.6
 [0.3.5]: https://github.com/AbrarAbe/sheaf/compare/v0.3.4..v0.3.5
 [0.3.4]: https://github.com/AbrarAbe/sheaf/compare/v0.3.3..v0.3.4

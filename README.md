@@ -259,7 +259,7 @@ To package that bundle as a portable AppImage:
 
 ```
 ./scripts/build_appimage.sh                      # produces Sheaf.AppImage
-./scripts/build_appimage.sh sheaf-v0.3.6-linux-x64.AppImage   # custom name
+./scripts/build_appimage.sh sheaf-v0.3.7-linux-x64.AppImage   # custom name
 ```
 
 The script bundles GTK into the AppImage and emits a `.zsync` file for delta
@@ -280,6 +280,7 @@ the `.zsync`.
 - [`docs/plan/plan_v0.3.4.md`](docs/plan/plan_v0.3.4.md) — v0.3.4 implementation plan (sticky state)
 - [`docs/plan/plan_v0.3.5.md`](docs/plan/plan_v0.3.5.md) — v0.3.5 implementation plan (steady)
 - [`docs/plan/plan_v0.3.6.md`](docs/plan/plan_v0.3.6.md) — v0.3.6 implementation plan (deliberate)
+- [`docs/plan/plan_v0.3.7.md`](docs/plan/plan_v0.3.7.md) — v0.3.7 implementation plan (tactile)
 
 ## Contributing
 
