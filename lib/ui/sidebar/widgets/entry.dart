@@ -28,6 +28,7 @@ class Entry extends StatelessWidget {
       color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
       borderRadius: BorderRadius.circular(QuireRadius.m),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(QuireRadius.m),
         onTap: onTap,
         hoverColor: theme.colorScheme.onSurface.withValues(alpha: 0.04),

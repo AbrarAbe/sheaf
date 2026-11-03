@@ -213,6 +213,7 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 18),
                       FilledButton.icon(
+                        style: FilledButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
                         onPressed: _choose,
                         icon: const Icon(Icons.folder_outlined, size: 18),
                         label: const Text('Choose folder…'),

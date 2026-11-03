@@ -139,8 +139,16 @@ class _NewNoteDialogState extends State<_NewNoteDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(null), child: const Text('Cancel')),
-        FilledButton(onPressed: _submit, child: const Text('Create')),
+        TextButton(
+          style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
+          onPressed: _submit,
+          child: const Text('Create'),
+        ),
       ],
     );
   }

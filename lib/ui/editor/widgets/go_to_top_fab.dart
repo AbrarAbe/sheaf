@@ -75,6 +75,7 @@ class _GoToTopFabState extends State<GoToTopFab> with SingleTickerProviderStateM
             elevation: 4,
             borderRadius: BorderRadius.circular(28),
             child: InkWell(
+              mouseCursor: SystemMouseCursors.click,
               customBorder: const CircleBorder(),
               onTap: _goToTop,
               child: SizedBox(

@@ -135,6 +135,7 @@ class _SettingsDialog extends StatelessWidget {
                       children: [
                         SizedBox(width: 72, child: Text('Zoom', style: theme.textTheme.bodySmall)),
                         IconButton(
+                          mouseCursor: SystemMouseCursors.click,
                           key: const Key('zoom-out'),
                           visualDensity: VisualDensity.compact,
                           onPressed: () => controller.setZoom(
@@ -151,6 +152,7 @@ class _SettingsDialog extends StatelessWidget {
                           ),
                         ),
                         IconButton(
+                          mouseCursor: SystemMouseCursors.click,
                           key: const Key('zoom-in'),
                           visualDensity: VisualDensity.compact,
                           onPressed: () => controller.setZoom(
@@ -159,6 +161,7 @@ class _SettingsDialog extends StatelessWidget {
                           icon: const Icon(Icons.add_circle_outline, size: 18),
                         ),
                         TextButton(
+                          style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
                           key: const Key('zoom-reset'),
                           onPressed: () => controller.setZoom(1.0),
                           child: const Text('Reset'),
@@ -203,6 +206,7 @@ class _SettingsDialog extends StatelessWidget {
                       ),
                     ),
                     TextButton(
+                      style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
                       onPressed: () async {
                         final picked = await pickFolder();
                         if (picked != null) await controller.openVault(picked);
@@ -229,6 +233,7 @@ class _SettingsDialog extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
+                        style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
                         key: const Key('reset-all-shortcuts'),
                         onPressed: overrides.isEmpty ? null : () => controller.resetAllShortcuts(),
                         child: const Text('Reset all'),
@@ -276,7 +281,11 @@ class _SettingsDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+        TextButton(
+          style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
       ],
     );
   }

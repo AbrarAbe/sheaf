@@ -1,25 +1,16 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart' hide MenuItem;
+import 'package:material_ui/material_ui.dart';
 
 import '../../theme/quire_theme.dart';
 
 export 'package:flutter_context_menu/flutter_context_menu.dart'
-    show
-        ContextMenu,
-        ContextMenuEntry,
-        ContextMenuItem,
-        ContextMenuState,
-        MenuHeader,
-        MenuDivider;
+    show ContextMenu, ContextMenuEntry, ContextMenuItem, ContextMenuState, MenuHeader, MenuDivider;
 
 // ---- Shortcut activators reused by menus and the key map ----
 const deleteActivator = SingleActivator(LogicalKeyboardKey.delete);
 const renameActivator = SingleActivator(LogicalKeyboardKey.f2);
-const newNoteActivator = SingleActivator(
-  LogicalKeyboardKey.keyN,
-  control: true,
-);
+const newNoteActivator = SingleActivator(LogicalKeyboardKey.keyN, control: true);
 
 /// Wraps [child] so secondary-click opens [menu].
 class QuireContextMenuRegion extends StatelessWidget {
@@ -58,12 +49,7 @@ ContextMenu<Object?> quireMenu(List<ContextMenuEntry<Object?>> entries) {
 }
 
 /// Hairline separator instead of the package's invisible zero-thickness one.
-const MenuDivider menuDivider = MenuDivider(
-  height: 9,
-  thickness: 1,
-  indent: 10,
-  endIndent: 10,
-);
+const MenuDivider menuDivider = MenuDivider(height: 9, thickness: 1, indent: 10, endIndent: 10);
 
 /// Builds a Sheaf-styled entry. Signature mirrors the old MenuItem helper so
 /// call sites don't change.
@@ -146,11 +132,10 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
         : cs.onSurface;
 
     return Material(
-      color: enabled && focused
-          ? cs.surfaceContainerHighest
-          : Colors.transparent,
+      color: enabled && focused ? cs.surfaceContainerHighest : Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
+        mouseCursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
         onTap: enabled ? () => handleItemSelection(context, menuState) : null,
         child: SizedBox(
           height: 35,
@@ -176,11 +161,7 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: safeHanken(
-                      TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: foreground,
-                      ),
+                      TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: foreground),
                     ),
                   ),
                 ),
@@ -193,9 +174,7 @@ final class QuireMenuItem extends ContextMenuItem<Object?> {
                         TextStyle(
                           fontSize: 11,
                           letterSpacing: 0.3,
-                          color: foreground.withValues(
-                            alpha: enabled ? .62 : .3,
-                          ),
+                          color: foreground.withValues(alpha: enabled ? .62 : .3),
                         ),
                       ),
                     ),

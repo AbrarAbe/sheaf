@@ -92,6 +92,7 @@ class _SidebarState extends State<Sidebar> {
                     ),
                     const Spacer(),
                     IconButton(
+                      mouseCursor: SystemMouseCursors.click,
                       tooltip: _expandValue ? 'Collapse all' : 'Expand all',
                       visualDensity: VisualDensity.compact,
                       icon: AnimatedSwitcher(
@@ -118,6 +119,7 @@ class _SidebarState extends State<Sidebar> {
                             ),
                           )
                         : IconButton(
+                            mouseCursor: SystemMouseCursors.click,
                             tooltip: 'New folder',
                             visualDensity: VisualDensity.compact,
                             icon: Icon(
@@ -240,6 +242,7 @@ class _SidebarState extends State<Sidebar> {
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                       child: InkWell(
+                        mouseCursor: SystemMouseCursors.click,
                         borderRadius: BorderRadius.circular(8),
                         onTap: widget.onSettingsTapped,
                         child: Padding(

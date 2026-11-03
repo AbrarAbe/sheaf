@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../theme/quire_theme.dart';
 
@@ -29,6 +29,7 @@ class HoverRowState extends State<HoverRow> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: Material(

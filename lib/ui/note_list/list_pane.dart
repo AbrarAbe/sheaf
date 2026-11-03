@@ -175,6 +175,7 @@ class _ListPaneState extends State<ListPane> {
                       icon: const Icon(Icons.edit_outlined, size: 16),
                       label: const Text('New note'),
                       style: FilledButton.styleFrom(
+                        enabledMouseCursor: SystemMouseCursors.click,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         textStyle: GoogleFonts.hankenGrotesk(
                           fontWeight: FontWeight.w600,

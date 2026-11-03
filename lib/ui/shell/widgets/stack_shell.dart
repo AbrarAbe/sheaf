@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../logic/editor_controller.dart';
 import '../../../logic/vault_controller.dart';
@@ -45,6 +45,7 @@ class StackShell extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
+                      mouseCursor: SystemMouseCursors.click,
                       icon: const Icon(Icons.arrow_back, size: 20),
                       tooltip: 'Back to list',
                       onPressed: () => controller.selectNote(null),

@@ -22,6 +22,7 @@ class TagChipBar extends StatelessWidget {
             Tooltip(
               message: 'Go to #$tag',
               child: InkWell(
+                mouseCursor: SystemMouseCursors.click,
                 borderRadius: BorderRadius.circular(999),
                 onTap: () => onTap(tag),
                 child: Container(

@@ -1,6 +1,6 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../data/vault_repository.dart' show TrashEntry;
 import '../../logic/search_controller.dart' show ageLabel;
@@ -107,6 +107,7 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
+                          mouseCursor: SystemMouseCursors.click,
                           tooltip: 'Restore',
                           icon: const Icon(Icons.restore, size: 20),
                           onPressed: () async {
@@ -121,6 +122,7 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
                           },
                         ),
                         IconButton(
+                          mouseCursor: SystemMouseCursors.click,
                           tooltip: 'Delete forever',
                           icon: Icon(
                             Icons.delete_forever_outlined,
@@ -147,7 +149,11 @@ class _TrashDialogContentState extends State<TrashDialogContent> {
               ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Close')),
+        TextButton(
+          style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
       ],
     );
   }

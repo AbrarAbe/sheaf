@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A removable scope indicator (feedback F13): folder/tag filter as a pill
 /// with a clear affordance.
@@ -14,6 +14,7 @@ class ScopeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(999),
       onTap: onClear,
       child: Container(

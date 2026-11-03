@@ -20,15 +20,12 @@ class HoverIcon extends StatelessWidget {
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(6),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(4),
-          child: Icon(
-            icon,
-            size: 14,
-            color: color ?? theme.colorScheme.onSurfaceVariant,
-          ),
+          child: Icon(icon, size: 14, color: color ?? theme.colorScheme.onSurfaceVariant),
         ),
       ),
     );

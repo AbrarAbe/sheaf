@@ -53,97 +53,101 @@ class FindBar extends StatelessWidget {
           CloseFindIntent: CallbackAction<CloseFindIntent>(onInvoke: (_) => onClose()),
         },
         child: Row(
-            children: [
-              Icon(Icons.search, size: 15, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  key: const Key('find-field'),
-                  controller: controller,
-                  focusNode: focusNode,
-                  autofocus: true,
-                  onChanged: onChanged,
-                  style: safeHanken(TextStyle(fontSize: 13, color: theme.colorScheme.onSurface)),
-                  decoration: InputDecoration(
-                    hintText: 'Find in note…',
-                    hintStyle: safeHanken(
-                      TextStyle(
-                        fontSize: 13,
-                        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                      ),
+          children: [
+            Icon(Icons.search, size: 15, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                key: const Key('find-field'),
+                controller: controller,
+                focusNode: focusNode,
+                autofocus: true,
+                onChanged: onChanged,
+                style: safeHanken(TextStyle(fontSize: 13, color: theme.colorScheme.onSurface)),
+                decoration: InputDecoration(
+                  hintText: 'Find in note…',
+                  hintStyle: safeHanken(
+                    TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     ),
-                    filled: false,
-                    border: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
                   ),
+                  filled: false,
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
                 ),
               ),
-              Text(
-                counter,
-                style: safeMono(TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant)),
-              ),
-              const SizedBox(width: 4),
-              Tooltip(
-                message: 'Match case',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(4),
-                  onTap: onCaseSensitiveChanged == null
-                      ? null
-                      : () => onCaseSensitiveChanged!(!caseSensitive),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    decoration: BoxDecoration(
+            ),
+            Text(
+              counter,
+              style: safeMono(TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant)),
+            ),
+            const SizedBox(width: 4),
+            Tooltip(
+              message: 'Match case',
+              child: InkWell(
+                mouseCursor: SystemMouseCursors.click,
+                borderRadius: BorderRadius.circular(4),
+                onTap: onCaseSensitiveChanged == null
+                    ? null
+                    : () => onCaseSensitiveChanged!(!caseSensitive),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: caseSensitive
+                        ? theme.colorScheme.secondaryContainer
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
                       color: caseSensitive
-                          ? theme.colorScheme.secondaryContainer
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: caseSensitive
-                            ? theme.colorScheme.primary.withValues(alpha: 0.3)
-                            : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                      ),
+                          ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                          : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                     ),
-                    child: Text(
-                      'Aa',
-                      style: safeMono(
-                        TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: caseSensitive
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurfaceVariant,
-                        ),
+                  ),
+                  child: Text(
+                    'Aa',
+                    style: safeMono(
+                      TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: caseSensitive
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
                 ),
               ),
-              IconButton(
-                key: const Key('find-prev'),
-                tooltip: 'Previous match (Shift+Enter)',
-                visualDensity: VisualDensity.compact,
-                onPressed: hasMatches ? onPrev : null,
-                icon: const Icon(Icons.keyboard_arrow_up, size: 18),
-              ),
-              IconButton(
-                key: const Key('find-next'),
-                tooltip: 'Next match (Enter)',
-                visualDensity: VisualDensity.compact,
-                onPressed: hasMatches ? onNext : null,
-                icon: const Icon(Icons.keyboard_arrow_down, size: 18),
-              ),
-              IconButton(
-                key: const Key('find-close'),
-                tooltip: 'Close (Esc)',
-                visualDensity: VisualDensity.compact,
-                onPressed: onClose,
-                icon: const Icon(Icons.close, size: 18),
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              mouseCursor: SystemMouseCursors.click,
+              key: const Key('find-prev'),
+              tooltip: 'Previous match (Shift+Enter)',
+              visualDensity: VisualDensity.compact,
+              onPressed: hasMatches ? onPrev : null,
+              icon: const Icon(Icons.keyboard_arrow_up, size: 18),
+            ),
+            IconButton(
+              mouseCursor: SystemMouseCursors.click,
+              key: const Key('find-next'),
+              tooltip: 'Next match (Enter)',
+              visualDensity: VisualDensity.compact,
+              onPressed: hasMatches ? onNext : null,
+              icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+            ),
+            IconButton(
+              mouseCursor: SystemMouseCursors.click,
+              key: const Key('find-close'),
+              tooltip: 'Close (Esc)',
+              visualDensity: VisualDensity.compact,
+              onPressed: onClose,
+              icon: const Icon(Icons.close, size: 18),
+            ),
+          ],
+        ),
       ),
     );
   }

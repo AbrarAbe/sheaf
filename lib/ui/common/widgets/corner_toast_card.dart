@@ -107,6 +107,7 @@ class CornerToastCardState extends State<CornerToastCard> {
           if (widget.data.actionLabel != null)
             TextButton(
               style: TextButton.styleFrom(
+                enabledMouseCursor: SystemMouseCursors.click,
                 visualDensity: VisualDensity.compact,
                 foregroundColor: theme.colorScheme.primary,
               ),

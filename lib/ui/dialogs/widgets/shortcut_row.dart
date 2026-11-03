@@ -58,29 +58,26 @@ class ShortcutRow extends StatelessWidget {
           TextButton(
             key: Key('edit-${action.name}'),
             style: TextButton.styleFrom(
+              enabledMouseCursor: SystemMouseCursors.click,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: const Size(0, 28),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             onPressed: () => showDialog(
               context: context,
-              builder: (_) => ShortcutRecorderDialog(
-                action: action,
-                controller: controller,
-              ),
+              builder: (_) => ShortcutRecorderDialog(action: action, controller: controller),
             ),
             child: const Text('Edit', style: TextStyle(fontSize: 12)),
           ),
           TextButton(
             key: Key('reset-${action.name}'),
             style: TextButton.styleFrom(
+              enabledMouseCursor: SystemMouseCursors.click,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: const Size(0, 28),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            onPressed: isOverridden
-                ? () => controller.setShortcutOverride(action, null)
-                : null,
+            onPressed: isOverridden ? () => controller.setShortcutOverride(action, null) : null,
             child: const Text('Reset', style: TextStyle(fontSize: 12)),
           ),
         ],

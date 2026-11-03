@@ -68,6 +68,7 @@ class _NoteRowState extends State<NoteRow> {
         if (value == 'info') widget.onInfoTap?.call();
       },
       child: MouseRegion(
+        cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
         child: Material(
@@ -78,6 +79,7 @@ class _NoteRowState extends State<NoteRow> {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(QuireRadius.l),
           child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
             borderRadius: BorderRadius.circular(QuireRadius.l),
             onTap: widget.onTap,
             child: Container(

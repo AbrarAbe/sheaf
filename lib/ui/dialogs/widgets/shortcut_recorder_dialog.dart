@@ -6,11 +6,7 @@ import '../../../logic/vault_controller.dart';
 import '../../../models/shortcut_settings.dart';
 
 class ShortcutRecorderDialog extends StatefulWidget {
-  const ShortcutRecorderDialog({
-    super.key,
-    required this.action,
-    required this.controller,
-  });
+  const ShortcutRecorderDialog({super.key, required this.action, required this.controller});
   final ShortcutAction action;
   final VaultController controller;
   @override
@@ -40,13 +36,7 @@ class ShortcutRecorderDialogState extends State<ShortcutRecorderDialog> {
     final shift = HardwareKeyboard.instance.isShiftPressed;
     final alt = HardwareKeyboard.instance.isAltPressed;
     final meta = HardwareKeyboard.instance.isMetaPressed;
-    final activator = SingleActivator(
-      key,
-      control: control,
-      shift: shift,
-      alt: alt,
-      meta: meta,
-    );
+    final activator = SingleActivator(key, control: control, shift: shift, alt: alt, meta: meta);
     final label = serializeActivator(activator);
     String? error;
     if (reservedFormattingLabels.contains(label)) {
@@ -102,9 +92,7 @@ class ShortcutRecorderDialogState extends State<ShortcutRecorderDialog> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: _error != null ? Colors.red : Colors.transparent,
-                ),
+                border: Border.all(color: _error != null ? Colors.red : Colors.transparent),
               ),
               child: Text(
                 capturedLabel,
@@ -113,32 +101,25 @@ class ShortcutRecorderDialogState extends State<ShortcutRecorderDialog> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 6),
-              Text(
-                _error!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-              ),
+              Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
             ],
             const SizedBox(height: 8),
-            const Text(
-              'Press keys, then Save. Single chord only.',
-              style: TextStyle(fontSize: 11),
-            ),
+            const Text('Press keys, then Save. Single chord only.', style: TextStyle(fontSize: 11)),
           ],
         ),
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
         FilledButton(
+          style: FilledButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
           onPressed: _captured == null || _error != null
               ? null
               : () async {
-                  await widget.controller.setShortcutOverride(
-                    widget.action,
-                    _captured,
-                  );
+                  await widget.controller.setShortcutOverride(widget.action, _captured);
                   if (context.mounted) Navigator.of(context).pop();
                 },
           child: const Text('Save'),

@@ -1,6 +1,6 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../logic/vault_controller.dart';
 import '../../../models/settings.dart';
@@ -67,6 +67,7 @@ class HeaderBar extends StatelessWidget {
                   child: InkWell(
                     key: const Key('sidebar-toggle'),
                     borderRadius: BorderRadius.circular(8),
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: onToggleSidebar,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -147,6 +148,7 @@ class HeaderBar extends StatelessWidget {
                       child: InkWell(
                         key: const Key('focus-toggle'),
                         borderRadius: BorderRadius.circular(8),
+                        mouseCursor: SystemMouseCursors.click,
                         onTap: onToggleFocusMode,
                         child: Padding(
                           padding: const EdgeInsets.all(8),
@@ -169,6 +171,7 @@ class HeaderBar extends StatelessWidget {
                       child: InkWell(
                         key: const Key('theme-toggle'),
                         borderRadius: BorderRadius.circular(8),
+                        mouseCursor: SystemMouseCursors.click,
                         onTap: () => controller.cycleTheme(),
                         child: Padding(
                           padding: const EdgeInsets.all(8),
@@ -230,6 +233,7 @@ class HeaderBar extends StatelessWidget {
                   child: InkWell(
                     key: const Key('palette-pill'),
                     customBorder: const StadiumBorder(),
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: onOpenPalette,
                     hoverColor: theme.colorScheme.surfaceContainerHighest,
                     child: Padding(

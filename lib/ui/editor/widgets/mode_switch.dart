@@ -13,12 +13,7 @@ class ModeSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    Widget segment(
-      EditorMode value,
-      IconData icon,
-      String label,
-      String tooltip,
-    ) {
+    Widget segment(EditorMode value, IconData icon, String label, String tooltip) {
       final selected = mode == value;
       return Tooltip(
         message: tooltip,
@@ -27,6 +22,7 @@ class ModeSwitch extends StatelessWidget {
           borderRadius: BorderRadius.circular(QuireRadius.s),
           child: InkWell(
             key: Key('mode-${value.name}'),
+            mouseCursor: SystemMouseCursors.click,
             borderRadius: BorderRadius.circular(QuireRadius.s),
             onTap: () => onSelected(value),
             child: Padding(
@@ -65,9 +61,7 @@ class ModeSwitch extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(
-          alpha: 0.55,
-        ),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(QuireRadius.s + 3),
       ),
       child: Row(
@@ -79,18 +73,8 @@ class ModeSwitch extends StatelessWidget {
             'Normal',
             'Word-like editing (Ctrl+Shift+M)',
           ),
-          segment(
-            EditorMode.markdown,
-            Icons.code_outlined,
-            'Markdown',
-            'Raw markdown source',
-          ),
-          segment(
-            EditorMode.preview,
-            Icons.visibility_outlined,
-            'Preview',
-            'Rendered output',
-          ),
+          segment(EditorMode.markdown, Icons.code_outlined, 'Markdown', 'Raw markdown source'),
+          segment(EditorMode.preview, Icons.visibility_outlined, 'Preview', 'Rendered output'),
         ],
       ),
     );

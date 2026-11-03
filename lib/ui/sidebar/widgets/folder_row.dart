@@ -86,6 +86,7 @@ class _FolderRowState extends State<FolderRow> {
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     borderRadius: BorderRadius.circular(4),
                     onTap: () => setState(() => _expanded = !_expanded),
                     child: Padding(

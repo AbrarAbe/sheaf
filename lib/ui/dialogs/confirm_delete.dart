@@ -45,10 +45,12 @@ class _ConfirmDeleteDialog extends StatelessWidget {
       content: Text(message),
       actions: [
         FilledButton(
+          style: FilledButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
           onPressed: () => Navigator.of(context).pop(false),
           child: const Text('Cancel'),
         ),
         TextButton(
+          style: TextButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
           onPressed: () => Navigator.of(context).pop(true),
           child: Row(
             mainAxisSize: MainAxisSize.min,

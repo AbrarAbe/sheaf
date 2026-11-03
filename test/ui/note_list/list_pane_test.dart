@@ -300,5 +300,20 @@ void main() {
       // Collapsed drops the grey expanded treatment for an accent.
       expect(collapsedColor, isNot(equals(expandedColor)));
     });
+
+    testWidgets('pinned toggle carries hand cursor', (tester) async {
+      await pumpList(
+        tester,
+        seed: (vault) async {
+          final old = await vault.createNote(title: 'Old but gold', body: 'stale');
+          await vault.setPinned(old.path, true);
+        },
+      );
+      final region = find.ancestor(
+        of: find.byKey(const Key('pinned-toggle')),
+        matching: find.byType(MouseRegion),
+      );
+      expect(tester.widget<MouseRegion>(region).cursor, SystemMouseCursors.click);
+    });
   });
 }

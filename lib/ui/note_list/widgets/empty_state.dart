@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../models/note.dart';
 
@@ -49,6 +49,7 @@ class EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             FilledButton.icon(
+              style: FilledButton.styleFrom(enabledMouseCursor: SystemMouseCursors.click),
               onPressed: onCreate == null ? null : () => onCreate!(),
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Write the first note'),

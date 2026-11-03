@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../logic/vault_controller.dart';
 import '../../../theme/quire_theme.dart';
@@ -22,6 +22,7 @@ class TagRow extends StatelessWidget {
       color: selected ? theme.colorScheme.secondaryContainer : Colors.transparent,
       borderRadius: BorderRadius.circular(QuireRadius.pill),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(QuireRadius.pill),
         onTap: () => controller.selectTag(selected ? null : tag),
         child: Padding(
