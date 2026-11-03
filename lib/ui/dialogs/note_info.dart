@@ -1,5 +1,5 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:path/path.dart' as p;
 
 import '../../logic/vault_controller.dart';
@@ -150,7 +150,7 @@ class NoteInfoDialog extends StatelessWidget {
           ),
           Expanded(
             flex: 3,
-            child: Text(
+            child: SelectableText(
               value,
               style: GoogleFonts.splineSansMono(fontSize: 11, color: cs.onSurface),
             ),

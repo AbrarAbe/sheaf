@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sheaf/models/note.dart';
 import 'package:sheaf/ui/dialogs/note_info.dart';
 
@@ -54,9 +54,9 @@ void main() {
   String valueOf(WidgetTester tester, String label) {
     final row = find.ancestor(of: find.text(label), matching: find.byType(Row)).first;
     return tester
-        .widgetList<Text>(find.descendant(of: row, matching: find.byType(Text)))
+        .widgetList<SelectableText>(find.descendant(of: row, matching: find.byType(SelectableText)))
         .map((w) => w.data ?? '')
-        .firstWhere((t) => t.isNotEmpty && t != label, orElse: () => '');
+        .firstWhere((t) => t.isNotEmpty, orElse: () => '');
   }
 
   group('NoteInfoDialog', () {
@@ -86,6 +86,15 @@ void main() {
       expect(valueOf(tester, 'Filename'), 'info-note.md');
       expect(valueOf(tester, 'Path'), 'info-note.md');
       expect(valueOf(tester, 'Title'), 'Info Note');
+    });
+
+    testWidgets('value text is selectable via SelectableText', (tester) async {
+      final (controller, note) = await createNote('selectable.md', 'Hello world\nSecond line');
+
+      await pumpDialog(tester, controller, note);
+
+      // Every metadata row exposes its value through a SelectableText surface.
+      expect(find.byType(SelectableText), findsNWidgets(8));
     });
 
     testWidgets('counts lines, words, characters correctly', (tester) async {
