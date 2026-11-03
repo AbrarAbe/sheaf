@@ -252,9 +252,11 @@ class _ListPaneState extends State<ListPane> {
 
         final blocks = <Widget>[];
         if (pinned.isNotEmpty) {
-          blocks.add(_eyebrow(theme, 'PINNED'));
-          for (final note in pinned) {
-            blocks.add(_rowFor(controller, note));
+          blocks.add(_pinnedHeader(theme, controller.settings.pinnedExpanded, pinned.length));
+          if (controller.settings.pinnedExpanded) {
+            for (final note in pinned) {
+              blocks.add(_rowFor(controller, note));
+            }
           }
         }
 
@@ -291,6 +293,65 @@ class _ListPaneState extends State<ListPane> {
         color: theme.colorScheme.onSurfaceVariant,
         fontFeatures: const [FontFeature.tabularFigures()],
       ),
+    ),
+  );
+
+  Padding _pinnedHeader(ThemeData theme, bool expanded, int count) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+    child: Row(
+      children: [
+        Text(
+          'PINNED',
+          style: GoogleFonts.splineSansMono(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.9,
+            height: 16 / 11,
+            color: theme.colorScheme.onSurfaceVariant,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          key: const Key('pinned-count'),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            // Grey and quiet while expanded (the rows are already visible);
+            // takes a primary tint while collapsed to hint at hidden pins.
+            color: expanded
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.06)
+                : theme.colorScheme.primary.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            '$count',
+            style: GoogleFonts.splineSansMono(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.4,
+              height: 16 / 11,
+              color: expanded ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.primary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+        const Spacer(),
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: IconButton(
+            key: const Key('pinned-toggle'),
+            tooltip: expanded ? 'Collapse pinned' : 'Expand pinned',
+            mouseCursor: SystemMouseCursors.click,
+            iconSize: 16,
+            onPressed: () => widget.controller.setPinnedExpanded(!expanded),
+            icon: AnimatedRotation(
+              turns: expanded ? 0.25 : 0,
+              duration: const Duration(milliseconds: 150),
+              child: Icon(Icons.chevron_right, size: 16, color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ),
+      ],
     ),
   );
 

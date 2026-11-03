@@ -181,6 +181,14 @@ class VaultController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Persists whether the PINNED section of the note list is expanded (v0.3.7).
+  Future<void> setPinnedExpanded(bool value) async {
+    if (value == _settings.pinnedExpanded) return;
+    _settings = _settings.copyWith(pinnedExpanded: value);
+    await _settingsRepo.save(_settings);
+    notifyListeners();
+  }
+
   /// Persists which surface creates a new note (v0.3.6).
   Future<void> setNewNotePicker(NewNotePicker picker) async {
     if (picker == _settings.newNotePicker) return;

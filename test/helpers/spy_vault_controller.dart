@@ -41,6 +41,8 @@ class SpyVaultController extends VaultController {
   double zoom = 1.0;
   bool showWindowControls = true;
   final windowControlToggles = <bool>[];
+  bool pinnedExpanded = true;
+  final pinnedExpandedToggles = <bool>[];
   NewNotePicker newNotePicker = NewNotePicker.builtin;
   final newNotePickers = <NewNotePicker>[];
   final createdNoteCalls = <({String title, String? folder})>[];
@@ -114,6 +116,7 @@ class SpyVaultController extends VaultController {
     editorFontSize: editorFontSize,
     zoomFactor: zoom,
     showWindowControls: showWindowControls,
+    pinnedExpanded: pinnedExpanded,
     newNotePicker: newNotePicker,
     shortcutOverrides: Map.unmodifiable(shortcutOverrides),
   );
@@ -144,6 +147,13 @@ class SpyVaultController extends VaultController {
   Future<void> setShowWindowControls(bool value) async {
     windowControlToggles.add(value);
     showWindowControls = value;
+  }
+
+  @override
+  Future<void> setPinnedExpanded(bool value) async {
+    pinnedExpandedToggles.add(value);
+    pinnedExpanded = value;
+    notifyListeners();
   }
 
   @override

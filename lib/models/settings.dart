@@ -15,6 +15,7 @@ class AppSettings {
     this.sidebarFull = false,
     this.sidebarStack = false,
     this.showWindowControls = true,
+    this.pinnedExpanded = true,
     this.newNotePicker = NewNotePicker.builtin,
     this.shortcutOverrides = const {},
   });
@@ -56,6 +57,10 @@ class AppSettings {
   /// (v0.3). Some setups keep the compositor title bar and want them gone.
   final bool showWindowControls;
 
+  /// Whether the PINNED section of the note list is expanded (v0.3.7). Default
+  /// expanded so existing layouts are unchanged on upgrade.
+  final bool pinnedExpanded;
+
   /// Which surface creates a new note (v0.3.6). The built-in modal always asks
   /// for a name and location; the OS picker hands back a directory only.
   final NewNotePicker newNotePicker;
@@ -78,6 +83,7 @@ class AppSettings {
     bool? sidebarFull,
     bool? sidebarStack,
     bool? showWindowControls,
+    bool? pinnedExpanded,
     NewNotePicker? newNotePicker,
     Map<String, String>? shortcutOverrides,
   }) => AppSettings(
@@ -92,6 +98,7 @@ class AppSettings {
     sidebarFull: sidebarFull ?? this.sidebarFull,
     sidebarStack: sidebarStack ?? this.sidebarStack,
     showWindowControls: showWindowControls ?? this.showWindowControls,
+    pinnedExpanded: pinnedExpanded ?? this.pinnedExpanded,
     newNotePicker: newNotePicker ?? this.newNotePicker,
     shortcutOverrides: shortcutOverrides ?? this.shortcutOverrides,
   );
@@ -108,6 +115,7 @@ class AppSettings {
     'sidebarFull': sidebarFull,
     'sidebarStack': sidebarStack,
     'showWindowControls': showWindowControls,
+    'pinnedExpanded': pinnedExpanded,
     'newNotePicker': newNotePicker.toJson(),
     if (shortcutOverrides.isNotEmpty) 'shortcutOverrides': shortcutOverrides,
   };
@@ -133,8 +141,7 @@ class AppSettings {
     if (rawOverrides is Map) {
       overrides = {
         for (final e in rawOverrides.entries)
-          if (e.key is String && e.value is String)
-            e.key as String: e.value as String,
+          if (e.key is String && e.value is String) e.key as String: e.value as String,
       };
     }
     return AppSettings(
@@ -149,6 +156,7 @@ class AppSettings {
       sidebarFull: json['sidebarFull'] as bool? ?? false,
       sidebarStack: json['sidebarStack'] as bool? ?? false,
       showWindowControls: json['showWindowControls'] as bool? ?? true,
+      pinnedExpanded: json['pinnedExpanded'] as bool? ?? true,
       newNotePicker: NewNotePicker.fromJson(json['newNotePicker'] as String?),
       shortcutOverrides: overrides,
     );
@@ -167,6 +175,7 @@ class AppSettings {
       other.sidebarFull == sidebarFull &&
       other.sidebarStack == sidebarStack &&
       other.showWindowControls == showWindowControls &&
+      other.pinnedExpanded == pinnedExpanded &&
       other.newNotePicker == newNotePicker &&
       _mapEq(other.shortcutOverrides, shortcutOverrides);
 
@@ -183,10 +192,9 @@ class AppSettings {
     sidebarFull,
     sidebarStack,
     showWindowControls,
+    pinnedExpanded,
     newNotePicker,
-    Object.hashAllUnordered(
-      shortcutOverrides.entries.map((e) => Object.hash(e.key, e.value)),
-    ),
+    Object.hashAllUnordered(shortcutOverrides.entries.map((e) => Object.hash(e.key, e.value))),
   );
 }
 
@@ -216,10 +224,8 @@ enum ThemeSetting {
 
   String toJson() => name;
 
-  factory ThemeSetting.fromJson(String? value) => values.firstWhere(
-    (v) => v.name == value,
-    orElse: () => ThemeSetting.system,
-  );
+  factory ThemeSetting.fromJson(String? value) =>
+      values.firstWhere((v) => v.name == value, orElse: () => ThemeSetting.system);
 }
 
 /// The three surfaces the note editor can render. See spec story 12:
@@ -232,10 +238,8 @@ enum EditorMode {
 
   String toJson() => name;
 
-  factory EditorMode.fromJson(String? value) => values.firstWhere(
-    (v) => v.name == value,
-    orElse: () => EditorMode.normal,
-  );
+  factory EditorMode.fromJson(String? value) =>
+      values.firstWhere((v) => v.name == value, orElse: () => EditorMode.normal);
 }
 
 /// Window layout tier (spec story 15). Lives beside settings so per-tier
@@ -250,8 +254,6 @@ enum NewNotePicker {
 
   String toJson() => name;
 
-  factory NewNotePicker.fromJson(String? value) => values.firstWhere(
-    (v) => v.name == value,
-    orElse: () => NewNotePicker.builtin,
-  );
+  factory NewNotePicker.fromJson(String? value) =>
+      values.firstWhere((v) => v.name == value, orElse: () => NewNotePicker.builtin);
 }
