@@ -36,6 +36,17 @@ class FolderRow extends StatefulWidget {
 
 class _FolderRowState extends State<FolderRow> {
   bool _expanded = false;
+  // Last selection value this row observed. The controller is a single shared,
+  // mutable object, so `oldWidget.controller.selectedFolder` in
+  // didUpdateWidget already holds the NEW value and cannot reveal a
+  // transition — we track it here instead.
+  String? _prevSelected;
+
+  @override
+  void initState() {
+    super.initState();
+    _prevSelected = widget.controller.selectedFolder;
+  }
 
   @override
   void didUpdateWidget(covariant FolderRow oldWidget) {
@@ -43,6 +54,16 @@ class _FolderRowState extends State<FolderRow> {
     if (widget.expandVersion != oldWidget.expandVersion) {
       _expanded = widget.expandValue;
     }
+    // Auto-expand a collapsed folder when it becomes the selected folder,
+    // so its subfolders are revealed. Only triggers on a selection transition
+    // (not on every rebuild), so a manually collapsed selected folder stays
+    // collapsed until re-selected.
+    final isSelected = widget.controller.selectedFolder == widget.node.relPath;
+    final wasSelected = _prevSelected == widget.node.relPath;
+    if (isSelected && !wasSelected && widget.node.children.isNotEmpty && !_expanded) {
+      _expanded = true;
+    }
+    _prevSelected = widget.controller.selectedFolder;
   }
 
   @override
@@ -110,6 +131,9 @@ class _FolderRowState extends State<FolderRow> {
                     switch (value) {
                       case 'new-note-inside':
                         controller.selectFolder(node.relPath);
+                        if (hasChildren && !_expanded && mounted) {
+                          setState(() => _expanded = true);
+                        }
                         await widget.onCreateNote?.call();
                       case 'new-inside':
                         await _promptAndCreate(context);
@@ -129,7 +153,13 @@ class _FolderRowState extends State<FolderRow> {
                   },
                   child: HoverRow(
                     selected: isSelected,
-                    onTap: () => controller.selectFolder(node.relPath),
+                    onTap: () {
+                      controller.selectFolder(node.relPath);
+                      // Reveal subfolders when selecting a collapsed folder.
+                      if (hasChildren && !_expanded) {
+                        setState(() => _expanded = true);
+                      }
+                    },
                     icon: isSelected ? Icons.folder_rounded : Icons.folder_outlined,
                     label: node.name,
                   ),

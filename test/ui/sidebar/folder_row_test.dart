@@ -1,7 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:sheaf/data/vault_repository.dart';
+import 'package:sheaf/logic/vault_controller.dart';
+import 'package:sheaf/ui/sidebar/widgets/folder_row.dart';
 import 'package:sheaf/ui/sidebar/widgets/hover_row.dart';
 import 'package:sheaf/ui/sidebar/widgets/text_prompt.dart';
+
+import '../../helpers/spy_vault_controller.dart';
 
 void main() {
   testWidgets('long folder label ellipsizes inside a narrow row', (tester) async {
@@ -74,5 +79,65 @@ void main() {
     final surfaceRect = tester.getRect(surface);
     expect(surfaceRect.width, lessThanOrEqualTo(400));
     expect(surfaceRect.center.dx, closeTo(600, 1));
+  });
+
+  group('auto-expand on selection (v0.3.7)', () {
+    const node = FolderNode(
+      name: 'proj',
+      relPath: 'proj',
+      children: [FolderNode(name: 'sub', relPath: 'proj/sub')],
+    );
+
+    // SpyVaultController records mutations without touching disk, so these
+    // tests avoid the real vault's filesystem watchers (which hang under the
+    // test FakeAsync zone) while still exercising real selectFolder/notify.
+    VaultController controller() => SpyVaultController('/tmp/sheaf_folder_test.json');
+
+    testWidgets('tapping a collapsed folder row reveals its subfolders', (tester) async {
+      final c = controller();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListenableBuilder(
+              listenable: c,
+              builder: (context, _) => FolderRow(controller: c, node: node),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('sub'), findsNothing);
+
+      await tester.tap(find.text('proj'));
+      await tester.pump();
+
+      expect(c.selectedFolder, 'proj');
+      expect(find.text('sub'), findsOneWidget);
+    });
+
+    testWidgets('selecting a collapsed folder externally auto-expands it', (tester) async {
+      final c = controller();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListenableBuilder(
+              listenable: c,
+              builder: (context, _) => FolderRow(controller: c, node: node),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('sub'), findsNothing);
+
+      // Selection changes without tapping the row — e.g. the sidebar selects a
+      // folder right after creating it.
+      c.selectFolder('proj');
+      await tester.pump();
+
+      expect(find.text('sub'), findsOneWidget);
+    });
   });
 }
