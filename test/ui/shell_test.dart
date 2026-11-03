@@ -193,15 +193,24 @@ void main() {
       expect(find.byType(Sidebar), findsOneWidget);
     });
 
-    testWidgets('drag dividers have a generous hit target (>= 12 dp wide)', (tester) async {
+    testWidgets('regular drag divider keeps a 12 dp hit target; end divider is a lighter 6 dp', (
+      tester,
+    ) async {
       await pumpShell(tester, width: 1280, height: 800);
 
       final dividers = find.byType(DragDivider);
       expect(dividers, findsNWidgets(2));
 
-      for (final divider in dividers.evaluate()) {
-        final box = divider.renderObject! as RenderBox;
-        expect(box.size.width, greaterThanOrEqualTo(12), reason: 'divider hit target too narrow');
+      // The regular (left) divider carries the full 12 dp grab strip; the end
+      // divider is deliberately narrower (6 dp) as a lighter pane boundary.
+      for (final element in dividers.evaluate()) {
+        final widget = element.widget as DragDivider;
+        final box = element.renderObject! as RenderBox;
+        if (widget.isEnd == true) {
+          expect(box.size.width, 6, reason: 'end divider should stay the lighter 6 dp target');
+        } else {
+          expect(box.size.width, greaterThanOrEqualTo(12), reason: 'divider hit target too narrow');
+        }
       }
     });
 
