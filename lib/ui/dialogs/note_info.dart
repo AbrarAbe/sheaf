@@ -1,6 +1,5 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:path/path.dart' as p;
 
 import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
@@ -23,11 +22,8 @@ class NoteInfoDialog extends StatelessWidget {
 
     final cs = Theme.of(context).colorScheme;
 
-    // Build the relative path (URL-decoded so spaces show as spaces not %20)
-    // and derive the file name from the same decoded path so Filename and Path
-    // rows agree on how encoded characters are shown.
+    // Build the relative path (URL-decoded so spaces show as spaces not %20).
     final relPath = _normalizeRelPath(note.path);
-    final fileName = p.basename(relPath);
 
     return AlertDialog(
       title: Row(
@@ -42,13 +38,8 @@ class NoteInfoDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildRow(context, 'Title', note.title.isNotEmpty ? note.title : 'Untitled'),
-            _buildRow(context, 'Filename', fileName),
             _buildRow(context, 'Path', relPath),
-            // dart:io exposes no birth/creation time on Linux, so Created is
-            // a best-effort read of ctime (stats.changed) while Modified
-            // reads mtime (stats.modified). Passing stats.modified to both
-            // is what made the two rows show the same data.
-            _buildRow(context, 'Created', _formatCreated(stats.changed)),
+            _buildRow(context, 'Size', _formatSize(stats.size)),
             _buildRow(context, 'Modified', _formatModified(stats.modified)),
             _buildRow(context, 'Lines', _lineCount(note.body).toString()),
             _buildRow(context, 'Words', _wordCount(note.body).toString()),
@@ -78,18 +69,25 @@ class NoteInfoDialog extends StatelessWidget {
     return lines.length;
   }
 
-  /// Format creation date, showing the time plus a relative age suffix.
-  String _formatCreated(DateTime date) => _formatTimestamp(date);
-
   /// Format modification date, showing the time plus a relative age suffix.
-  String _formatModified(DateTime date) => _formatTimestamp(date);
-
-  /// Shared formatter behind [_formatCreated] and [_formatModified].
-  String _formatTimestamp(DateTime date) {
+  String _formatModified(DateTime date) {
     final diff = DateTime.now().difference(date);
     final datePart = _datePart(date);
     final timePart = ' at ${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
     return '$datePart$timePart${_relativeAgeSuffix(diff)}';
+  }
+
+  /// Human-readable file size, e.g. `512 B`, `1.2 KB`, `3.4 MB`.
+  String _formatSize(int bytes) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    var value = bytes.toDouble();
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    final magnitude = value >= 100 || unit == 0 ? 0 : 1;
+    return '${value.toStringAsFixed(magnitude)} ${units[unit]}';
   }
 
   /// Date part as dd/MM/yyyy (day and month zero-padded).

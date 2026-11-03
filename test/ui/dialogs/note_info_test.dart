@@ -68,22 +68,13 @@ void main() {
       expect(find.text('Note Info'), findsOneWidget);
       expect(find.byIcon(Icons.info_outlined), findsOneWidget);
       // Every labelled row is present.
-      for (final label in [
-        'Title',
-        'Filename',
-        'Path',
-        'Lines',
-        'Created',
-        'Modified',
-        'Words',
-        'Characters',
-      ]) {
+      for (final label in ['Title', 'Path', 'Size', 'Modified', 'Lines', 'Words', 'Characters']) {
         expect(find.text(label), findsOneWidget, reason: 'expected row "$label"');
       }
       expect(find.text('Close'), findsOneWidget);
 
-      // A single-level path shows the same name in Filename and Path.
-      expect(valueOf(tester, 'Filename'), 'info-note.md');
+      // Filename is gone: the Path row is the single source for the name.
+      expect(find.text('Filename'), findsNothing);
       expect(valueOf(tester, 'Path'), 'info-note.md');
       expect(valueOf(tester, 'Title'), 'Info Note');
     });
@@ -94,7 +85,7 @@ void main() {
       await pumpDialog(tester, controller, note);
 
       // Every metadata row exposes its value through a SelectableText surface.
-      expect(find.byType(SelectableText), findsNWidgets(8));
+      expect(find.byType(SelectableText), findsNWidgets(7));
     });
 
     testWidgets('counts lines, words, characters correctly', (tester) async {
@@ -108,17 +99,26 @@ void main() {
       expect(valueOf(tester, 'Characters'), body.length.toString());
     });
 
-    testWidgets('Created and Modified both include time via shared formatter', (tester) async {
+    testWidgets('Modified includes time via the shared formatter', (tester) async {
       final (controller, note) = await createNote('time.md', 'body');
 
       await pumpDialog(tester, controller, note);
 
-      final created = valueOf(tester, 'Created');
       final modified = valueOf(tester, 'Modified');
-      expect(created, contains(' at '));
       expect(modified, contains(' at '));
-      expect(created, anyOf(contains(' ago'), contains('just now')));
       expect(modified, anyOf(contains(' ago'), contains('just now')));
+    });
+
+    testWidgets('Size shows a human-readable file size', (tester) async {
+      final (controller, note) = await createNote('size.md', 'body');
+
+      await pumpDialog(tester, controller, note);
+
+      final size = valueOf(tester, 'Size');
+      // The on-disk file is a few bytes, so it renders in bytes, not 0 or a
+      // raw integer.
+      expect(size, matches(RegExp(r'^\d+(\.\d+)? B$')));
+      expect(size, isNot('0 B'));
     });
 
     testWidgets('reads distinct stat fields without throwing', (tester) async {
@@ -137,7 +137,6 @@ void main() {
       );
 
       await pumpDialog(tester, controller, note);
-      expect(find.text('Created'), findsOneWidget);
       expect(find.text('Modified'), findsOneWidget);
     });
 
@@ -181,7 +180,7 @@ void main() {
       expect(valueOf(tester, 'Characters'), '0');
     });
 
-    testWidgets('Path and Filename are URL-decoded', (tester) async {
+    testWidgets('Path is URL-decoded', (tester) async {
       final controller = makeSpy();
       const encodedPath = 'folder%20name/note%20file.md';
       // Back the note with a real file at the (literal) encoded path so
@@ -193,7 +192,6 @@ void main() {
       await pumpDialog(tester, controller, encodedNote);
 
       expect(valueOf(tester, 'Path'), 'folder name/note file.md');
-      expect(valueOf(tester, 'Filename'), 'note file.md');
       expect(find.textContaining('%20'), findsNothing);
     });
   });
