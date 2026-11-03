@@ -1,6 +1,6 @@
 import 'package:flutter/gestures.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:sheaf/models/note.dart';
 import 'package:sheaf/ui/note_list/list_pane.dart';
 
@@ -54,12 +54,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Note Info'), findsOneWidget);
-      expect(find.text('Filename'), findsOneWidget);
+      // Task 9 dropped the Filename and Created rows; Path + Size remain.
+      expect(find.text('Filename'), findsNothing);
       expect(find.text('Path'), findsOneWidget);
-      expect(find.text('Created'), findsOneWidget);
+      expect(find.text('Size'), findsOneWidget);
       expect(find.text('Modified'), findsOneWidget);
-      // Both Created and Modified should include time
-      expect(find.textContaining(' at '), findsAtLeastNWidgets(2));
+      // Modified (the only timestamp row) includes the time
+      expect(find.textContaining(' at '), findsAtLeastNWidgets(1));
     });
 
     testWidgets('Info dialog can be dismissed via Close', (tester) async {
