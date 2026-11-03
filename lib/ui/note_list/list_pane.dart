@@ -160,7 +160,7 @@ class _ListPaneState extends State<ListPane> {
               // Toolbar: scope chips + New note (feedback F13 — vault-wide
               // search moved to the Ctrl+K palette).
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
                 child: Row(
                   children: [
                     Expanded(
@@ -282,23 +282,8 @@ class _ListPaneState extends State<ListPane> {
     );
   }
 
-  Padding _eyebrow(ThemeData theme, String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-    child: Text(
-      text,
-      style: GoogleFonts.splineSansMono(
-        fontSize: 11,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0.9,
-        height: 16 / 11,
-        color: theme.colorScheme.onSurfaceVariant,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
-    ),
-  );
-
   Padding _pinnedHeader(ThemeData theme, bool expanded, int count) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
     child: Row(
       children: [
         Text(
@@ -353,6 +338,21 @@ class _ListPaneState extends State<ListPane> {
           ),
         ),
       ],
+    ),
+  );
+
+  Padding _eyebrow(ThemeData theme, String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(12, 18, 12, 8),
+    child: Text(
+      text,
+      style: GoogleFonts.splineSansMono(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.9,
+        height: 16 / 11,
+        color: theme.colorScheme.onSurfaceVariant,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     ),
   );
 

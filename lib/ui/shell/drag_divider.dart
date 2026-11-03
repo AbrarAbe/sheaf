@@ -3,7 +3,8 @@ import 'package:material_ui/material_ui.dart';
 /// A draggable divider between panes: a generous invisible hit strip with a
 /// 1 px hairline centered in it, column-resize cursor per layout-and-space.md.
 class DragDivider extends StatelessWidget {
-  const DragDivider({super.key, required this.onDrag});
+  final bool? isEnd;
+  const DragDivider({super.key, this.isEnd, required this.onDrag});
 
   /// Called with the horizontal delta of the drag.
   final ValueChanged<double> onDrag;
@@ -22,8 +23,11 @@ class DragDivider extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onHorizontalDragUpdate: (details) => onDrag(details.delta.dx),
         child: SizedBox(
-          width: hitWidth,
-          child: Center(child: Container(width: 1, color: hairline)),
+          width: isEnd == true ? 6 : hitWidth,
+          child: Row(
+            mainAxisAlignment: isEnd == true ? .end : .center,
+            children: [VerticalDivider(width: isEnd == true ? 2 : 1, color: hairline)],
+          ),
         ),
       ),
     );

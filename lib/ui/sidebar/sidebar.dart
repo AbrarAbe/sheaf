@@ -1,7 +1,7 @@
 import 'dart:io' show Platform;
 
-import 'package:material_ui/material_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../logic/vault_controller.dart';
 import '../../models/note.dart';
@@ -47,12 +47,8 @@ class _SidebarState extends State<Sidebar> {
     final theme = Theme.of(context);
     final hairline = theme.colorScheme.outlineVariant;
     final controller = widget.controller;
-    return Container(
+    return SizedBox(
       width: widget.width,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(right: BorderSide(color: hairline, width: 1)),
-      ),
       child: ListenableBuilder(
         listenable: controller,
         builder: (context, _) {

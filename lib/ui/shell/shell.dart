@@ -441,7 +441,7 @@ class _ShellState extends State<Shell> {
           width: widths.list,
           child: ListPane(controller: controller, onCreateNote: _createNote),
         ),
-        DragDivider(onDrag: (dx) => widths.list += dx),
+        DragDivider(onDrag: (dx) => widths.list += dx, isEnd: true),
         Expanded(key: const Key('pane-editor'), child: _editorPane()),
       ],
     );
