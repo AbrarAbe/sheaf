@@ -118,6 +118,16 @@ Each task = one checkbox group = one commit. Scope is `S` unless noted; all on
 - [ ] `analyze_files` clean; unit test asserts the helper maps a `statx` result to the right `DateTime` and that the Created row renders btime (not ctime) on the Linux path.
 - Scope: `S`. Introduces native FFI — **get an explicit go/no-go before implementing**; not auto-included in the v0.3.7 ship.
 - Files: `lib/ui/dialogs/note_info.dart`, new `lib/data/created_time.dart` (or similar), test under `test/ui/dialogs/`.
+- **SUPERSEDED by Task 9** — removing the Created row (Task 9) eliminates the ctime bug outright, so the FFI btime work is no longer needed. Kept here for the record only; do not implement unless Created is ever reintroduced.
+
+### Task 9 — Simplify note-info metadata rows
+- [x] Remove the `Filename` row — it is redundant since `Path` already ends with the file name.
+- [x] Remove the `Created` row (this also resolves the Task 8 same-timestamp bug by dropping the unreliable ctime read rather than fixing it).
+- [x] Add a `Size` row showing a human-readable file size (e.g. `512 B`, `1.2 KB`, `3.4 MB`) from `statSync().size`.
+- [x] Drop the now-dead creation-date helpers and the `path` import if it becomes unused.
+- [x] `analyze_files` clean; update `note_info_test.dart` so the row list, `SelectableText` count and assertions match the new row set (no `Filename`/`Created`, plus `Size`).
+- Scope: `XS`.
+- Files: `lib/ui/dialogs/note_info.dart`, `test/ui/dialogs/note_info_test.dart`.
 
 ## Verification (per task)
 
@@ -134,3 +144,7 @@ Each task = one checkbox group = one commit. Scope is `S` unless noted; all on
 - v0.3.7 — added Task 8 (note-info Created/Modified same-timestamp fix via
   Linux btime over FFI `statx`), gated behind an explicit go since it adds
   native code; optional and not auto-included in the ship.
+- v0.3.7 — added Task 9 (simplify note-info rows: drop the redundant
+  Filename row, replace Created with a human-readable Size row). Removing
+  Created resolves the Task 8 bug by dropping the unreliable ctime read, so
+  Task 8 is superseded and parked.
